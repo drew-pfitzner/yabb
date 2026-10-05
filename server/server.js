@@ -1,4 +1,4 @@
-/* YABB server: logins, separate budgets, the document API store.js talks to, live updates and receipts.
+/* YNABB server: logins, separate budgets, the document API store.js talks to, live updates and receipts.
    No npm packages: Node's own http, crypto and sqlite. Run: node server/server.js
    Settings come from environment variables (see the README in this folder). */
 'use strict';
@@ -30,12 +30,19 @@ const DOC_ID = /^[A-Za-z0-9_.:-]{1,100}$/;
 const BLOB_ID = /^[A-Za-z0-9_-]{1,100}$/;
 const BLOB_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 const MAX_JSON = 20e6, MAX_BLOB = 20e6;
-const COOKIE = SECURE ? '__Host-yabb' : 'yabb';
+const COOKIE = SECURE ? '__Host-ynabb' : 'ynabb';
 
 fs.mkdirSync(BLOB_DIR, { recursive: true });
 
 // ---------- database ----------
-const db = new DatabaseSync(path.join(DATA_DIR, 'yabb.sqlite'));
+// the app was called YABB until October 2026: carry its database file across once, with its journal
+if (fs.existsSync(path.join(DATA_DIR, 'yabb.sqlite')) && !fs.existsSync(path.join(DATA_DIR, 'ynabb.sqlite'))) {
+  for (const ext of ['-wal', '-shm', '']) {
+    const from = path.join(DATA_DIR, 'yabb.sqlite' + ext);
+    if (fs.existsSync(from)) fs.renameSync(from, path.join(DATA_DIR, 'ynabb.sqlite' + ext));
+  }
+}
+const db = new DatabaseSync(path.join(DATA_DIR, 'ynabb.sqlite'));
 db.exec(`
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
@@ -459,7 +466,7 @@ const redirect = (res, to) => { res.writeHead(303, Object.assign({}, SECURITY_HE
 // ---------- routing ----------
 // Changes must come from our own pages: a custom header can't be sent cross-site without permission we never give.
 function checkSameSite(req) {
-  if (req.headers['x-requested-with'] !== 'yabb') fail(403, 'Blocked.');
+  if (req.headers['x-requested-with'] !== 'ynabb') fail(403, 'Blocked.');
   const origin = req.headers.origin;
   if (!origin) return;
   // behind Tailscale the public name can arrive as X-Forwarded-Host
@@ -544,7 +551,7 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   if (args.length) cli(args).then(() => process.exit(0));
   else bootstrap().then(() => server.listen(PORT, HOST, () => {
-    console.log(`YABB ${VERSION} on http://${HOST}:${PORT} (data in ${DATA_DIR})`);
+    console.log(`YNABB ${VERSION} on http://${HOST}:${PORT} (data in ${DATA_DIR})`);
     backups.start();
   }));
 }

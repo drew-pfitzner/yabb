@@ -2,7 +2,7 @@
 
 ## Why it exists
 
-The owner's family (six people) budgeted in YNAB. YABB replaces it with an app they control. It does the same zero-based budgeting, with much smarter bank import and reconciling. The big pain it solves: YNAB's balance had drifted about $1,000 from the bank because of hand-entered transactions that later doubled up with the bank's lines. Finding them by hand took hours.
+The owner's family (six people) budgeted in YNAB. YNABB replaces it with an app they control. It does the same zero-based budgeting, with much smarter bank import and reconciling. The big pain it solves: YNAB's balance had drifted about $1,000 from the bank because of hand-entered transactions that later doubled up with the bank's lines. Finding them by hand took hours.
 
 **North star:** import the NAB file, click a couple of buttons, and have a reliably reconciled budget.
 
@@ -15,7 +15,7 @@ The owner's family (six people) budgeted in YNAB. YABB replaces it with an app t
 | YABB Fresh | https://claude.ai/artifact/LqHnaSYMpp6KK48yLY6b3t | Empty budget for trying the setup guide. |
 | YABB Redo | https://claude.ai/artifact/Nn5xmVJ5qMgu6EiU12LKGs | Empty copy made on 4 Oct 2026 to re-import YNAB and redo the reconcile without touching the real one. |
 
-All four run the same code (the files in `app/`); only the `<title>` differs. Each has its own database. They can only be updated from a Claude Code session using the Artifact tool, which is one reason to self-host.
+These claude.ai copies still carry the old YABB titles. All four run the same code (the files in `app/`); only the `<title>` differs. Each has its own database. They can only be updated from a Claude Code session using the Artifact tool, which is one reason to self-host.
 
 ## What the app does (as of 4 Oct 2026)
 
@@ -44,8 +44,8 @@ All four run the same code (the files in `app/`); only the `<title>` differs. Ea
 
 **Reconcile and the bank check**
 - Reconcile an account against the bank balance (prefilled from the file).
-- **Check against the bank:** finds the last day YABB and the bank agreed, then lists each difference after that: missing lines, extra lines, amounts that differ.
-- Fixes: **Fix all** (keeps the bank's copy and carries over hand-entered notes, category and receipt), **Add to YABB**, and **Lock it in**.
+- **Check against the bank:** finds the last day YNABB and the bank agreed, then lists each difference after that: missing lines, extra lines, amounts that differ.
+- Fixes: **Fix all** (keeps the bank's copy and carries over hand-entered notes, category and receipt), **Add to YNABB**, and **Lock it in**.
 - **Possible doubles:** pair cards with **Merge into one** or **Not a double**. Uses bank-text dates with ±1 day tolerance.
 
 **Payees and rules**
@@ -65,7 +65,7 @@ All four run the same code (the files in `app/`); only the `<title>` differs. Ea
 
 - **2 Oct 2026:** first build as "Zero Line": budget engine, categories, targets, transactions, import and a YNAB import.
 - **3 Oct:**
-  - Renamed **YABB**, with a three-slice pie logo (teal, light teal, gold).
+  - Renamed **YABB** ("Yet Another Bloody Budget"), with a three-slice pie logo (teal, light teal, gold).
   - Real budget emptied, real YNAB data imported fresh, NAB CSVs imported.
   - Built the bank check, Fix all, possible doubles, the merge tools and the rules redesign.
   - The real everyday account was reconciled to the exact bank balance.
@@ -73,6 +73,8 @@ All four run the same code (the files in `app/`); only the `<title>` differs. Ea
   - Bulk select and approve; rule day-of-month and "does not contain".
   - Month switcher moved; Spent drill-down; fixed the negative Ready to Assign in past months.
   - Range and ⌘ selection with bulk edits; the Redo copy; this handover.
+
+- **5 Oct:** moved to its own server on the A6 (logins, separate budgets, backups, auto-deploy), and renamed **YNABB**: "Yikes Not Another Bloody Budget".
 
 ## Ideas parked for later
 

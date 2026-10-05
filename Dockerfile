@@ -1,8 +1,8 @@
-# YABB: the app plus its server. No npm packages, so this is just Node and the files.
+# YNABB: the app plus its server. No npm packages, so this is just Node and the files.
 FROM node:24-alpine
 # tzdata so "2am" means 2am in Griffith
 RUN apk add --no-cache tzdata
-WORKDIR /yabb
+WORKDIR /ynabb
 COPY package.json ./
 COPY app ./app
 COPY server/server.js server/backup.js ./server/

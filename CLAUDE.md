@@ -1,6 +1,6 @@
 # Instructions for the next agent
 
-You're picking up YABB, a zero-based budgeting web app (a YNAB replacement) built for one Australian family. Read `README.md`, then `docs/PROJECT-CONTEXT.md` and `docs/ARCHITECTURE.md`, before changing anything.
+You're picking up YNABB, a zero-based budgeting web app (a YNAB replacement) built for one Australian family. Read `README.md`, then `docs/PROJECT-CONTEXT.md` and `docs/ARCHITECTURE.md`, before changing anything.
 
 ## The owner
 

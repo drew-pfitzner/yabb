@@ -1,4 +1,4 @@
-# YABB server
+# YNABB server
 
 One file (`server.js`), no npm packages: Node 22.13 or newer, using its built-in SQLite. It serves the app from `../app`, plus:
 
@@ -18,7 +18,7 @@ npm run dev                      # http://127.0.0.1:8080
 npm test                         # the server tests
 ```
 
-Data goes in `data/` (gitignored): `yabb.sqlite` plus `blobs/` for receipts. Delete the folder to start again.
+Data goes in `data/` (gitignored): `ynabb.sqlite` plus `blobs/` for receipts. Delete the folder to start again.
 
 ## Settings (environment variables)
 

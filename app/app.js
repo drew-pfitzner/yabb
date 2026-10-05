@@ -1,4 +1,4 @@
-/* YABB UI */
+/* YNABB UI */
 (function () {
   'use strict';
   const E = window.Engine, S = window.Store;
@@ -263,7 +263,7 @@
     st.className = 'sync ' + cls;
     st.querySelector('span').textContent = label;
     $('#banner').innerHTML = mode === 'local'
-      ? '<div class="banner">Preview mode: changes are saved in this browser only. Open YABB from its web address and sign in to sync between your devices.</div>'
+      ? '<div class="banner">Preview mode: changes are saved in this browser only. Open YNABB from its web address and sign in to sync between your devices.</div>'
       : (S.status === 'error' && S.error ? `<div class="banner bad">${esc(S.error)}</div>` : '');
     $$('[data-nav]').forEach((b) => b.setAttribute('aria-current', b.dataset.nav === UI.view ? 'page' : 'false'));
     const lb = $('#layoutbtn');
@@ -285,7 +285,7 @@
   function viewWelcome() {
     return `<section class="welcome">
       <h1>Give every dollar a job.</h1>
-      <p class="lede">YABB is a zero-based budget. Money comes in and waits in <b>Ready to Assign</b>. You give each dollar a job by assigning it to a category, until Ready to Assign is at zero. When you overspend, that category goes red and stays red, even into next month, until you cover it from another category or top it up.</p>
+      <p class="lede">YNABB is a zero-based budget. Money comes in and waits in <b>Ready to Assign</b>. You give each dollar a job by assigning it to a category, until Ready to Assign is at zero. When you overspend, that category goes red and stays red, even into next month, until you cover it from another category or top it up.</p>
       <ol class="steps">
         <li><b>Add your accounts</b> with today's balances. That money becomes Ready to Assign.</li>
         <li><b>Set up categories.</b> Nest them as deep as you like: Bills › Insurance › Car.</li>
@@ -296,7 +296,7 @@
         <button class="btn" data-action="starter">Start with a suggested category list</button>
         <button class="btn" data-action="add-group">Start with no categories</button>
         <label class="btn" for="ynab-file">Move my budget from YNAB</label><input type="file" id="ynab-file" accept=".zip,.csv,application/zip,text/csv" multiple hidden data-live="0">
-        <label class="btn" for="restore-file">Restore a YABB backup</label><input type="file" id="restore-file" accept=".json,application/json" hidden data-live="0">
+        <label class="btn" for="restore-file">Restore a YNABB backup</label><input type="file" id="restore-file" accept=".json,application/json" hidden data-live="0">
       </div>
       <p class="fine">You can rename, nest, hide or delete any category later.</p>
       ${S.mode === 'server' ? `<p class="fine">Signed in as ${esc(S.account.name)} · <a class="linkish" href="/account">Account and password</a> · <a class="linkish" href="#" data-action="sign-out">Sign out</a></p>` : ''}
@@ -1418,7 +1418,7 @@
   }
   function recBar() {
     const r = UI.rec, { diff } = recState();
-    return `<div class="rec-bar ${diff ? 'off' : 'ok'}" title="${diff ? (diff < 0 ? 'YABB has more than the bank' : 'YABB has less than the bank') + '. Rows tagged in red are worth checking first.' : 'Everything adds up to the bank balance'}">
+    return `<div class="rec-bar ${diff ? 'off' : 'ok'}" title="${diff ? (diff < 0 ? 'YNABB has more than the bank' : 'YNABB has less than the bank') + '. Rows tagged in red are worth checking first.' : 'Everything adds up to the bank balance'}">
         <span class="rb-title"><b>Reconciling</b></span>
         <label class="rb-n">${isDebt(r.acct) ? 'Owing' : 'Bank'} <input id="rec-bank-live" inputmode="decimal" autocomplete="off" data-live="0" value="${plain(isDebt(r.acct) ? -r.bank : r.bank)}" aria-label="Bank balance"></label>
         <span class="rb-n rb-diff">${diff ? `${diff < 0 ? 'Over' : 'Under'} by <b>${money(Math.abs(diff))}</b>` : '<b>Matches &#10003;</b>'}</span>
@@ -1694,7 +1694,7 @@
       <div class="t-clr">${cl}</div>
     </div>`;
   }
-  // side by side: what was already in YABB, and what the bank file says
+  // side by side: what was already in YNABB, and what the bank file says
   function matchCompare(t) {
     const m = t.match, upd = m.kind === 'update';
     const youDate = t.date, bankDate = m.date || t.date;
@@ -1773,7 +1773,7 @@
           <div class="row-btns"><label class="btn sm" for="rfile">Replace</label><button class="btn sm" data-saction="rm-receipt">Remove</button></div>
           <input type="file" id="rfile" accept="image/*,application/pdf" hidden></div>`;
       }
-      if (!S.assets) return `<p class="hint">${S.mode === 'local' ? 'Receipts can be attached when you sign in to YABB.' : 'Attaching receipts needs edit access to this budget.'}</p>`;
+      if (!S.assets) return `<p class="hint">${S.mode === 'local' ? 'Receipts can be attached when you sign in to YNABB.' : 'Attaching receipts needs edit access to this budget.'}</p>`;
       return `<label class="btn sm" for="rfile">${ICON.receipt} Add photo or PDF</label><input type="file" id="rfile" accept="image/*,application/pdf" hidden><span id="rstat" class="hint"></span>`;
     };
     const readForm = () => {
@@ -2039,7 +2039,7 @@
       const posted = rows.map((r) => r.posted || r.date).filter(Boolean).sort();
       const from = posted[0], to = posted[posted.length - 1];
       const iks = new Set(st.classified.map((r) => r.ik)), updated = new Set(st.classified.filter((r) => r.updateId || r.matchId).map((r) => r.updateId || r.matchId));
-      // only holds YABB itself imported while pending: never anything brought over from YNAB, entered by hand, or already reconciled
+      // only holds YNABB itself imported while pending: never anything brought over from YNAB, entered by hand, or already reconciled
       st.gone = from ? existing.filter((t) => t.ik && t.cleared !== 'r' && t.bank && E.isPending(t.bank) && !t.match && t.date >= from && t.date < to && !updated.has(t.id)
         && !iks.has(t.ik) && !(t.iks || []).some((k) => iks.has(k))).sort((a, b) => (a.date < b.date ? -1 : 1)) : [];
       st.goneSel = new Set(st.gone.map((t) => t.id));
@@ -2305,11 +2305,11 @@
   }
   const bankDate = (t) => (t.match && t.match.posted) || t.posted || (t.match && t.match.date) || t.date;
   const dayGap = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
-  // a card hold YABB imported while pending ("POS …"), not yet taken by the bank; YNAB's pending-text entries are real
+  // a card hold YNABB imported while pending ("POS …"), not yet taken by the bank; YNAB's pending-text entries are real
   const isHold = (t) => !!t.ik && t.cleared !== 'r' && E.isPending(t.bank);
   function balanceCheck(acct) {
     const bank = S.items('bankbal')[acct] || {};
-    // before an account's first entry (its starting balance) YABB knows nothing, so those days can't be compared
+    // before an account's first entry (its starting balance) YNABB knows nothing, so those days can't be compared
     const firstDate = D.tx.reduce((m, t) => (t.acct === acct && (!m || t.date < m) ? t.date : m), '');
     const dates = Object.keys(bank).filter((d) => firstDate && d >= firstDate).sort();
     if (!dates.length) return null;
@@ -2335,7 +2335,7 @@
     if (z > 0) stable.splice(0, z);
     const upto = matchedUntil ? txs.filter((x) => x.d <= matchedUntil) : [];
     const lastTx = upto.length ? upto[upto.length - 1].t : null;
-    // line by line: pair each bank line with a YABB transaction of the same amount within 10 days
+    // line by line: pair each bank line with a YNABB transaction of the same amount within 10 days
     const brows = ((S.items('bankrows')[acct] || {}).rows || []).map((x) => { const [d, a, ...r] = x.split('|'); return { d, amt: Number(a), desc: r.join(' ') }; }).filter((r) => r.d >= dates[0]);
     let onlyBank = [], onlyOurs = [];
     if (brows.length) {
@@ -2390,7 +2390,7 @@
   function bcFlags() {
     const res = UI.bc ? balanceCheck(UI.bc.acct) : null;
     const out = {};
-    if (res) res.steps.forEach((p, k) => { if (UI.bc.step == null || UI.bc.step === k) p.ids.forEach((id) => (out[id] = [['Check', 'Likely part of why YABB and the bank stopped matching']])); });
+    if (res) res.steps.forEach((p, k) => { if (UI.bc.step == null || UI.bc.step === k) p.ids.forEach((id) => (out[id] = [['Check', 'Likely part of why YNABB and the bank stopped matching']])); });
     return out;
   }
   function bcSince(acct) {
@@ -2433,7 +2433,7 @@
       <p><label class="btn sm primary" for="bc-file">Choose a bank file</label>${fileIn}</p></div>`;
     const L = res.last, steps = res.steps;
     const lineT = (t, note) => `<li><button class="bc-line" data-action="bc-go" data-id="${t.id}" data-q="${esc(bcKey(t.payee || tidyPayee(t.bank || '')))}" title="Find every ${esc(t.payee || '')} in ${esc(a.name)}"><span class="d">${esc(dateLabel(t.date))}</span><span class="p">${esc(t.payee || t.bank || '')}${note ? ` <small>${note}</small>` : ''}</span><b>${signed(t.amt)}</b></button></li>`;
-    const lineB = (r) => `<li class="bc-row"><button class="bc-line" data-action="bc-go" data-q="${esc(bcKey(tidyPayee(r.desc)))}" title="Search YABB for this"><span class="d">${esc(dateLabel(r.d))}</span><span class="p">${esc(r.desc)}</span><b>${signed(r.amt)}</b></button><button class="btn xs primary" data-action="bc-add" data-d="${r.d}" data-amt="${r.amt}" data-desc="${esc(r.desc)}" title="Add this bank line to YABB">Add to YABB</button></li>`;
+    const lineB = (r) => `<li class="bc-row"><button class="bc-line" data-action="bc-go" data-q="${esc(bcKey(tidyPayee(r.desc)))}" title="Search YNABB for this"><span class="d">${esc(dateLabel(r.d))}</span><span class="p">${esc(r.desc)}</span><b>${signed(r.amt)}</b></button><button class="btn xs primary" data-action="bc-add" data-d="${r.d}" data-amt="${r.amt}" data-desc="${esc(r.desc)}" title="Add this bank line to YNABB">Add to YNABB</button></li>`;
     if (UI.bc.find != null) return `<div class="bc-panel bc-mini"><b>Checking ${esc(a.name)} against the bank</b><span>Showing every transaction matching <b>&ldquo;${esc(UI.q)}&rdquo;</b>. Look for the same purchase twice.</span><button class="btn sm primary" data-action="bc-back">&larr; Back to the differences</button>${x}</div>`;
     let html = `<div class="bc-panel"><header><b>Checking ${esc(a.name)} against the bank</b>${x}</header>`;
     if (!steps.length && !L.diff) {
@@ -2442,29 +2442,29 @@
         ${done ? `<span>Reconciled to ${esc(dateLabel(L.d))}.</span>` : `<span><button class="btn primary" data-action="bc-lock">Lock it in</button> marks everything up to ${esc(dateLabel(L.d))} as reconciled.</span>`}</div>`;
     } else {
       html += `<div class="bc-top">
-        <div class="bc-now ${L.diff ? 'bad' : ''}"><small>On ${esc(dateLabel(L.d))}</small><b>${L.diff ? `Out by ${money(Math.abs(L.diff))}` : 'Matches now'}</b><span>Bank ${money(L.bank)} · YABB ${money(L.ours)}</span></div>
+        <div class="bc-now ${L.diff ? 'bad' : ''}"><small>On ${esc(dateLabel(L.d))}</small><b>${L.diff ? `Out by ${money(Math.abs(L.diff))}` : 'Matches now'}</b><span>Bank ${money(L.bank)} · YNABB ${money(L.ours)}</span></div>
         ${res.lastTx ? `<div class="bc-last"><small>Last time everything matched</small><b>${esc(dateLabel(res.matchedUntil))}</b><span>Both had ${money(dayOfBal(res))}, straight after <button class="linkish" data-action="bc-go" data-id="${res.lastTx.id}">${esc(res.lastTx.payee || 'this')} ${signed(res.lastTx.amt)}</button></span></div>` : ''}
       </div>`;
       const fixable = steps.filter((p) => p.explained).length;
-      if (fixable) html += `<div class="bc-fixall"><span>${fixable === steps.length ? `YABB found the cause of every difference.` : `YABB found the cause of ${fixable} of the ${steps.length} differences.`} Check the list below, then:</span><button class="btn primary" data-action="bc-fix" data-k="">Fix ${fixable === 1 ? 'it' : `all ${fixable}`}</button></div>`;
+      if (fixable) html += `<div class="bc-fixall"><span>${fixable === steps.length ? `YNABB found the cause of every difference.` : `YNABB found the cause of ${fixable} of the ${steps.length} differences.`} Check the list below, then:</span><button class="btn primary" data-action="bc-fix" data-k="">Fix ${fixable === 1 ? 'it' : `all ${fixable}`}</button></div>`;
       html += `<h4 class="bc-h">${res.lastTx ? `What changed since ${esc(dateLabel(res.matchedUntil))}` : 'What changed'}</h4><ol class="bc-steps">`;
       html += steps.map((p, k) => {
         const more = p.change > 0, amt = money(Math.abs(p.change));
         if (p.before) return `<li class="bc-card"><header><span class="when">Before ${esc(dateLabel(p.to))}</span><b class="${more ? 'pos' : 'neg'}">${more ? '+' : '&minus;'}${amt}</b></header><p>It was already out on the first day of your bank file. Add a bank file that goes back further, or check the starting balance.</p></li>`;
         const bk = p.b.bank - p.a.bank, us = p.b.ours - p.a.ours;
-        let body = `<p class="bc-nums">Over these days the bank's balance changed by <b>${signed(bk)}</b> but YABB's changed by <b>${signed(us)}</b>, so YABB ${more ? 'gained' : 'lost'} <b>${amt}</b> more than it should have.</p>`;
+        let body = `<p class="bc-nums">Over these days the bank's balance changed by <b>${signed(bk)}</b> but YNABB's changed by <b>${signed(us)}</b>, so YNABB ${more ? 'gained' : 'lost'} <b>${amt}</b> more than it should have.</p>`;
         if (res.hasRows) {
           const why = (t) => { const o = bcKeeper(t, res); return o ? `${t.ik ? '' : 'entered by hand, '}${o.amt === t.amt ? `also here on ${esc(dateLabel(o.date))}: probably counted twice` : `the bank's copy on ${esc(dateLabel(o.date))} is ${esc(signed(o.amt))}: probably the same purchase`}${(t.memo || '').replace(/\s*\uD83D\uDD39.*$/, '').trim() ? '. Its note moves across' : ''}` : t.ik ? '' : 'entered by hand'; };
-          if (p.ours.length) body += `<div class="bc-grp"><span class="tag ours">In YABB, not at the bank</span><ul>${p.ours.map((t) => lineT(t, why(t))).join('')}</ul></div>`;
-          if (p.theirs.length) body += `<div class="bc-grp"><span class="tag bank">At the bank, missing from YABB</span><ul>${p.theirs.map(lineB).join('')}</ul></div>`;
+          if (p.ours.length) body += `<div class="bc-grp"><span class="tag ours">In YNABB, not at the bank</span><ul>${p.ours.map((t) => lineT(t, why(t))).join('')}</ul></div>`;
+          if (p.theirs.length) body += `<div class="bc-grp"><span class="tag bank">At the bank, missing from YNABB</span><ul>${p.theirs.map(lineB).join('')}</ul></div>`;
           if (p.differ.length) body += `<div class="bc-grp"><span class="tag diff">Different amount</span><ul>${p.differ.map(({ t, r }) => lineT(t, `bank says ${esc(signed(r.amt))}`)).join('')}</ul></div>`;
           body += p.explained ? `<p class="bc-yes">&#10003; Fixing ${p.ids.length + p.theirs.length === 1 ? 'this' : 'these'} closes the whole ${amt}.</p>`
             : p.ours.length || p.theirs.length || p.differ.length ? '<p class="hint">These are the differences found here, though they don\'t add up to the whole amount. Show these days and compare with your statement.</p>'
               : '<p class="hint">Every line matches here, so the difference is probably a date: something dated just outside these days. Show these days and compare with your statement.</p>';
         } else if (p.combo) {
           body += `<div class="bc-grp"><span class="tag ours">${p.combo.length === 1 ? 'Exactly the same amount' : `These ${p.combo.length} add up to exactly ${amt}`}</span><ul>${p.combo.map((t) => lineT(t, t.ik ? 'from the bank' : 'entered by hand')).join('')}</ul></div>
-            <p class="hint">${more ? 'Money in YABB the bank never got?' : 'Spending in YABB the bank never took, or counted twice?'} Check ${p.combo.length === 1 ? 'it' : 'them'} against your statement.</p>`;
-        } else body += `<p class="hint">Couldn't pin down which ones. Add your bank file again (below) so YABB can compare line by line.</p>`;
+            <p class="hint">${more ? 'Money in YNABB the bank never got?' : 'Spending in YNABB the bank never took, or counted twice?'} Check ${p.combo.length === 1 ? 'it' : 'them'} against your statement.</p>`;
+        } else body += `<p class="hint">Couldn't pin down which ones. Add your bank file again (below) so YNABB can compare line by line.</p>`;
         const on = UI.bc.step === k;
         return `<li class="bc-card${on ? ' on' : ''}"><header><span class="when">${esc(dateLabel(p.from))} &ndash; ${esc(dateLabel(p.to))}</span><b class="${more ? 'pos' : 'neg'}">${more ? '+' : '&minus;'}${amt}</b>
           <button class="btn xs${on ? ' on' : ''}" data-action="bc-step" data-k="${on ? '' : k}">${on ? 'Show all since it matched' : `Show these days (${p.txs.length})`}</button></header>${body}</li>`;
@@ -2493,7 +2493,7 @@
     return pool.find((x) => x.amt === t.amt)
       || (key ? pool.find((x) => Math.sign(x.amt) === Math.sign(t.amt) && Math.abs(x.amt - t.amt) <= Math.max(100, Math.abs(t.amt) * 0.1) && bcKey(x.payee || tidyPayee(x.bank || '')) === key) : null) || null;
   }
-  // one click: delete what the bank never had (keeping its category on the other copy), add what YABB is missing, correct amounts
+  // one click: delete what the bank never had (keeping its category on the other copy), add what YNABB is missing, correct amounts
   async function bcFix(acct, which) {
     const res = balanceCheck(acct);
     if (!res) return;
@@ -2544,7 +2544,7 @@
     if (!UI.bc || UI.bc.step != null) return '';
     const res = balanceCheck(UI.bc.acct);
     if (!res || !res.lastTx || res.lastTx.id !== t.id) return '';
-    return `<div class="bc-mark">&#10003; YABB and the bank last matched exactly here: both ${money(dayOfBal(res))} at the end of ${esc(dateLabel(res.matchedUntil))}</div>`;
+    return `<div class="bc-mark">&#10003; YNABB and the bank last matched exactly here: both ${money(dayOfBal(res))} at the end of ${esc(dateLabel(res.matchedUntil))}</div>`;
   }
   function tidyPayee(desc) {
     // NAB starts card lines with the card code and date ("V1234 21/08 BOOST PREPAID…"), or "POS"/"EFTPOS" and a time
@@ -2804,7 +2804,7 @@
       <div class="field narrow"><label for="set-cur">Show amounts in</label><select id="set-cur" data-live="0">${['AUD', 'NZD', 'USD', 'CAD', 'GBP', 'EUR', 'SGD', 'ZAR', 'INR'].map((c) => `<option ${c === cur ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
 
       <h2>Guide and lessons</h2>
-      <p>A gentle, step-by-step guide: how this way of budgeting works, setting up your accounts and plan, and how to use YABB day to day.</p>
+      <p>A gentle, step-by-step guide: how this way of budgeting works, setting up your accounts and plan, and how to use YNABB day to day.</p>
       <div class="row-btns"><button class="btn primary" data-action="guide">Open the guide</button></div>
 
       <h2>Layout on this device</h2>
@@ -2816,7 +2816,7 @@
       <p>Signed in as <b>${esc(S.account.name)}</b>${S.account.budget ? `, using the <b>${esc(S.account.budget.name)}</b> budget` : ''}. Everyone who shares this budget has their own login, and changes sync live between you on phones and computers.</p>
       <p class="fine">${S.account.admin ? 'Add people, make new budgets and reset passwords on the account page.' : 'To add someone, ask the admin to make them a login.'}</p>
       <div class="row-btns"><a class="btn" href="/account">${S.account.admin ? 'Account and admin' : 'Account and password'}</a><button class="btn" data-action="sign-out">Sign out</button></div>
-      <p class="fine">YABB version ${esc(S.account.version)}</p>
+      <p class="fine">YNABB version ${esc(S.account.version)}</p>
 ` : `<h2>Sharing with your partner</h2>
       <p>Open the share menu on this page in claude.ai and invite your partner as an <b>Editor</b>. They need their own claude.ai account. Everything syncs live between both of you, on phones and computers. Editors can also attach receipts. Anyone given view-only access can't see the budget data.</p>
       <p class="fine">Status: ${S.mode === 'cloud' ? 'syncing through claude.ai' : 'saving in this browser only'}.</p>
@@ -2845,7 +2845,7 @@
 
   async function exportJSON() {
     const data = JSON.stringify({ app: 'zero-line', version: 1, exportedAt: new Date().toISOString(), data: S.data }, null, 1);
-    await offerFile('yabb-backup-' + E.todayISO() + '.json', data);
+    await offerFile('ynabb-backup-' + E.todayISO() + '.json', data);
   }
   async function exportCSV() {
     const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
@@ -2854,7 +2854,7 @@
       const cat = t.transfer ? 'Transfer: ' + acctName(t.transfer) : t.splits && t.splits.length ? t.splits.map((p) => (p.cat ? catPath(p.cat) : 'Uncategorized') + ' ' + plain(p.amt)).join('; ') : t.cat ? catPath(t.cat) : '';
       lines.push([t.date, acctName(t.acct), t.payee, cat, plain(t.amt), t.bank, t.memo, { u: 'no', c: 'yes', r: 'reconciled' }[t.cleared || 'u'], t.receipt ? 'yes' : ''].map(q).join(','));
     }
-    await offerFile('yabb-transactions-' + E.todayISO() + '.csv', lines.join('\n'));
+    await offerFile('ynabb-transactions-' + E.todayISO() + '.csv', lines.join('\n'));
   }
   async function offerFile(name, data) {
     if (S.downloads) {
@@ -2936,7 +2936,7 @@
         ? `<div class="warn-box">${chk.mismatched.length} category balances don't match YNAB exactly, for example ${esc(chk.mismatched[0].cat)} in ${ml(chk.mismatched[0].month)}: YNAB ${money(chk.mismatched[0].ynab)}, here ${money(chk.mismatched[0].zero)}.</div>`
         : `<p class="ok-line">${ICON.tick} Checked: every category's available amount matches YNAB in all ${chk.months} months.</p>`)
         : '<div class="warn-box">No Plan (budget) file was found, so only accounts, categories and transactions come across, not what you assigned each month.</div>'}
-      ${r.covered ? `<p class="hint">YNAB cleared overspending at the end of each month and took it from Ready to Assign. YABB keeps overspending in the category, so ${r.covered === 1 ? 'that 1 time is' : `those ${r.covered} times are`} brought in as money moved from Ready to Assign the next month. The totals come out the same.</p>` : ''}
+      ${r.covered ? `<p class="hint">YNAB cleared overspending at the end of each month and took it from Ready to Assign. YNABB keeps overspending in the category, so ${r.covered === 1 ? 'that 1 time is' : `those ${r.covered} times are`} brought in as money moved from Ready to Assign the next month. The totals come out the same.</p>` : ''}
       ${chk.uncategorized ? `<p class="hint warn">${chk.uncategorized} transactions in YNAB had no category (${money(Math.abs(chk.uncategorizedAmt))}). They come across uncategorized for you to sort out.</p>` : ''}
 
       <h3>Accounts</h3>
@@ -2949,7 +2949,7 @@
       <div class="ynab-tbl">${tgtIds.map((id) => `<div class="ynab-row tgt"><label class="check"><input type="checkbox" data-ytgt="${id}" checked><span>${esc(res.cats[id].name)}</span></label><span class="fine">${res.targets[id].times > 1 ? `${res.targets[id].times} of ${res.targets[id].of} months` : 'last month'}</span><input class="num" inputmode="decimal" data-yamt="${id}" value="${plain(res.targets[id].amount)}" aria-label="Monthly target for ${esc(res.cats[id].name)}"></div>`).join('')}</div>
 
       <h3>Replace this budget</h3>
-      <p>${have ? '<b>This replaces everything in YABB</b> (categories, accounts, transactions and assigning) for you and your partner.' : 'This fills your empty budget.'} Your currency and layout settings stay. Learned payees and bank-import history are cleared.</p>
+      <p>${have ? '<b>This replaces everything in YNABB</b> (categories, accounts, transactions and assigning) for you and your partner.' : 'This fills your empty budget.'} Your currency and layout settings stay. Learned payees and bank-import history are cleared.</p>
       ${have ? '<div class="row-btns"><button class="btn sm" data-saction="backup">Download a backup of the current budget first</button></div>' : ''}`;
     openSheet({ title: 'Move from YNAB', body, wide: true, foot: `<button class="btn ${have ? 'danger' : 'primary'}" data-saction="go">${have ? 'Replace my budget with this YNAB budget' : 'Bring in my YNAB budget'}</button><button class="btn" data-saction="no">Cancel</button>` });
     $('#yt-all').addEventListener('change', (ev) => document.querySelectorAll('[data-ytgt]').forEach((c) => { c.checked = ev.target.checked; }));
@@ -2982,8 +2982,8 @@
 
   async function restore(file) {
     let parsed;
-    try { parsed = JSON.parse(await file.text()); } catch (e) { toast('That file is not a YABB backup.'); return; }
-    if (!parsed || parsed.app !== 'zero-line' || !parsed.data) { toast('That file is not a YABB backup.'); return; }
+    try { parsed = JSON.parse(await file.text()); } catch (e) { toast('That file is not a YNABB backup.'); return; }
+    if (!parsed || parsed.app !== 'zero-line' || !parsed.data) { toast('That file is not a YNABB backup.'); return; }
     openSheet({
       title: 'Restore from backup',
       body: `<p>This replaces the whole budget with the backup from ${esc(new Date(parsed.exportedAt).toLocaleString())}. Your partner sees the change too. Anything added since that backup is lost.</p>`,
@@ -3186,7 +3186,7 @@
     'rec-finish': () => recFinish(0),
     'rec-adjust': () => recFinish(recState().diff),
     'export-json': exportJSON,
-    'sign-out': async () => { await fetch('/api/logout', { method: 'POST', headers: { 'X-Requested-With': 'yabb' } }).catch(() => {}); location.href = '/login'; },
+    'sign-out': async () => { await fetch('/api/logout', { method: 'POST', headers: { 'X-Requested-With': 'ynabb' } }).catch(() => {}); location.href = '/login'; },
     'export-csv': exportCSV,
     'rm-rule': (el) => guard(S.write('meta', 'rules', { items: { [el.dataset.k]: null } })),
     'close-sheet': closeSheet,

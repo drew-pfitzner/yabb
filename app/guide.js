@@ -1,4 +1,4 @@
-/* YABB: a gentle step-by-step guide. Teaches the idea, sets up the budget, then shows how to use it.
+/* YNABB: a gentle step-by-step guide. Teaches the idea, sets up the budget, then shows how to use it.
    Written for someone who's never budgeted and doesn't like numbers: one idea per screen, tapping not typing, the app does the maths. */
 (function () {
   'use strict';
@@ -77,7 +77,7 @@
   const step = (o) => S.push(o);
 
   step({ id: 'hello', ch: 0, title: 'Hi! Let\'s sort out your money, together.', nextLabel: 'Let\'s start',
-    body: () => big('This isn\'t a maths test. YABB does all the adding up for you.') +
+    body: () => big('This isn\'t a maths test. YNABB does all the adding up for you.') +
       p('Your only job is to decide what your money is <b>for</b>. That\'s it.') +
       p('We\'ll go one small step at a time:') +
       `<ol class="g-chapters"><li><b>Why bother</b>: what a plan can do for you</li><li><b>Practice</b>: try it on a pretend person first. Nothing real, nothing to break.</li><li><b>Uneven pay</b>: what to do when money comes in bits and pieces</li><li><b>Your money</b>: where your money is, and what you owe</li><li><b>Your plan</b>: what your money is for</li><li><b>Using it</b>: the few things you\'ll do each week</li></ol>` +
@@ -188,7 +188,7 @@
   step({ id: 'debt', ch: 2, title: 'If you owe money',
     body: () => p('Lots of people do. Credit cards, Afterpay, a car loan, the ATO. No judgement here.') +
       `<ol class="g-steps"><li>Always pay at least the <b>minimum</b> on everything.</li><li>If there\'s any extra, put it on <b>one</b> debt at a time.</li><li>When that one\'s gone, move on to the next.</li></ol>` +
-      p('YABB keeps track of all of it, and shows you when each one will be paid off. Watching that date get closer is very satisfying.') });
+      p('YNABB keeps track of all of it, and shows you when each one will be paid off. Watching that date get closer is very satisfying.') });
 
   // ---- uneven pay: Jo ----
   // Jo's month, most important first. [name, needs, why]
@@ -269,7 +269,7 @@
         (done.length ? (done[0] === 'next'
           ? ok('Perfect. That\'s called <b>getting ahead</b>: next month\'s most important things are already paid for, before next month even starts. With uneven pay, this is gold. A slow month just stops being scary.')
           : `<div class="g-hm">That\'s not wrong, and it\'s Jo\'s money to choose! But with uneven pay, the strongest first move is usually <b>next month\'s essentials</b>. Then a cushion, then extra off debt, then treats.</div>`) : '') +
-        (done.includes('next') ? p('In YABB, you do this by going to <b>next month</b> (the arrow at the top of the Budget page) and giving the money jobs there.') : '');
+        (done.includes('next') ? p('In YNABB, you do this by going to <b>next month</b> (the arrow at the top of the Budget page) and giving the money jobs there.') : '');
     },
     bind: (card) => $$('[data-extra]', card).forEach((b) => b.addEventListener('click', () => { const l = st.joX, k = b.dataset.extra; if (!l.includes(k)) l.unshift(k); save(); draw(); })) });
 
@@ -438,7 +438,7 @@
           (left === 0 && still === 0 ? p('Every dollar has a job, and every part of your plan is covered. That\'s a great place to be.') : '');
       }
       return `<div class="g-stat"><span>Money waiting for a job</span><b>${money(m.rta)}</b></div>` +
-        p(`Your plan asks for <b>${money(m.underTotal)}</b> this month. Tap the button and YABB hands out your money for you, most important things first.`) +
+        p(`Your plan asks for <b>${money(m.underTotal)}</b> this month. Tap the button and YNABB hands out your money for you, most important things first.`) +
         `<div class="g-row"><button class="g-btn big" data-act="fund" ${plan && Object.keys(plan.changes).length ? '' : 'disabled'}>Give my money its jobs</button></div>` +
         (m.rta <= 0 ? soft('There\'s nothing waiting for a job right now. That\'s okay: when you\'re next paid, come back to this step.') : '');
     },
@@ -459,20 +459,20 @@
 
   // ---- using it ----
   step({ id: 'spend', ch: 6, title: 'When you spend money',
-    body: () => p('Each time you spend, YABB needs to know, so the right job gets smaller.') +
+    body: () => p('Each time you spend, YNABB needs to know, so the right job gets smaller.') +
       p('The easy way: <b>bring it in from your bank</b> every few days (next page). Or add one by hand with the <b>Add</b> button.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="add">Show me the Add button</button></div>`,
     show: { add: ['tx', '[data-action="add-tx"]', 'Tap Add to put in something you\'ve bought. Pick what it was for, and you\'re done.'] } });
 
   step({ id: 'import', ch: 6, title: 'Bringing it in from your bank',
-    body: () => `<ol class="g-steps"><li>In your bank\'s website, open the account and look for <b>Export</b> or <b>Download transactions</b>.</li><li>Choose the <b>QIF</b> or <b>CSV</b> file.</li><li>In YABB, tap <b>Import from bank</b> and choose that file.</li></ol>` +
-      p('YABB skips anything it already has, and matches up anything you added by hand.') +
+    body: () => `<ol class="g-steps"><li>In your bank\'s website, open the account and look for <b>Export</b> or <b>Download transactions</b>.</li><li>Choose the <b>QIF</b> or <b>CSV</b> file.</li><li>In YNABB, tap <b>Import from bank</b> and choose that file.</li></ol>` +
+      p('YNABB skips anything it already has, and matches up anything you added by hand.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="imp">Show me where</button></div>`,
     show: { imp: ['tx', '[data-action="import"]', 'Import from bank is here. Choose the file you downloaded from your bank.'] } });
 
   step({ id: 'review', ch: 6, title: 'Giving each one a job',
     body: () => p('New transactions from the bank wait for you to say what they were for. Click one, choose its category, done.') +
-      p('YABB learns as you go. Next time Woolies comes in, it\'ll already know it\'s Groceries.') +
+      p('YNABB learns as you go. Next time Woolies comes in, it\'ll already know it\'s Groceries.') +
       tip('Five minutes, a couple of times a week, keeps it easy. Leaving it for a month makes it a chore.') });
 
   step({ id: 'red', ch: 6, title: 'When something goes red',
@@ -482,14 +482,14 @@
     show: { avail: ['budget', '.bud-head span:last-child', 'This column shows what\'s left in each category. Click any amount to move money in or out.'] } });
 
   step({ id: 'match', ch: 6, title: 'Checking it matches the bank',
-    body: () => p('Every week or two, check that YABB and your bank agree. Tap <b>Reconcile</b>, type what your bank says you have, and YABB shows you if anything\'s missing.') +
+    body: () => p('Every week or two, check that YNABB and your bank agree. Tap <b>Reconcile</b>, type what your bank says you have, and YNABB shows you if anything\'s missing.') +
       p('If it matches, you know your plan is right. That\'s a lovely feeling.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rec">Show me where</button></div>`,
     show: { rec: ['tx', '[data-action="rec-pop"]', 'Reconcile is here. Type the balance your banking app shows.'] } });
 
   step({ id: 'payday', ch: 6, title: 'When you get paid',
     body: () => p('New money lands in <b>Ready to Assign</b>, at the top of your Budget page. It\'s waiting for a job.') +
-      p('Tap <b>Fund targets</b> and YABB gives it jobs for you, the same as you did earlier. Anything left, you choose.') +
+      p('Tap <b>Fund targets</b> and YNABB gives it jobs for you, the same as you did earlier. Anything left, you choose.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rta">Show me where</button></div>`,
     show: { rta: ['budget', '.rta, .rta-banner, [class*="rta"]', 'This is Ready to Assign: money waiting for a job.'] } });
 
@@ -540,7 +540,7 @@
     }).join('');
     const inCh = v.filter((x) => x.ch === s.ch), pos = inCh.indexOf(s);
     root.innerHTML = `<div class="g-top">
-        <div class="g-brand">YABB guide</div>
+        <div class="g-brand">YNABB guide</div>
         <nav class="g-chs" aria-label="Chapters">${chs}</nav>
         <button class="g-close" data-act="close" title="Close. Your place is saved." aria-label="Close the guide">Close</button>
       </div>
@@ -578,7 +578,7 @@
       root.id = 'zl-guide';
       root.setAttribute('role', 'dialog');
       root.setAttribute('aria-modal', 'true');
-      root.setAttribute('aria-label', 'YABB guide');
+      root.setAttribute('aria-label', 'YNABB guide');
       document.body.appendChild(root);
     }
     root.hidden = false;

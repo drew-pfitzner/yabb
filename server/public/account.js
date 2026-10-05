@@ -8,7 +8,7 @@ let me = null, data = null;
 async function api(method, url, body) {
   const r = await fetch(url, {
     method,
-    headers: Object.assign({ 'X-Requested-With': 'yabb' }, body ? { 'Content-Type': 'application/json' } : {}),
+    headers: Object.assign({ 'X-Requested-With': 'ynabb' }, body ? { 'Content-Type': 'application/json' } : {}),
     body: body ? JSON.stringify(body) : undefined,
   });
   if (r.status === 401) { location.href = '/login'; throw new Error('Signed out.'); }

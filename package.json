@@ -1,7 +1,7 @@
 {
-  "name": "yabb",
+  "name": "ynabb",
   "private": true,
-  "description": "YABB (Yet Another Bloody Budget): a zero-based family budget app",
+  "description": "YNABB (Yikes Not Another Bloody Budget): a zero-based family budget app",
   "engines": { "node": ">=22.13" },
   "scripts": {
     "dev": "COOKIE_SECURE=0 node server/server.js",

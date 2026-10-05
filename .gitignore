@@ -1,0 +1,14 @@
+# Real family financial data: never commit (this repo is public)
+private-data/
+context/
+*.csv
+*.zip
+# Server data, backups and secrets (once self-hosted)
+data/
+backups/
+.env
+*.sqlite
+*.db
+# Mac and editor clutter
+.DS_Store
+node_modules/

@@ -1,0 +1,2991 @@
+{
+ "app": "zero-line",
+ "version": 1,
+ "exportedAt": "2026-10-03T09:00:00.000Z",
+ "data": {
+  "meta": {
+   "cats": {
+    "items": {
+     "g_bills": {
+      "id": "g_bills",
+      "name": "Bills",
+      "parent": null,
+      "order": 1,
+      "kind": "need"
+     },
+     "mortgage": {
+      "id": "mortgage",
+      "name": "Mortgage",
+      "parent": "g_bills",
+      "order": 2,
+      "kind": "need",
+      "target": {
+       "type": "refill",
+       "amount": 210000,
+       "day": 1
+      }
+     },
+     "power": {
+      "id": "power",
+      "name": "Electricity",
+      "parent": "g_bills",
+      "order": 3,
+      "kind": "need",
+      "target": {
+       "type": "due",
+       "amount": 42000,
+       "due": "2026-11-20",
+       "every": 3
+      }
+     },
+     "phone": {
+      "id": "phone",
+      "name": "Phone",
+      "parent": "g_bills",
+      "order": 4,
+      "kind": "need",
+      "target": {
+       "type": "refill",
+       "amount": 6500,
+       "day": 19
+      }
+     },
+     "internet": {
+      "id": "internet",
+      "name": "Internet",
+      "parent": "g_bills",
+      "order": 5,
+      "kind": "need",
+      "target": {
+       "type": "refill",
+       "amount": 8500,
+       "day": 12
+      }
+     },
+     "carins": {
+      "id": "carins",
+      "name": "Car insurance",
+      "parent": "g_bills",
+      "order": 6,
+      "kind": "need",
+      "target": {
+       "type": "monthly",
+       "amount": 9200
+      }
+     },
+     "g_every": {
+      "id": "g_every",
+      "name": "Everyday",
+      "parent": null,
+      "order": 7,
+      "kind": "need"
+     },
+     "groc": {
+      "id": "groc",
+      "name": "Groceries",
+      "parent": "g_every",
+      "order": 8,
+      "kind": "need",
+      "target": {
+       "type": "monthly",
+       "amount": 90000
+      }
+     },
+     "fuel": {
+      "id": "fuel",
+      "name": "Fuel",
+      "parent": "g_every",
+      "order": 9,
+      "kind": "need",
+      "target": {
+       "type": "monthly",
+       "amount": 24000
+      }
+     },
+     "health": {
+      "id": "health",
+      "name": "Pharmacy & health",
+      "parent": "g_every",
+      "order": 10,
+      "kind": "need",
+      "target": {
+       "type": "monthly",
+       "amount": 8000
+      }
+     },
+     "g_fun": {
+      "id": "g_fun",
+      "name": "Fun",
+      "parent": null,
+      "order": 11,
+      "kind": "want"
+     },
+     "eatout": {
+      "id": "eatout",
+      "name": "Eating out",
+      "parent": "g_fun",
+      "order": 12,
+      "kind": "want",
+      "target": {
+       "type": "monthly",
+       "amount": 25000
+      }
+     },
+     "subs": {
+      "id": "subs",
+      "name": "Subscriptions",
+      "parent": "g_fun",
+      "order": 13,
+      "kind": "want",
+      "target": {
+       "type": "refill",
+       "amount": 3500,
+       "day": 8
+      }
+     },
+     "clothes": {
+      "id": "clothes",
+      "name": "Clothing",
+      "parent": "g_fun",
+      "order": 14,
+      "kind": "want",
+      "target": {
+       "type": "monthly",
+       "amount": 10000
+      }
+     },
+     "g_save": {
+      "id": "g_save",
+      "name": "Savings",
+      "parent": null,
+      "order": 15,
+      "kind": "save"
+     },
+     "holiday": {
+      "id": "holiday",
+      "name": "Holiday",
+      "parent": "g_save",
+      "order": 16,
+      "kind": "save",
+      "target": {
+       "type": "goal",
+       "amount": 1500000,
+       "by": "2027-06-30"
+      }
+     },
+     "household": {
+      "id": "household",
+      "name": "Household",
+      "parent": "g_every",
+      "order": 17,
+      "kind": "need",
+      "target": {
+       "type": "monthly",
+       "amount": 15000
+      }
+     }
+    }
+   },
+   "accounts": {
+    "items": {
+     "acctnab01": {
+      "id": "acctnab01",
+      "name": "NAB Everyday",
+      "type": "checking",
+      "closed": false,
+      "reconciledAt": "2026-09-11",
+      "reconciledBalance": 1354851
+     },
+     "acctsav01": {
+      "id": "acctsav01",
+      "name": "NAB Savings",
+      "type": "savings",
+      "closed": false,
+      "reconciledAt": "2026-09-11",
+      "reconciledBalance": 1050000
+     }
+    }
+   },
+   "rules": {
+    "items": {
+     "home loan repayment": {
+      "payee": "NAB Home Loan",
+      "cat": "mortgage"
+     },
+     "acme logistics pl salary": {
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income"
+     },
+     "aldi stores marrickville": {
+      "payee": "Aldi",
+      "cat": "groc"
+     },
+     "chemist warehouse newtown": {
+      "payee": "Chemist Warehouse",
+      "cat": "health"
+     },
+     "uniqlo broadway": {
+      "payee": "Uniqlo",
+      "cat": "clothes"
+     },
+     "netflix com melbourne": {
+      "payee": "Netflix",
+      "cat": "subs"
+     },
+     "spotify sydney": {
+      "payee": "Spotify",
+      "cat": "subs"
+     },
+     "aussie broadband direct": {
+      "payee": "Aussie Broadband",
+      "cat": "internet"
+     },
+     "cafe xo surry hills": {
+      "payee": "Cafe XO",
+      "cat": "eatout"
+     },
+     "thai pothong newtown": {
+      "payee": "Thai Pothong",
+      "cat": "eatout"
+     },
+     "ampol st peters": {
+      "payee": "Ampol",
+      "cat": "fuel"
+     },
+     "aami insurance direct": {
+      "payee": "AAMI",
+      "cat": "carins"
+     },
+     "bakers delight newtown": {
+      "payee": "Bakers Delight",
+      "cat": "groc"
+     },
+     "woolworths newtown": {
+      "payee": "Woolworths",
+      "cat": "groc"
+     },
+     "telstra direct": {
+      "payee": "Telstra",
+      "cat": "phone"
+     },
+     "origin energy bpay": {
+      "payee": "Origin Energy",
+      "cat": "power"
+     },
+     "charcoal chicken newtown": {
+      "payee": "Charcoal Chicken",
+      "cat": "eatout"
+     },
+     "woolworths king st & crnewtown": {
+      "payee": "Woolworths",
+      "cat": "groc"
+     },
+     "jb hi fi broadway": {
+      "payee": "JB Hi-Fi",
+      "cat": "household"
+     },
+     "reversal jb hi fi broadway": {
+      "payee": "JB Hi-Fi",
+      "cat": "household"
+     },
+     "mitre enmore": {
+      "payee": "Mitre 10",
+      "cat": "household"
+     },
+     "target newtown": {
+      "payee": "Target",
+      "cat": "clothes"
+     },
+     "kmart broadway": {
+      "payee": "Kmart",
+      "cat": "household"
+     },
+     "uniqlo broadway refund": {
+      "payee": "Uniqlo",
+      "cat": "clothes"
+     },
+     "petbarn alexandria": {
+      "payee": "Petbarn",
+      "cat": "household"
+     },
+     "coles enmore": {
+      "payee": "Coles",
+      "cat": "groc"
+     },
+     "officeworks order pickup": {
+      "payee": "Officeworks",
+      "cat": "household"
+     },
+     "bunnings alexandria": {
+      "payee": "Bunnings",
+      "cat": "household"
+     },
+     "interest paid": {
+      "payee": "NAB",
+      "cat": "_income"
+     }
+    }
+   },
+   "imports": {
+    "items": {}
+   },
+   "settings": {
+    "currency": "AUD"
+   }
+  },
+  "months": {
+   "2026-04": {
+    "assigned": {
+     "mortgage": 210000,
+     "phone": 6500,
+     "internet": 8500,
+     "carins": 9200,
+     "power": 14000,
+     "groc": 90000,
+     "fuel": 24000,
+     "health": 8000,
+     "household": 15000,
+     "eatout": 25000,
+     "subs": 3500,
+     "clothes": 10000,
+     "holiday": 103400,
+     "emerg": 893400
+    },
+    "moves": {}
+   },
+   "2026-05": {
+    "assigned": {
+     "mortgage": 210000,
+     "phone": 6500,
+     "internet": 8500,
+     "carins": 9200,
+     "power": 14000,
+     "groc": 90000,
+     "fuel": 24000,
+     "health": 8000,
+     "household": 15000,
+     "eatout": 25000,
+     "subs": 3500,
+     "clothes": 10000,
+     "holiday": 103400,
+     "emerg": 93400
+    },
+    "moves": {}
+   },
+   "2026-06": {
+    "assigned": {
+     "mortgage": 210000,
+     "phone": 6500,
+     "internet": 8500,
+     "carins": 9200,
+     "power": 14000,
+     "groc": 90000,
+     "fuel": 24000,
+     "health": 8000,
+     "household": 15000,
+     "eatout": 25000,
+     "subs": 3500,
+     "clothes": 10000,
+     "holiday": 103400,
+     "emerg": 93400
+    },
+    "moves": {}
+   },
+   "2026-07": {
+    "assigned": {
+     "mortgage": 210000,
+     "phone": 6500,
+     "internet": 8500,
+     "carins": 9200,
+     "power": 14000,
+     "groc": 90000,
+     "fuel": 24000,
+     "health": 8000,
+     "household": 15000,
+     "eatout": 25000,
+     "subs": 3500,
+     "clothes": 10000,
+     "holiday": 103400,
+     "emerg": 93400
+    },
+    "moves": {}
+   },
+   "2026-08": {
+    "assigned": {
+     "mortgage": 210000,
+     "phone": 6500,
+     "internet": 8500,
+     "carins": 9200,
+     "power": 14000,
+     "groc": 90000,
+     "fuel": 24000,
+     "health": 8000,
+     "household": 15000,
+     "eatout": 25000,
+     "subs": 3500,
+     "clothes": 10000,
+     "holiday": 103400,
+     "emerg": 93400
+    },
+    "moves": {}
+   },
+   "2026-09": {
+    "assigned": {
+     "mortgage": 210000,
+     "phone": 6500,
+     "internet": 8500,
+     "carins": 9200,
+     "power": 14000,
+     "groc": 90000,
+     "fuel": 24000,
+     "health": 8000,
+     "household": 15000,
+     "eatout": 25000,
+     "subs": 3500,
+     "clothes": 10000,
+     "holiday": 103400,
+     "emerg": 93400
+    },
+    "moves": {}
+   },
+   "2026-10": {
+    "assigned": {
+     "mortgage": 210000,
+     "groc": 45000,
+     "fuel": 12000
+    },
+    "moves": {}
+   }
+  },
+  "tx": {
+   "2026-04": {
+    "t": {
+     "t0001": {
+      "id": "t0001",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-01",
+      "payee": "Starting balance",
+      "cat": "_income",
+      "amt": 320000,
+      "cleared": "r"
+     },
+     "t0002": {
+      "id": "t0002",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-04-01",
+      "payee": "Starting balance",
+      "cat": "_income",
+      "amt": 800000,
+      "cleared": "r"
+     },
+     "t0003": {
+      "id": "t0003",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "bank": "HOME LOAN REPAYMENT 0821 4455 12",
+      "ik": "acctnab01|2026-04-01|-210000|home loan repayment|1",
+      "cleared": "r"
+     },
+     "t0004": {
+      "id": "t0004",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-02",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-04-02|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t0005": {
+      "id": "t0005",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-03",
+      "posted": "2026-04-06",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -8128,
+      "bank": "V1234 03/04 ALDI STORES 241 MARRICKVILLE 74364583831",
+      "ik": "acctnab01|2026-04-06|-8128|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t0006": {
+      "id": "t0006",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-07",
+      "posted": "2026-04-08",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -3863,
+      "bank": "V1234 07/04 CHEMIST WAREHOUSE NEWTOWN 74368858851",
+      "ik": "acctnab01|2026-04-08|-3863|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t0007": {
+      "id": "t0007",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-06",
+      "posted": "2026-04-09",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -3513,
+      "bank": "V1234 06/04 UNIQLO BROADWAY 74360717354",
+      "ik": "acctnab01|2026-04-09|-3513|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t0008": {
+      "id": "t0008",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-08",
+      "posted": "2026-04-10",
+      "payee": "Netflix",
+      "cat": "subs",
+      "amt": -1799,
+      "bank": "V1234 08/04 NETFLIX.COM MELBOURNE 74360721093",
+      "ik": "acctnab01|2026-04-10|-1799|netflix com melbourne|1",
+      "cleared": "r"
+     },
+     "t0009": {
+      "id": "t0009",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-08",
+      "posted": "2026-04-10",
+      "payee": "Spotify",
+      "cat": "subs",
+      "amt": -1399,
+      "bank": "V1234 08/04 SPOTIFY P2B91C SYDNEY 74369420652",
+      "ik": "acctnab01|2026-04-10|-1399|spotify sydney|1",
+      "cleared": "r"
+     },
+     "t000a": {
+      "id": "t000a",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-12",
+      "payee": "Aussie Broadband",
+      "cat": "internet",
+      "amt": -8500,
+      "bank": "AUSSIE BROADBAND DIRECT DEBIT 774120",
+      "ik": "acctnab01|2026-04-12|-8500|aussie broadband direct|1",
+      "cleared": "r"
+     },
+     "t000b": {
+      "id": "t000b",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-10",
+      "posted": "2026-04-13",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -6683,
+      "bank": "V1234 10/04 ALDI STORES 241 MARRICKVILLE 74362714878",
+      "ik": "acctnab01|2026-04-13|-6683|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t000c": {
+      "id": "t000c",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-11",
+      "posted": "2026-04-13",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -883,
+      "bank": "V1234 11/04 CAFE XO SURRY HILLS 74361360428",
+      "ik": "acctnab01|2026-04-13|-883|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t000d": {
+      "id": "t000d",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-12",
+      "posted": "2026-04-14",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -5293,
+      "bank": "V1234 12/04 THAI POTHONG NEWTOWN 74364487250",
+      "ik": "acctnab01|2026-04-14|-5293|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t000e": {
+      "id": "t000e",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-13",
+      "posted": "2026-04-14",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7478,
+      "bank": "V1234 13/04 AMPOL ST PETERS 4471 74364024724",
+      "ik": "acctnab01|2026-04-14|-7478|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t000f": {
+      "id": "t000f",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-15",
+      "payee": "AAMI",
+      "cat": "carins",
+      "amt": -9200,
+      "bank": "AAMI INSURANCE DIRECT DEBIT 55120",
+      "ik": "acctnab01|2026-04-15|-9200|aami insurance direct|1",
+      "cleared": "r"
+     },
+     "t000g": {
+      "id": "t000g",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-14",
+      "posted": "2026-04-16",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -6028,
+      "bank": "V1234 14/04 ALDI STORES 241 MARRICKVILLE 74364259209",
+      "ik": "acctnab01|2026-04-16|-6028|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t000h": {
+      "id": "t000h",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-16",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-04-16|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t000i": {
+      "id": "t000i",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-16",
+      "posted": "2026-04-17",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -5298,
+      "bank": "V1234 16/04 ALDI STORES 241 MARRICKVILLE 74368273448",
+      "ik": "acctnab01|2026-04-17|-5298|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t000j": {
+      "id": "t000j",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-15",
+      "posted": "2026-04-18",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1363,
+      "bank": "V1234 15/04 BAKERS DELIGHT NEWTOWN 74363710074",
+      "ik": "acctnab01|2026-04-18|-1363|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t000k": {
+      "id": "t000k",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-18",
+      "posted": "2026-04-19",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -13688,
+      "bank": "V1234 18/04 WOOLWORTHS 3341 NEWTOWN 74368900211",
+      "ik": "acctnab01|2026-04-19|-13688|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t000l": {
+      "id": "t000l",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-19",
+      "payee": "Telstra",
+      "cat": "phone",
+      "amt": -6500,
+      "bank": "TELSTRA DIRECT DEBIT 3301882",
+      "ik": "acctnab01|2026-04-19|-6500|telstra direct|1",
+      "cleared": "r"
+     },
+     "t000m": {
+      "id": "t000m",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-19",
+      "posted": "2026-04-22",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -6253,
+      "bank": "V1234 19/04 AMPOL ST PETERS 4471 74363806917",
+      "ik": "acctnab01|2026-04-22|-6253|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t000n": {
+      "id": "t000n",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-21",
+      "posted": "2026-04-22",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -5953,
+      "bank": "V1234 21/04 UNIQLO BROADWAY 74364221692",
+      "ik": "acctnab01|2026-04-22|-5953|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t000o": {
+      "id": "t000o",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-22",
+      "posted": "2026-04-24",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -8423,
+      "bank": "V1234 22/04 ALDI STORES 241 MARRICKVILLE 74368763409",
+      "ik": "acctnab01|2026-04-24|-8423|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t000p": {
+      "id": "t000p",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-23",
+      "posted": "2026-04-24",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -5463,
+      "bank": "V1234 23/04 UNIQLO BROADWAY 74369156610",
+      "ik": "acctnab01|2026-04-24|-5463|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t000q": {
+      "id": "t000q",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": -50000,
+      "bank": "ONLINE  T4885322904",
+      "ik": "acctnab01|2026-04-25|-50000|online|1",
+      "cleared": "r",
+      "transfer": "acctsav01",
+      "pair": "t000r"
+     },
+     "t000r": {
+      "id": "t000r",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-04-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": 50000,
+      "transfer": "acctnab01",
+      "pair": "t000q",
+      "cleared": "r"
+     },
+     "t000s": {
+      "id": "t000s",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-25",
+      "posted": "2026-04-26",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -7558,
+      "bank": "V1234 25/04 UNIQLO BROADWAY 74362254283",
+      "ik": "acctnab01|2026-04-26|-7558|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t000t": {
+      "id": "t000t",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-24",
+      "posted": "2026-04-27",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -6698,
+      "bank": "V1234 24/04 THAI POTHONG NEWTOWN 74365457386",
+      "ik": "acctnab01|2026-04-27|-6698|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t000u": {
+      "id": "t000u",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-26",
+      "posted": "2026-04-29",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -10188,
+      "bank": "V1234 26/04 WOOLWORTHS 3341 NEWTOWN 74366564232",
+      "ik": "acctnab01|2026-04-29|-10188|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t000v": {
+      "id": "t000v",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-28",
+      "posted": "2026-04-29",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -12818,
+      "bank": "V1234 28/04 WOOLWORTHS 3341 NEWTOWN 74366161835",
+      "ik": "acctnab01|2026-04-29|-12818|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t000w": {
+      "id": "t000w",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-27",
+      "posted": "2026-04-30",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -5643,
+      "bank": "V1234 27/04 UNIQLO BROADWAY 74367212991",
+      "ik": "acctnab01|2026-04-30|-5643|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t000x": {
+      "id": "t000x",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-04-30",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-04-30|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     }
+    }
+   },
+   "2026-05": {
+    "t": {
+     "t000y": {
+      "id": "t000y",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "bank": "HOME LOAN REPAYMENT 0821 4455 12",
+      "ik": "acctnab01|2026-05-01|-210000|home loan repayment|1",
+      "cleared": "r"
+     },
+     "t000z": {
+      "id": "t000z",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-01",
+      "posted": "2026-05-04",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -5813,
+      "bank": "V1234 01/05 AMPOL ST PETERS 4471 74365952969",
+      "ik": "acctnab01|2026-05-04|-5813|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t0010": {
+      "id": "t0010",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-04",
+      "posted": "2026-05-07",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -698,
+      "bank": "V1234 04/05 BAKERS DELIGHT NEWTOWN 74368331650",
+      "ik": "acctnab01|2026-05-07|-698|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t0011": {
+      "id": "t0011",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-07",
+      "posted": "2026-05-08",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1448,
+      "bank": "V1234 07/05 BAKERS DELIGHT NEWTOWN 74362138192",
+      "ik": "acctnab01|2026-05-08|-1448|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t0012": {
+      "id": "t0012",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-08",
+      "posted": "2026-05-10",
+      "payee": "Netflix",
+      "cat": "subs",
+      "amt": -1799,
+      "bank": "V1234 08/05 NETFLIX.COM MELBOURNE 74366603868",
+      "ik": "acctnab01|2026-05-10|-1799|netflix com melbourne|1",
+      "cleared": "r"
+     },
+     "t0013": {
+      "id": "t0013",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-08",
+      "posted": "2026-05-10",
+      "payee": "Spotify",
+      "cat": "subs",
+      "amt": -1399,
+      "bank": "V1234 08/05 SPOTIFY P2B91C SYDNEY 74361217326",
+      "ik": "acctnab01|2026-05-10|-1399|spotify sydney|1",
+      "cleared": "r"
+     },
+     "t0014": {
+      "id": "t0014",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-08",
+      "posted": "2026-05-10",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -11908,
+      "bank": "V1234 08/05 WOOLWORTHS 3341 NEWTOWN 74362027853",
+      "ik": "acctnab01|2026-05-10|-11908|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t0015": {
+      "id": "t0015",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-11",
+      "posted": "2026-05-12",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -8743,
+      "bank": "V1234 11/05 ALDI STORES 241 MARRICKVILLE 74366717675",
+      "ik": "acctnab01|2026-05-12|-8743|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t0016": {
+      "id": "t0016",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-12",
+      "payee": "Aussie Broadband",
+      "cat": "internet",
+      "amt": -8500,
+      "bank": "AUSSIE BROADBAND DIRECT DEBIT 774120",
+      "ik": "acctnab01|2026-05-12|-8500|aussie broadband direct|1",
+      "cleared": "r"
+     },
+     "t0017": {
+      "id": "t0017",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-12",
+      "posted": "2026-05-13",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1418,
+      "bank": "V1234 12/05 BAKERS DELIGHT NEWTOWN 74363849463",
+      "ik": "acctnab01|2026-05-13|-1418|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t0018": {
+      "id": "t0018",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-14",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-05-14|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t0019": {
+      "id": "t0019",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-15",
+      "payee": "AAMI",
+      "cat": "carins",
+      "amt": -9200,
+      "bank": "AAMI INSURANCE DIRECT DEBIT 55120",
+      "ik": "acctnab01|2026-05-15|-9200|aami insurance direct|1",
+      "cleared": "r"
+     },
+     "t001a": {
+      "id": "t001a",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-13",
+      "posted": "2026-05-16",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -3963,
+      "bank": "V1234 13/05 UNIQLO BROADWAY 74365073438",
+      "ik": "acctnab01|2026-05-16|-3963|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t001b": {
+      "id": "t001b",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-14",
+      "posted": "2026-05-17",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -6168,
+      "bank": "V1234 14/05 ALDI STORES 241 MARRICKVILLE 74366830945",
+      "ik": "acctnab01|2026-05-17|-6168|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t001c": {
+      "id": "t001c",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-15",
+      "posted": "2026-05-18",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -9613,
+      "bank": "V1234 15/05 WOOLWORTHS 3341 NEWTOWN 74369518784",
+      "ik": "acctnab01|2026-05-18|-9613|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t001d": {
+      "id": "t001d",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-17",
+      "posted": "2026-05-18",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7663,
+      "bank": "V1234 17/05 AMPOL ST PETERS 4471 74364550995",
+      "ik": "acctnab01|2026-05-18|-7663|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t001e": {
+      "id": "t001e",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-18",
+      "posted": "2026-05-19",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -8438,
+      "bank": "V1234 18/05 WOOLWORTHS 3341 NEWTOWN 74368447782",
+      "ik": "acctnab01|2026-05-19|-8438|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t001f": {
+      "id": "t001f",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-19",
+      "payee": "Telstra",
+      "cat": "phone",
+      "amt": -6500,
+      "bank": "TELSTRA DIRECT DEBIT 3301882",
+      "ik": "acctnab01|2026-05-19|-6500|telstra direct|1",
+      "cleared": "r"
+     },
+     "t001g": {
+      "id": "t001g",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-20",
+      "payee": "Origin Energy",
+      "cat": "power",
+      "amt": -41260,
+      "bank": "ORIGIN ENERGY BPAY 1144",
+      "ik": "acctnab01|2026-05-20|-41260|origin energy bpay|1",
+      "cleared": "r"
+     },
+     "t001h": {
+      "id": "t001h",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-22",
+      "posted": "2026-05-25",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -6928,
+      "bank": "V1234 22/05 WOOLWORTHS 3341 NEWTOWN 74362010277",
+      "ik": "acctnab01|2026-05-25|-6928|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t001i": {
+      "id": "t001i",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-24",
+      "posted": "2026-05-25",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -1648,
+      "bank": "V1234 24/05 CAFE XO SURRY HILLS 74364311494",
+      "ik": "acctnab01|2026-05-25|-1648|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t001j": {
+      "id": "t001j",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": -50000,
+      "bank": "ONLINE  T4885332959",
+      "ik": "acctnab01|2026-05-25|-50000|online|1",
+      "cleared": "r",
+      "transfer": "acctsav01",
+      "pair": "t001k"
+     },
+     "t001k": {
+      "id": "t001k",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-05-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": 50000,
+      "transfer": "acctnab01",
+      "pair": "t001j",
+      "cleared": "r"
+     },
+     "t001l": {
+      "id": "t001l",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-23",
+      "posted": "2026-05-26",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -8123,
+      "bank": "V1234 23/05 WOOLWORTHS 3341 NEWTOWN 74366866549",
+      "ik": "acctnab01|2026-05-26|-8123|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t001m": {
+      "id": "t001m",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-25",
+      "posted": "2026-05-27",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1223,
+      "bank": "V1234 25/05 BAKERS DELIGHT NEWTOWN 74363584083",
+      "ik": "acctnab01|2026-05-27|-1223|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t001n": {
+      "id": "t001n",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-26",
+      "posted": "2026-05-27",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1188,
+      "bank": "V1234 26/05 BAKERS DELIGHT NEWTOWN 74369688022",
+      "ik": "acctnab01|2026-05-27|-1188|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t001o": {
+      "id": "t001o",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-28",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-05-28|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t001p": {
+      "id": "t001p",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-27",
+      "posted": "2026-05-30",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -4033,
+      "bank": "V1234 27/05 UNIQLO BROADWAY 74368782158",
+      "ik": "acctnab01|2026-05-30|-4033|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t001q": {
+      "id": "t001q",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-29",
+      "posted": "2026-05-30",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1548,
+      "bank": "V1234 29/05 BAKERS DELIGHT NEWTOWN 74368223301",
+      "ik": "acctnab01|2026-05-30|-1548|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t001r": {
+      "id": "t001r",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-30",
+      "posted": "2026-05-31",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -5963,
+      "bank": "V1234 30/05 UNIQLO BROADWAY 74362746095",
+      "ik": "acctnab01|2026-05-31|-5963|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t001s": {
+      "id": "t001s",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-05-31",
+      "posted": "2026-06-01",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -7398,
+      "bank": "V1234 31/05 WOOLWORTHS 3341 NEWTOWN 74366980510",
+      "ik": "acctnab01|2026-06-01|-7398|woolworths newtown|1",
+      "cleared": "r"
+     }
+    }
+   },
+   "2026-06": {
+    "t": {
+     "t001t": {
+      "id": "t001t",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "bank": "HOME LOAN REPAYMENT 0821 4455 12",
+      "ik": "acctnab01|2026-06-01|-210000|home loan repayment|1",
+      "cleared": "r"
+     },
+     "t001u": {
+      "id": "t001u",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-03",
+      "posted": "2026-06-06",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -7163,
+      "bank": "V1234 03/06 THAI POTHONG NEWTOWN 74363150449",
+      "ik": "acctnab01|2026-06-06|-7163|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t001v": {
+      "id": "t001v",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-05",
+      "posted": "2026-06-06",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7398,
+      "bank": "V1234 05/06 AMPOL ST PETERS 4471 74360061474",
+      "ik": "acctnab01|2026-06-06|-7398|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t001w": {
+      "id": "t001w",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-04",
+      "posted": "2026-06-07",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -1783,
+      "bank": "V1234 04/06 CAFE XO SURRY HILLS 74367877047",
+      "ik": "acctnab01|2026-06-07|-1783|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t001x": {
+      "id": "t001x",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-06",
+      "posted": "2026-06-09",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1578,
+      "bank": "V1234 06/06 BAKERS DELIGHT NEWTOWN 74365451363",
+      "ik": "acctnab01|2026-06-09|-1578|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t001y": {
+      "id": "t001y",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-08",
+      "posted": "2026-06-10",
+      "payee": "Netflix",
+      "cat": "subs",
+      "amt": -1799,
+      "bank": "V1234 08/06 NETFLIX.COM MELBOURNE 74360184463",
+      "ik": "acctnab01|2026-06-10|-1799|netflix com melbourne|1",
+      "cleared": "r"
+     },
+     "t001z": {
+      "id": "t001z",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-08",
+      "posted": "2026-06-10",
+      "payee": "Spotify",
+      "cat": "subs",
+      "amt": -1399,
+      "bank": "V1234 08/06 SPOTIFY P2B91C SYDNEY 74360272489",
+      "ik": "acctnab01|2026-06-10|-1399|spotify sydney|1",
+      "cleared": "r"
+     },
+     "t0020": {
+      "id": "t0020",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-08",
+      "posted": "2026-06-11",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1498,
+      "bank": "V1234 08/06 BAKERS DELIGHT NEWTOWN 74361573212",
+      "ik": "acctnab01|2026-06-11|-1498|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t0021": {
+      "id": "t0021",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-11",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-06-11|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t0022": {
+      "id": "t0022",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-10",
+      "posted": "2026-06-12",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -7888,
+      "bank": "V1234 10/06 UNIQLO BROADWAY 74369310129",
+      "ik": "acctnab01|2026-06-12|-7888|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t0023": {
+      "id": "t0023",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-12",
+      "payee": "Aussie Broadband",
+      "cat": "internet",
+      "amt": -8500,
+      "bank": "AUSSIE BROADBAND DIRECT DEBIT 774120",
+      "ik": "acctnab01|2026-06-12|-8500|aussie broadband direct|1",
+      "cleared": "r"
+     },
+     "t0024": {
+      "id": "t0024",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-11",
+      "posted": "2026-06-13",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -1463,
+      "bank": "V1234 11/06 CAFE XO SURRY HILLS 74366199507",
+      "ik": "acctnab01|2026-06-13|-1463|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t0025": {
+      "id": "t0025",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-12",
+      "posted": "2026-06-13",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -12208,
+      "bank": "V1234 12/06 WOOLWORTHS 3341 NEWTOWN 74360854611",
+      "ik": "acctnab01|2026-06-13|-12208|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t0026": {
+      "id": "t0026",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-13",
+      "posted": "2026-06-14",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -3858,
+      "bank": "V1234 13/06 CHEMIST WAREHOUSE NEWTOWN 74362998212",
+      "ik": "acctnab01|2026-06-14|-3858|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t0027": {
+      "id": "t0027",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-15",
+      "payee": "AAMI",
+      "cat": "carins",
+      "amt": -9200,
+      "bank": "AAMI INSURANCE DIRECT DEBIT 55120",
+      "ik": "acctnab01|2026-06-15|-9200|aami insurance direct|1",
+      "cleared": "r"
+     },
+     "t0028": {
+      "id": "t0028",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-16",
+      "posted": "2026-06-17",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -1963,
+      "bank": "V1234 16/06 CHEMIST WAREHOUSE NEWTOWN 74366313133",
+      "ik": "acctnab01|2026-06-17|-1963|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t0029": {
+      "id": "t0029",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-15",
+      "posted": "2026-06-18",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -10213,
+      "bank": "V1234 15/06 WOOLWORTHS 3341 NEWTOWN 74364803097",
+      "ik": "acctnab01|2026-06-18|-10213|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t002a": {
+      "id": "t002a",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-17",
+      "posted": "2026-06-19",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -2188,
+      "bank": "V1234 17/06 CAFE XO SURRY HILLS 74369722283",
+      "ik": "acctnab01|2026-06-19|-2188|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t002b": {
+      "id": "t002b",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-19",
+      "payee": "Telstra",
+      "cat": "phone",
+      "amt": -6500,
+      "bank": "TELSTRA DIRECT DEBIT 3301882",
+      "ik": "acctnab01|2026-06-19|-6500|telstra direct|1",
+      "cleared": "r"
+     },
+     "t002c": {
+      "id": "t002c",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-20",
+      "posted": "2026-06-22",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -1578,
+      "bank": "V1234 20/06 CAFE XO SURRY HILLS 74365835271",
+      "ik": "acctnab01|2026-06-22|-1578|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t002d": {
+      "id": "t002d",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-21",
+      "posted": "2026-06-23",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -7368,
+      "bank": "V1234 21/06 THAI POTHONG NEWTOWN 74365447157",
+      "ik": "acctnab01|2026-06-23|-7368|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t002e": {
+      "id": "t002e",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-23",
+      "posted": "2026-06-25",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -1703,
+      "bank": "V1234 23/06 CAFE XO SURRY HILLS 74363098215",
+      "ik": "acctnab01|2026-06-25|-1703|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t002f": {
+      "id": "t002f",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-25",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-06-25|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t002g": {
+      "id": "t002g",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": -50000,
+      "bank": "ONLINE  T4885322765",
+      "ik": "acctnab01|2026-06-25|-50000|online|1",
+      "cleared": "r",
+      "transfer": "acctsav01",
+      "pair": "t002h"
+     },
+     "t002h": {
+      "id": "t002h",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-06-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": 50000,
+      "transfer": "acctnab01",
+      "pair": "t002g",
+      "cleared": "r"
+     },
+     "t002i": {
+      "id": "t002i",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-26",
+      "posted": "2026-06-27",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -1243,
+      "bank": "V1234 26/06 CHEMIST WAREHOUSE NEWTOWN 74366669965",
+      "ik": "acctnab01|2026-06-27|-1243|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t002j": {
+      "id": "t002j",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-06-29",
+      "posted": "2026-06-30",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -5383,
+      "bank": "V1234 29/06 THAI POTHONG NEWTOWN 74366329048",
+      "ik": "acctnab01|2026-06-30|-5383|thai pothong newtown|1",
+      "cleared": "r"
+     }
+    }
+   },
+   "2026-07": {
+    "t": {
+     "t002k": {
+      "id": "t002k",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "bank": "HOME LOAN REPAYMENT 0821 4455 12",
+      "ik": "acctnab01|2026-07-01|-210000|home loan repayment|1",
+      "cleared": "r"
+     },
+     "t002l": {
+      "id": "t002l",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-02",
+      "posted": "2026-07-03",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -11728,
+      "bank": "V1234 02/07 WOOLWORTHS 3341 NEWTOWN 74368528442",
+      "ik": "acctnab01|2026-07-03|-11728|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t002m": {
+      "id": "t002m",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-03",
+      "posted": "2026-07-04",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -13898,
+      "bank": "V1234 03/07 WOOLWORTHS 3341 NEWTOWN 74364620022",
+      "ik": "acctnab01|2026-07-04|-13898|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t002n": {
+      "id": "t002n",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-05",
+      "posted": "2026-07-06",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -6348,
+      "bank": "V1234 05/07 AMPOL ST PETERS 4471 74369683627",
+      "ik": "acctnab01|2026-07-06|-6348|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t002o": {
+      "id": "t002o",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-04",
+      "posted": "2026-07-07",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -8838,
+      "bank": "V1234 04/07 THAI POTHONG NEWTOWN 74365868592",
+      "ik": "acctnab01|2026-07-07|-8838|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t002p": {
+      "id": "t002p",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-09",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-07-09|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t002q": {
+      "id": "t002q",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-08",
+      "posted": "2026-07-10",
+      "payee": "Netflix",
+      "cat": "subs",
+      "amt": -1799,
+      "bank": "V1234 08/07 NETFLIX.COM MELBOURNE 74365020203",
+      "ik": "acctnab01|2026-07-10|-1799|netflix com melbourne|1",
+      "cleared": "r"
+     },
+     "t002r": {
+      "id": "t002r",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-08",
+      "posted": "2026-07-10",
+      "payee": "Spotify",
+      "cat": "subs",
+      "amt": -1399,
+      "bank": "V1234 08/07 SPOTIFY P2B91C SYDNEY 74364568200",
+      "ik": "acctnab01|2026-07-10|-1399|spotify sydney|1",
+      "cleared": "r"
+     },
+     "t002s": {
+      "id": "t002s",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-09",
+      "posted": "2026-07-10",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -9653,
+      "bank": "V1234 09/07 ALDI STORES 241 MARRICKVILLE 74365005017",
+      "ik": "acctnab01|2026-07-10|-9653|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t002t": {
+      "id": "t002t",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-08",
+      "posted": "2026-07-11",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1263,
+      "bank": "V1234 08/07 BAKERS DELIGHT NEWTOWN 74366583443",
+      "ik": "acctnab01|2026-07-11|-1263|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t002u": {
+      "id": "t002u",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-10",
+      "posted": "2026-07-11",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -5268,
+      "bank": "V1234 10/07 UNIQLO BROADWAY 74360726868",
+      "ik": "acctnab01|2026-07-11|-5268|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t002v": {
+      "id": "t002v",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-11",
+      "posted": "2026-07-12",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -8123,
+      "bank": "V1234 11/07 ALDI STORES 241 MARRICKVILLE 74363301412",
+      "ik": "acctnab01|2026-07-12|-8123|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t002w": {
+      "id": "t002w",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-12",
+      "payee": "Aussie Broadband",
+      "cat": "internet",
+      "amt": -8500,
+      "bank": "AUSSIE BROADBAND DIRECT DEBIT 774120",
+      "ik": "acctnab01|2026-07-12|-8500|aussie broadband direct|1",
+      "cleared": "r"
+     },
+     "t002x": {
+      "id": "t002x",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-12",
+      "posted": "2026-07-15",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -7578,
+      "bank": "V1234 12/07 UNIQLO BROADWAY 74365357919",
+      "ik": "acctnab01|2026-07-15|-7578|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t002y": {
+      "id": "t002y",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-15",
+      "payee": "AAMI",
+      "cat": "carins",
+      "amt": -9200,
+      "bank": "AAMI INSURANCE DIRECT DEBIT 55120",
+      "ik": "acctnab01|2026-07-15|-9200|aami insurance direct|1",
+      "cleared": "r"
+     },
+     "t002z": {
+      "id": "t002z",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-14",
+      "posted": "2026-07-16",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -1558,
+      "bank": "V1234 14/07 CAFE XO SURRY HILLS 74363697451",
+      "ik": "acctnab01|2026-07-16|-1558|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t0030": {
+      "id": "t0030",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-15",
+      "posted": "2026-07-16",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -6933,
+      "bank": "V1234 15/07 ALDI STORES 241 MARRICKVILLE 74360555127",
+      "ik": "acctnab01|2026-07-16|-6933|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t0031": {
+      "id": "t0031",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-19",
+      "payee": "Telstra",
+      "cat": "phone",
+      "amt": -6500,
+      "bank": "TELSTRA DIRECT DEBIT 3301882",
+      "ik": "acctnab01|2026-07-19|-6500|telstra direct|1",
+      "cleared": "r"
+     },
+     "t0032": {
+      "id": "t0032",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-19",
+      "posted": "2026-07-20",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -5028,
+      "bank": "V1234 19/07 ALDI STORES 241 MARRICKVILLE 74360723427",
+      "ik": "acctnab01|2026-07-20|-5028|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t0033": {
+      "id": "t0033",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-20",
+      "posted": "2026-07-23",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -14288,
+      "bank": "V1234 20/07 WOOLWORTHS 3341 NEWTOWN 74364327024",
+      "ik": "acctnab01|2026-07-23|-14288|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t0034": {
+      "id": "t0034",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-21",
+      "posted": "2026-07-23",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -6493,
+      "bank": "V1234 21/07 UNIQLO BROADWAY 74362938971",
+      "ik": "acctnab01|2026-07-23|-6493|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t0035": {
+      "id": "t0035",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-22",
+      "posted": "2026-07-23",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7348,
+      "bank": "V1234 22/07 AMPOL ST PETERS 4471 74362177158",
+      "ik": "acctnab01|2026-07-23|-7348|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t0036": {
+      "id": "t0036",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-23",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-07-23|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t0037": {
+      "id": "t0037",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": -50000,
+      "bank": "ONLINE  T4885384123",
+      "ik": "acctnab01|2026-07-25|-50000|online|1",
+      "cleared": "r",
+      "transfer": "acctsav01",
+      "pair": "t0038"
+     },
+     "t0038": {
+      "id": "t0038",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-07-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": 50000,
+      "transfer": "acctnab01",
+      "pair": "t0037",
+      "cleared": "r"
+     },
+     "t0039": {
+      "id": "t0039",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-25",
+      "posted": "2026-07-26",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -11753,
+      "bank": "V1234 25/07 ALDI STORES 241 MARRICKVILLE 74362076854",
+      "ik": "acctnab01|2026-07-26|-11753|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t003a": {
+      "id": "t003a",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-26",
+      "posted": "2026-07-27",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -5278,
+      "bank": "V1234 26/07 THAI POTHONG NEWTOWN 74368411768",
+      "ik": "acctnab01|2026-07-27|-5278|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t003b": {
+      "id": "t003b",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-27",
+      "posted": "2026-07-29",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -8303,
+      "bank": "V1234 27/07 THAI POTHONG NEWTOWN 74369110558",
+      "ik": "acctnab01|2026-07-29|-8303|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t003c": {
+      "id": "t003c",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-30",
+      "posted": "2026-07-31",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1418,
+      "bank": "V1234 30/07 BAKERS DELIGHT NEWTOWN 74365419712",
+      "ik": "acctnab01|2026-07-31|-1418|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t003e": {
+      "id": "t003e",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-07-31",
+      "posted": "2026-08-03",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -803,
+      "bank": "V1234 31/07 CAFE XO SURRY HILLS 74369077205",
+      "ik": "acctnab01|2026-08-03|-803|cafe xo surry hills|1",
+      "cleared": "r"
+     }
+    }
+   },
+   "2026-08": {
+    "t": {
+     "t003d": {
+      "id": "t003d",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "bank": "HOME LOAN REPAYMENT 0821 4455 12",
+      "ik": "acctnab01|2026-08-01|-210000|home loan repayment|1",
+      "cleared": "r"
+     },
+     "t003f": {
+      "id": "t003f",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-02",
+      "posted": "2026-08-03",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -15578,
+      "bank": "V1234 02/08 WOOLWORTHS 3341 NEWTOWN 74368365497",
+      "ik": "acctnab01|2026-08-03|-15578|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t003g": {
+      "id": "t003g",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-04",
+      "posted": "2026-08-05",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -17778,
+      "bank": "V1234 04/08 WOOLWORTHS 3341 NEWTOWN 74360294399",
+      "ik": "acctnab01|2026-08-05|-17778|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t003h": {
+      "id": "t003h",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-03",
+      "posted": "2026-08-06",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -16033,
+      "bank": "V1234 03/08 WOOLWORTHS 3341 NEWTOWN 74361387264",
+      "ik": "acctnab01|2026-08-06|-16033|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t003i": {
+      "id": "t003i",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-06",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-08-06|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t003j": {
+      "id": "t003j",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-06",
+      "posted": "2026-08-07",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -608,
+      "bank": "V1234 06/08 BAKERS DELIGHT NEWTOWN 74366306071",
+      "ik": "acctnab01|2026-08-07|-608|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t003k": {
+      "id": "t003k",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-05",
+      "posted": "2026-08-08",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -5638,
+      "bank": "V1234 05/08 ALDI STORES 241 MARRICKVILLE 74365821728",
+      "ik": "acctnab01|2026-08-08|-5638|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t003l": {
+      "id": "t003l",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-07",
+      "posted": "2026-08-10",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -2933,
+      "bank": "V1234 07/08 CHEMIST WAREHOUSE NEWTOWN 74361884604",
+      "ik": "acctnab01|2026-08-10|-2933|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t003m": {
+      "id": "t003m",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-08",
+      "posted": "2026-08-10",
+      "payee": "Netflix",
+      "cat": "subs",
+      "amt": -1799,
+      "bank": "V1234 08/08 NETFLIX.COM MELBOURNE 74364552020",
+      "ik": "acctnab01|2026-08-10|-1799|netflix com melbourne|1",
+      "cleared": "r"
+     },
+     "t003n": {
+      "id": "t003n",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-08",
+      "posted": "2026-08-10",
+      "payee": "Spotify",
+      "cat": "subs",
+      "amt": -1399,
+      "bank": "V1234 08/08 SPOTIFY P2B91C SYDNEY 74365801385",
+      "ik": "acctnab01|2026-08-10|-1399|spotify sydney|1",
+      "cleared": "r"
+     },
+     "t003o": {
+      "id": "t003o",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-08",
+      "posted": "2026-08-10",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -913,
+      "bank": "V1234 08/08 BAKERS DELIGHT NEWTOWN 74369224033",
+      "ik": "acctnab01|2026-08-10|-913|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t003p": {
+      "id": "t003p",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-09",
+      "posted": "2026-08-10",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -11353,
+      "bank": "V1234 09/08 ALDI STORES 241 MARRICKVILLE 74363215834",
+      "ik": "acctnab01|2026-08-10|-11353|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t003q": {
+      "id": "t003q",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-10",
+      "posted": "2026-08-11",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -6778,
+      "bank": "V1234 10/08 UNIQLO BROADWAY 74368425357",
+      "ik": "acctnab01|2026-08-11|-6778|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t003r": {
+      "id": "t003r",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-11",
+      "posted": "2026-08-12",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -10633,
+      "bank": "V1234 11/08 ALDI STORES 241 MARRICKVILLE 74364598754",
+      "ik": "acctnab01|2026-08-12|-10633|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t003s": {
+      "id": "t003s",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-12",
+      "payee": "Aussie Broadband",
+      "cat": "internet",
+      "amt": -8500,
+      "bank": "AUSSIE BROADBAND DIRECT DEBIT 774120",
+      "ik": "acctnab01|2026-08-12|-8500|aussie broadband direct|1",
+      "cleared": "r"
+     },
+     "t003t": {
+      "id": "t003t",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-14",
+      "posted": "2026-08-15",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -1968,
+      "bank": "V1234 14/08 CHEMIST WAREHOUSE NEWTOWN 74365154381",
+      "ik": "acctnab01|2026-08-15|-1968|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t003u": {
+      "id": "t003u",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-15",
+      "payee": "AAMI",
+      "cat": "carins",
+      "amt": -9200,
+      "bank": "AAMI INSURANCE DIRECT DEBIT 55120",
+      "ik": "acctnab01|2026-08-15|-9200|aami insurance direct|1",
+      "cleared": "r"
+     },
+     "t003v": {
+      "id": "t003v",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-15",
+      "posted": "2026-08-16",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -5948,
+      "bank": "V1234 15/08 ALDI STORES 241 MARRICKVILLE 74360672310",
+      "ik": "acctnab01|2026-08-16|-5948|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t003w": {
+      "id": "t003w",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-16",
+      "posted": "2026-08-19",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -2923,
+      "bank": "V1234 16/08 CHEMIST WAREHOUSE NEWTOWN 74364238715",
+      "ik": "acctnab01|2026-08-19|-2923|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t003x": {
+      "id": "t003x",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-19",
+      "payee": "Telstra",
+      "cat": "phone",
+      "amt": -6500,
+      "bank": "TELSTRA DIRECT DEBIT 3301882",
+      "ik": "acctnab01|2026-08-19|-6500|telstra direct|1",
+      "cleared": "r"
+     },
+     "t003y": {
+      "id": "t003y",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-19",
+      "posted": "2026-08-20",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1003,
+      "bank": "V1234 19/08 BAKERS DELIGHT NEWTOWN 74363940420",
+      "ik": "acctnab01|2026-08-20|-1003|bakers delight newtown|1",
+      "cleared": "r"
+     },
+     "t003z": {
+      "id": "t003z",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-20",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-08-20|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t0040": {
+      "id": "t0040",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-20",
+      "payee": "Origin Energy",
+      "cat": "power",
+      "amt": -41260,
+      "bank": "ORIGIN ENERGY BPAY 1144",
+      "ik": "acctnab01|2026-08-20|-41260|origin energy bpay|1",
+      "cleared": "r"
+     },
+     "t0041": {
+      "id": "t0041",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-21",
+      "posted": "2026-08-22",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7003,
+      "bank": "V1234 21/08 AMPOL ST PETERS 4471 74368238258",
+      "ik": "acctnab01|2026-08-22|-7003|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t0042": {
+      "id": "t0042",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-20",
+      "posted": "2026-08-23",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -638,
+      "bank": "V1234 20/08 CAFE XO SURRY HILLS 74360260442",
+      "ik": "acctnab01|2026-08-23|-638|cafe xo surry hills|1",
+      "cleared": "r"
+     },
+     "t0043": {
+      "id": "t0043",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-23",
+      "posted": "2026-08-24",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7148,
+      "bank": "V1234 23/08 AMPOL ST PETERS 4471 74369103887",
+      "ik": "acctnab01|2026-08-24|-7148|ampol st peters|1",
+      "cleared": "r"
+     },
+     "t0044": {
+      "id": "t0044",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-24",
+      "posted": "2026-08-25",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -10718,
+      "bank": "V1234 24/08 ALDI STORES 241 MARRICKVILLE 74369625780",
+      "ik": "acctnab01|2026-08-25|-10718|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t0045": {
+      "id": "t0045",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": -50000,
+      "bank": "ONLINE  T4885304892",
+      "ik": "acctnab01|2026-08-25|-50000|online|1",
+      "cleared": "r",
+      "transfer": "acctsav01",
+      "pair": "t0046"
+     },
+     "t0046": {
+      "id": "t0046",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-08-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": 50000,
+      "transfer": "acctnab01",
+      "pair": "t0045",
+      "cleared": "r"
+     },
+     "t0047": {
+      "id": "t0047",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-27",
+      "posted": "2026-08-28",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -5153,
+      "bank": "V1234 27/08 ALDI STORES 241 MARRICKVILLE 74368800516",
+      "ik": "acctnab01|2026-08-28|-5153|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t0048": {
+      "id": "t0048",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-29",
+      "posted": "2026-08-30",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -6473,
+      "bank": "V1234 29/08 UNIQLO BROADWAY 74369924896",
+      "ik": "acctnab01|2026-08-30|-6473|uniqlo broadway|1",
+      "cleared": "r"
+     },
+     "t0049": {
+      "id": "t0049",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-30",
+      "posted": "2026-08-31",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -9798,
+      "bank": "V1234 30/08 ALDI STORES 241 MARRICKVILLE 74364524575",
+      "ik": "acctnab01|2026-08-31|-9798|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t004b": {
+      "id": "t004b",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-08-31",
+      "posted": "2026-09-02",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -673,
+      "bank": "V1234 31/08 BAKERS DELIGHT NEWTOWN 74369827604",
+      "ik": "acctnab01|2026-09-02|-673|bakers delight newtown|1",
+      "cleared": "r"
+     }
+    }
+   },
+   "2026-09": {
+    "t": {
+     "t004a": {
+      "id": "t004a",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "bank": "HOME LOAN REPAYMENT 0821 4455 12",
+      "ik": "acctnab01|2026-09-01|-210000|home loan repayment|1",
+      "cleared": "r"
+     },
+     "t004c": {
+      "id": "t004c",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-03",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "bank": "ACME LOGISTICS PL SALARY 0048211",
+      "ik": "acctnab01|2026-09-03|285000|acme logistics pl salary|1",
+      "cleared": "r"
+     },
+     "t004d": {
+      "id": "t004d",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-02",
+      "posted": "2026-09-04",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -6083,
+      "bank": "V1234 02/09 THAI POTHONG NEWTOWN 74367729253",
+      "ik": "acctnab01|2026-09-04|-6083|thai pothong newtown|1",
+      "cleared": "r"
+     },
+     "t004e": {
+      "id": "t004e",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-03",
+      "posted": "2026-09-06",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -8088,
+      "bank": "V1234 03/09 WOOLWORTHS 3341 NEWTOWN 74365111710",
+      "ik": "acctnab01|2026-09-06|-8088|woolworths newtown|1",
+      "cleared": "r"
+     },
+     "t004f": {
+      "id": "t004f",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-06",
+      "posted": "2026-09-07",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -4803,
+      "bank": "V1234 06/09 ALDI STORES 241 MARRICKVILLE 74366053537",
+      "ik": "acctnab01|2026-09-07|-4803|aldi stores marrickville|1",
+      "cleared": "r"
+     },
+     "t004g": {
+      "id": "t004g",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-08",
+      "posted": "2026-09-10",
+      "payee": "Netflix",
+      "cat": "subs",
+      "amt": -1799,
+      "bank": "V1234 08/09 NETFLIX.COM MELBOURNE 74367915670",
+      "ik": "acctnab01|2026-09-10|-1799|netflix com melbourne|1",
+      "cleared": "r"
+     },
+     "t004h": {
+      "id": "t004h",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-08",
+      "posted": "2026-09-10",
+      "payee": "Spotify",
+      "cat": "subs",
+      "amt": -1399,
+      "bank": "V1234 08/09 SPOTIFY P2B91C SYDNEY 74368677429",
+      "ik": "acctnab01|2026-09-10|-1399|spotify sydney|1",
+      "cleared": "r"
+     },
+     "t004i": {
+      "id": "t004i",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-10",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -1895,
+      "bank": "POS 10/09 CHEMIST WAREHOUSE NEWTOWN",
+      "ik": "acctnab01|2026-09-10|-1895|chemist warehouse newtown|1",
+      "cleared": "r"
+     },
+     "t004j": {
+      "id": "t004j",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-11",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -2365,
+      "bank": "POS 11/09 WOOLWORTHS/KING ST & CR   NEWTOWN",
+      "ik": "acctnab01|2026-09-11|-2365|woolworths king st & cr newtown|1",
+      "cleared": "r"
+     },
+     "t004k": {
+      "id": "t004k",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-10",
+      "payee": "Charcoal Chicken",
+      "cat": "eatout",
+      "amt": -8000,
+      "bank": "POS 10/09 CHARCOAL CHICKEN   NEWTOWN",
+      "ik": "acctnab01|2026-09-10|-8000|charcoal chicken newtown|1",
+      "cleared": "r"
+     },
+     "t004l": {
+      "id": "t004l",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-09",
+      "payee": "Quest Apartments",
+      "cat": "holiday",
+      "amt": -20000,
+      "bank": "POS 09/09 QUEST APARTMENTS   SYDNEY",
+      "ik": "acctnab01|2026-09-09|-20000|quest apartments sydney|1",
+      "cleared": "r"
+     },
+     "t004m": {
+      "id": "t004m",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-09",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -6418,
+      "cleared": "u"
+     },
+     "t004n": {
+      "id": "t004n",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-11",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -15598,
+      "cleared": "u"
+     },
+     "t004o": {
+      "id": "t004o",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-11",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -10918,
+      "cleared": "u"
+     },
+     "t004p": {
+      "id": "t004p",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-13",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -8613,
+      "cleared": "u"
+     },
+     "t004q": {
+      "id": "t004q",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-14",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7778,
+      "cleared": "u"
+     },
+     "t004r": {
+      "id": "t004r",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-15",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -6708,
+      "cleared": "u"
+     },
+     "t004s": {
+      "id": "t004s",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-17",
+      "payee": "Bakers Delight",
+      "cat": "groc",
+      "amt": -1298,
+      "cleared": "u"
+     },
+     "t004t": {
+      "id": "t004t",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-19",
+      "payee": "Telstra",
+      "cat": "phone",
+      "amt": -6500,
+      "cleared": "u"
+     },
+     "t004u": {
+      "id": "t004u",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-22",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -7038,
+      "cleared": "u"
+     },
+     "t004v": {
+      "id": "t004v",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-23",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -6303,
+      "cleared": "u"
+     },
+     "t004w": {
+      "id": "t004w",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-25",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": -4518,
+      "cleared": "u"
+     },
+     "t004x": {
+      "id": "t004x",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-27",
+      "payee": "Chemist Warehouse",
+      "cat": "health",
+      "amt": -4478,
+      "cleared": "u"
+     },
+     "t0050": {
+      "id": "t0050",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-15",
+      "payee": "Ampol",
+      "cat": "fuel",
+      "amt": -6500,
+      "cleared": "u"
+     },
+     "t0051": {
+      "id": "t0051",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-18",
+      "payee": "JB Hi-Fi",
+      "cat": "household",
+      "amt": -5999,
+      "memo": "Phone charger",
+      "cleared": "u"
+     },
+     "t0053": {
+      "id": "t0053",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-21",
+      "payee": "Target",
+      "cat": "clothes",
+      "amt": -2000,
+      "memo": "Socks",
+      "cleared": "u"
+     },
+     "t0054": {
+      "id": "t0054",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-21",
+      "payee": "Kmart",
+      "cat": "household",
+      "amt": -2000,
+      "memo": "Storage tubs",
+      "cleared": "u"
+     },
+     "t0055": {
+      "id": "t0055",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-22",
+      "payee": "Woolworths",
+      "cat": null,
+      "splits": [
+       {
+        "cat": "groc",
+        "amt": -15035
+       },
+       {
+        "cat": "health",
+        "amt": -2250
+       }
+      ],
+      "amt": -17285,
+      "cleared": "u"
+     },
+     "t0056": {
+      "id": "t0056",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-17",
+      "payee": "Uniqlo",
+      "cat": "clothes",
+      "amt": 3995,
+      "memo": "Returned jeans",
+      "cleared": "u"
+     },
+     "t0057": {
+      "id": "t0057",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-24",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -550,
+      "memo": "Coffee with Sam",
+      "cleared": "u"
+     },
+     "t0058": {
+      "id": "t0058",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-24",
+      "payee": "Cafe XO",
+      "cat": "eatout",
+      "amt": -550,
+      "cleared": "u"
+     },
+     "t0059": {
+      "id": "t0059",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-24",
+      "payee": "Petbarn",
+      "cat": "household",
+      "amt": 3500,
+      "memo": "Dog food",
+      "cleared": "u"
+     },
+     "t005a": {
+      "id": "t005a",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-25",
+      "payee": "Transfer to savings",
+      "amt": -50000,
+      "cleared": "u",
+      "transfer": "acctsav01",
+      "pair": "t005b",
+      "cat": null
+     },
+     "t005b": {
+      "id": "t005b",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-09-25",
+      "payee": "Transfer to savings",
+      "cat": null,
+      "amt": 50000,
+      "transfer": "acctnab01",
+      "pair": "t005a",
+      "cleared": "u"
+     },
+     "t005c": {
+      "id": "t005c",
+      "acct": "acctsav01",
+      "by": "mock",
+      "date": "2026-09-26",
+      "payee": "Coles",
+      "cat": "groc",
+      "amt": -6120,
+      "cleared": "u"
+     },
+     "t005d": {
+      "id": "t005d",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-26",
+      "payee": "Bunnings",
+      "cat": "household",
+      "amt": -5400,
+      "memo": "Garden hose and pots",
+      "cleared": "u"
+     },
+     "t005e": {
+      "id": "t005e",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-27",
+      "payee": "Coles",
+      "cat": "groc",
+      "amt": -4500,
+      "cleared": "u"
+     },
+     "t005f": {
+      "id": "t005f",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-20",
+      "payee": "Origin Energy",
+      "cat": "power",
+      "amt": -41260,
+      "memo": "Paid on the due date",
+      "cleared": "u"
+     },
+     "t005g": {
+      "id": "t005g",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-28",
+      "payee": "Grandma birthday",
+      "cat": "clothes",
+      "amt": -5000,
+      "memo": "Paid cash",
+      "cleared": "u"
+     },
+     "t005h": {
+      "id": "t005h",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-29",
+      "payee": "Officeworks",
+      "cat": "household",
+      "amt": -2310,
+      "memo": "Printing",
+      "cleared": "u"
+     },
+     "t005i": {
+      "id": "t005i",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-30",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -4260,
+      "cleared": "u"
+     },
+     "t005j": {
+      "id": "t005j",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-30",
+      "payee": "Aldi",
+      "cat": "groc",
+      "amt": -4260,
+      "cleared": "u"
+     },
+     "t005k": {
+      "id": "t005k",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-09-30",
+      "payee": "Thai Pothong",
+      "cat": "eatout",
+      "amt": -6840,
+      "memo": "Friday dinner",
+      "cleared": "u"
+     }
+    }
+   },
+   "2026-10": {
+    "t": {
+     "t004y": {
+      "id": "t004y",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-10-01",
+      "payee": "Acme Logistics (pay)",
+      "cat": "_income",
+      "amt": 285000,
+      "cleared": "u"
+     },
+     "t004z": {
+      "id": "t004z",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-10-01",
+      "payee": "NAB Home Loan",
+      "cat": "mortgage",
+      "amt": -210000,
+      "cleared": "u"
+     },
+     "t005l": {
+      "id": "t005l",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-10-02",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -6435,
+      "cleared": "u"
+     },
+     "t005m": {
+      "id": "t005m",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2026-10-03",
+      "payee": "Woolworths",
+      "cat": "groc",
+      "amt": -8765,
+      "cleared": "u"
+     }
+    }
+   },
+   "2025-09": {
+    "t": {
+     "t0052": {
+      "id": "t0052",
+      "acct": "acctnab01",
+      "by": "mock",
+      "date": "2025-09-20",
+      "payee": "Mitre 10",
+      "cat": "household",
+      "amt": -3870,
+      "memo": "Paint",
+      "cleared": "u"
+     }
+    }
+   }
+  }
+ }
+}

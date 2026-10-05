@@ -994,18 +994,18 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow.open .tline:not(:has(.st:not(.funded))) { display: none; }
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; padding: 0; text-align: left; font-size: 14px; min-width: 0; }
 :root[data-layout="phone"] .brow.open .b-asg { padding-left: 23px; }
-:root[data-layout="phone"] .brow.open .m-lbl { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-:root[data-layout="phone"] .brow.open .asg { width: 100%; max-width: 110px; font-size: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+:root[data-layout="phone"] .brow.open .m-lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; line-height: 1.2; }
+:root[data-layout="phone"] .brow.open .asg { width: 100%; max-width: 110px; height: 26px; font-size: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; box-sizing: border-box; }
 :root[data-layout="phone"] .brow .b-avl .m-lbl { display: none; }
 /* opened: Available drops into the row of numbers, still in its pill; Target stays out for now */
 :root[data-layout="phone"] .brow.open .b-tgt { display: none; }
 :root[data-layout="phone"] .brow.open .b-avl { display: flex; flex-direction: column; align-items: center; gap: 3px; justify-self: stretch; align-self: start; }
 :root[data-layout="phone"] .brow.open .b-avl .m-lbl { display: inline; }
-:root[data-layout="phone"] .brow.open .b-avl .pill { min-height: 36px; display: inline-flex; align-items: center; }
+:root[data-layout="phone"] .brow.open .b-avl .pill { display: inline-flex; align-items: center; justify-content: center; }
 /* a darker outline so the soft green and orange pills stand out on the beige of an opened row */
-:root[data-layout="phone"] .brow.open .b-avl .pill:not(.flat) { border: 1.5px solid color-mix(in srgb, currentColor 60%, transparent); }
+:root[data-layout="phone"] .brow.open .b-avl .pill:not(.flat) { border: 1.5px solid color-mix(in srgb, currentColor 60%, transparent); padding: .5px 7.5px; }
 :root[data-layout="phone"] .brow.open .b-avl .pill.st-over { border-color: color-mix(in srgb, var(--bad) 70%, #000); }
-:root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num, :root[data-layout="phone"] .brow.open .b-asg .num { min-height: 36px; display: flex; align-items: center; }
+:root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num, :root[data-layout="phone"] .brow.open .b-asg .num { min-height: 26px; display: flex; align-items: center; }
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-self: start; }
 /* three even columns, each centred: label over number */
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-items: center; text-align: center; }

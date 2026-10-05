@@ -985,10 +985,10 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow .cname { font-size: 15px; }
 :root[data-layout="phone"] .brow .b-avl { justify-self: end; }
 :root[data-layout="phone"] .brow .b-bar { max-width: none; }
-:root[data-layout="phone"] .brow.open { grid-template-areas: "name name avl" "bar bar bar" "asg act tgt"; background: var(--surface-2); }
+:root[data-layout="phone"] .brow.open { grid-template-areas: "name name avl" "bar bar bar" "asg act tgt" "edit edit edit"; background: var(--surface-2); }
 :root[data-layout="phone"] .brow.open .b-name { flex-wrap: wrap; row-gap: 3px; }
 :root[data-layout="phone"] .brow.open .tline { display: block; flex-basis: 100%; order: 9; margin: 0; padding-left: 23px; white-space: normal; font-size: 12.5px; }
-:root[data-layout="phone"] .brow.open .b-edit { display: inline-flex; margin-left: auto; }
+:root[data-layout="phone"] .brow.open .b-edit { display: block; grid-area: edit; justify-self: center; font-size: 14px; font-weight: 600; padding: 4px 10px; }
 /* less is more: an opened category says only what needs doing, not the target's details */
 :root[data-layout="phone"] .brow.open .tline .tdesc, :root[data-layout="phone"] .brow.open .tline .st.funded { display: none; }
 :root[data-layout="phone"] .brow.open .tline:not(:has(.st:not(.funded))) { display: none; }

@@ -648,9 +648,10 @@
       <div class="b-name">
         <span class="twisty-sp"></span>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>
-        ${editControls(id)}<button class="btn xs b-edit" data-action="cat-edit" data-id="${id}">Edit</button>
+        ${editControls(id)}
         ${tlineHTML(targetLine(id, r))}
       </div>
+      <button class="linkish b-edit" data-action="cat-edit" data-id="${id}">${c.target ? 'Change target' : 'Add a target'}</button>
       <div class="b-bar">${bar(r.parts)}</div>
       ${tgtCell(r.target ? r.target.need : null, r.target ? tgtDesc(id, r) : '')}
       <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>

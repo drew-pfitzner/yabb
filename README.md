@@ -2,6 +2,8 @@
 
 YNABB "Yikes Not Another Bloody Budget" is a zero-based budgeting web app, built to replace YNAB for one Australian family (NAB bank accounts, two adults who share the budget). It was built with Claude Code on 2–4 October 2026 and currently runs as a claude.ai artifact. **The next goal is to self-host it.**
 
+**Working on it?** See `docs/GETTING-STARTED.md`. The live app is at https://ynabb.tail8c1464.ts.net.
+
 Start here, then read in this order:
 
 1. `CLAUDE.md`: instructions for the next agent (how the owner likes to work, rules to follow).

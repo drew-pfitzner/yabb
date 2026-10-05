@@ -651,7 +651,7 @@
         ${editControls(id)}
         ${tlineHTML(targetLine(id, r))}
       </div>
-      <button class="linkish b-edit" data-action="cat-edit" data-id="${id}">${c.target ? 'Change target' : 'Add a target'}</button>
+      <button class="b-edit" data-action="cat-edit" data-id="${id}" aria-label="Edit ${esc(c.name)}: target, name and more" title="Edit target, name and more"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <div class="b-bar">${bar(r.parts)}</div>
       ${tgtCell(r.target ? r.target.need : null, r.target ? tgtDesc(id, r) : '')}
       <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>

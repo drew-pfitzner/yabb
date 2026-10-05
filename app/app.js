@@ -374,7 +374,7 @@
 
     const underCount = D.tree.roots.reduce((n, id) => n + M.roll[id].underCount, 0);
     const attnTitle = [M.overspentCount ? `${M.overspentCount} in the red (${money(M.overspentTotal)})` : '', underCount ? `${underCount} short of their target` : ''].filter(Boolean).join(', ');
-    return rtaBanner(M) + (pctOn() ? splitBar() : '') + `
+    return rtaBanner(M) + (pctOn() && !isPhone() ? splitBar() : '') + `
       <div class="month-sum">
           <span>Income <b>${money(M.incomeThisMonth)}</b></span>
           <span>Assigned <b>${money(M.assignedThisMonth)}</b></span>

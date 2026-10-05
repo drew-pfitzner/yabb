@@ -1,6 +1,6 @@
 # YNABB: handover package
 
-YNABB ("Yikes Not Another Bloody Budget", first called "Zero Line", then "YABB") is a zero-based budgeting web app, built to replace YNAB for one Australian family (NAB bank accounts, two adults who share the budget). It was built with Claude Code on 2–4 October 2026 and currently runs as a claude.ai artifact. **The next goal is to self-host it.**
+YNABB "Yikes Not Another Bloody Budget" is a zero-based budgeting web app, built to replace YNAB for one Australian family (NAB bank accounts, two adults who share the budget). It was built with Claude Code on 2–4 October 2026 and currently runs as a claude.ai artifact. **The next goal is to self-host it.**
 
 Start here, then read in this order:
 

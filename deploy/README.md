@@ -35,7 +35,28 @@ docker compose exec yabb node server/server.js add-admin <username> <Name>   :: 
 docker compose exec yabb node server/server.js reset-password <username>      :: emergency
 ```
 
-Until auto-deploy exists (see `TODO.md`), an update is: `git pull`, then `docker compose up -d --build`.
+Updates install themselves (below). Never edit files in `C:\YABB` by hand: auto-deploy refuses to update over a hand edit.
+
+## Updates (auto-deploy)
+
+The scheduled task **"YABB Auto Deploy"** runs `deploy\auto-deploy.ps1` every 2 minutes. When GitHub's `main` has moved on, it:
+
+1. fast-forwards `C:\YABB` to it (and refuses if someone edited files by hand);
+2. rebuilds with `docker compose up -d --build`;
+3. waits for the app to answer with the new version;
+4. if it doesn't, rolls back to the previous version and skips the broken one until a newer one arrives.
+
+`C:\YABB\deploy.log` has the history. The admin page (Updates) shows the live version and whether the last update worked.
+
+So **to ship a change, merge it into `main` on GitHub.** It's live within about 3 minutes. To undo a change, revert it on GitHub, and that installs the same way.
+
+Install or reinstall the task (from a prompt on the A6):
+
+```bat
+schtasks /Create /TN "YABB Auto Deploy" /SC MINUTE /MO 2 /F /TR "conhost.exe --headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\YABB\deploy\auto-deploy.ps1"
+```
+
+It runs as `drewp` while signed in, which the A6 always is (auto-login).
 
 ## Power cuts
 

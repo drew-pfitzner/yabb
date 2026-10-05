@@ -13,3 +13,4 @@ backups/
 .DS_Store
 node_modules/
 offsite/
+deploy.log

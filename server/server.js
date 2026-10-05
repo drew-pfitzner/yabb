@@ -18,7 +18,8 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const BLOB_DIR = path.join(DATA_DIR, 'blobs');
 const SECURE = ENV.COOKIE_SECURE !== '0'; // turn off only for plain-http testing on this computer
 const TRUST_PROXY = ENV.TRUST_PROXY === '1'; // behind Tailscale: read the visitor's address from X-Forwarded-For
-const VERSION = ENV.APP_VERSION || 'dev';
+const VERSION = (ENV.APP_VERSION || 'dev').trim();
+const STARTED = Date.now();
 
 const MIN = 60e3, DAY = 24 * 60 * MIN;
 const SESSION_IDLE = 14 * DAY, SESSION_MAX = 90 * DAY;
@@ -357,6 +358,10 @@ function serveBlob(res, who, id) {
 
 // ---------- the admin's tools ----------
 function needAdmin(who) { if (!who.user.admin) fail(403, 'Only the admin can do that.'); }
+// written by deploy/auto-deploy.ps1 on the A6 after each update
+function deployStatus() {
+  try { return JSON.parse(fs.readFileSync(path.join(ENV.BACKUP_DIR || '', 'deploy-status.json'), 'utf8').replace(/^\uFEFF/, '')); } catch (e) { return null; }
+}
 function adminOverview(res) {
   send(res, 200, {
     budgets: q('SELECT b.id, b.name, b.created_at, (SELECT COUNT(*) FROM docs d WHERE d.budget_id = b.id) docs, (SELECT MAX(ts) FROM changes c WHERE c.budget_id = b.id) last_change FROM budgets b ORDER BY b.created_at').all(),
@@ -364,7 +369,9 @@ function adminOverview(res) {
       (SELECT MAX(ts) FROM signins s WHERE s.user_id = u.id AND s.ok = 1) last_signin FROM users u ORDER BY u.created_at`).all(),
     signins: q('SELECT ts, username, ip, agent, ok, note FROM signins ORDER BY seq DESC LIMIT 60').all(),
     backups: backups.status(),
+    deploy: deployStatus(),
     version: VERSION,
+    started: STARTED,
   });
 }
 async function adminAction(req, res, who, parts) {

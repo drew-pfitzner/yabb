@@ -970,7 +970,7 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 @media all {
   :root[data-layout="phone"] .main { max-width: 560px; padding: 0 12px calc(78px + env(safe-area-inset-bottom, 0px)); }
   :root[data-layout="phone"] .tabbar { max-width: 560px; margin: 0 auto; }
-  :root[data-layout="phone"] .topnav, :root[data-layout="phone"] .brand, :root[data-layout="phone"] .top-break { display: none; }
+  :root[data-layout="phone"] .topnav, :root[data-layout="phone"] .top-break { display: none; }
   :root[data-layout="phone"] .top { padding: 6px 0; }
   :root[data-layout="phone"] .monthsw h1 { font-size: 17px; min-width: 0; }
   :root[data-layout="phone"] .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--surface); border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px)); }
@@ -1049,6 +1049,9 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .txr.open .tx-pen:active { background: var(--surface); color: var(--ink); }
 /* phone: the header stays at the top (clear of the clock and battery); headings stick under it */
 .page-name { display: none; }
+/* the pie on its own at the left of the phone header */
+:root[data-layout="phone"] .brand { font-size: 0; gap: 0; margin-right: 2px; flex: none; }
+:root[data-layout="phone"] .brand svg { width: 24px; height: 24px; }
 :root[data-layout="phone"] .top { position: sticky; top: 0; z-index: 30; background: var(--bg); margin: 0 -12px 8px; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
 :root[data-layout="phone"] .page-name:not([hidden]) { display: block; margin-right: auto; font: 700 18px/1.1 var(--display); letter-spacing: -.01em; }
 :root[data-layout="phone"] .bud { overflow: clip; }

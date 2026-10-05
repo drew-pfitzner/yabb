@@ -1,0 +1,41 @@
+# YABB on the A6. Two containers:
+#   tailscale: joins the tailnet as "yabb" and publishes https://yabb.<tailnet>.ts.net to the internet (Funnel)
+#   yabb:      the app, sharing the tailscale container's network, so nothing is open on the home network
+# Secrets go in .env next to this file (see deploy/README.md). Start: docker compose up -d --build
+name: yabb
+
+services:
+  tailscale:
+    image: tailscale/tailscale:stable
+    container_name: yabb-tailscale
+    hostname: yabb
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_EXTRA_ARGS: --advertise-tags=tag:yabb
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/serve.json
+      TS_USERSPACE: "true"
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./deploy/serve.json:/config/serve.json:ro
+    restart: unless-stopped
+
+  yabb:
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    image: yabb:latest
+    container_name: yabb-app
+    network_mode: service:tailscale
+    depends_on: [tailscale]
+    environment:
+      COOKIE_SECURE: "1"
+      TRUST_PROXY: "1"
+    volumes:
+      - yabb-data:/data
+    restart: unless-stopped
+
+volumes:
+  tailscale-state:
+  yabb-data:

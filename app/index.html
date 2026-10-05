@@ -986,7 +986,12 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow .b-avl { justify-self: end; }
 :root[data-layout="phone"] .brow .b-bar { max-width: none; }
 :root[data-layout="phone"] .brow.open { grid-template-areas: "name name name" "bar bar bar" "asg act avl" "edit edit edit"; background: var(--surface-2); }
-:root[data-layout="phone"] .brow.open .b-name { flex-wrap: wrap; row-gap: 3px; }
+:root[data-layout="phone"] .brow.open .b-name { flex-wrap: wrap; row-gap: 6px; }
+:root[data-layout="phone"] .brow.open { row-gap: 10px; }
+/* a tapped name isn't a link: no blue or underline on a phone */
+:root[data-layout="phone"] .brow .cname:hover, :root[data-layout="phone"] .brow .cname:focus { color: inherit; text-decoration: none; outline: none; }
+:root[data-layout="phone"] .brow .cname { -webkit-tap-highlight-color: transparent; }
+:root[data-layout="phone"] .brow.debt .cname:hover, :root[data-layout="phone"] .brow.debt .cname:focus, :root[data-layout="phone"] .brow.debt-grp .cname:hover, :root[data-layout="phone"] .brow.debt-grp .cname:focus { color: var(--goal); }
 :root[data-layout="phone"] .brow.open .tline { display: block; flex-basis: 100%; order: 9; margin: 0; padding-left: 23px; white-space: normal; font-size: 12.5px; }
 :root[data-layout="phone"] .brow.open .b-edit { display: block; grid-area: edit; justify-self: center; font-size: 14px; font-weight: 600; padding: 4px 10px; }
 /* less is more: an opened category says only what needs doing, not the target's details */

@@ -54,6 +54,9 @@
   applyLayout();
   function barPref() { try { return localStorage.getItem('zeroline-bar') || 'thick'; } catch (e) { return 'thick'; } }
   document.documentElement.dataset.bar = barPref();
+  // phone transactions show one line each: the payee, or your note (remembered on this device)
+  function txLine() { try { return localStorage.getItem('zeroline-txline') === 'note' ? 'note' : 'payee'; } catch (e) { return 'payee'; } }
+  document.documentElement.dataset.txline = txLine();
   // the Target column and the needs/wants/savings bar start off every time the page opens; the buttons show them for now
   const SHOW = { tgt: false, pct: false };
   const tgtOn = () => SHOW.tgt, pctOn = () => SHOW.pct;
@@ -1539,6 +1542,7 @@
           <span class="ts-count${activeFilters || UI.q || UI.only ? '' : ' plain'}">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
         </div>
         <div class="ts-r">
+          ${isPhone() ? `<div class="seg-ctl tl-ctl" role="group" aria-label="Show"><button data-action="tx-line" data-v="payee" aria-pressed="${txLine() === 'payee'}">Payee</button><button data-action="tx-line" data-v="note" aria-pressed="${txLine() === 'note'}">Note</button></div>` : ''}
           ${list.length > 1 && (activeFilters || UI.q || UI.only) ? `<button class="btn sm" data-action="select-all" title="${MAC ? '⌘' : 'Ctrl+'}A">Select all ${list.length}</button>` : ''}
           ${matches ? `<span class="hint">${matches} matched ${matches === 1 ? 'transaction needs' : 'transactions need'} approving one by one</span>` : ''}
           ${updates ? `<button class="btn sm" data-action="approve-updates">Approve ${updates} description ${updates === 1 ? 'update' : 'updates'}</button>` : ''}
@@ -1730,9 +1734,9 @@
   function txRow(t) {
     if (UI.editTx === t.id && !isPhone()) return txEditRow(t);
     const cl = t.cleared === 'r' ? `<span class="clr r" title="Reconciled">${ICON.lock}</span>` : `<button class="clr ${t.cleared === 'c' ? 'c' : 'u'}" data-action="toggle-clear" data-id="${t.id}" aria-label="${t.cleared === 'c' ? 'Cleared. Mark as not cleared' : 'Not cleared. Mark as cleared'}" title="${t.cleared === 'c' ? 'Cleared by the bank' : 'Not yet cleared'}">C</button>`;
-    return `<div class="txr${t.match ? ' matched' : t.approved === false ? ' review' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
+    return `<div class="txr${UI.peekTx === t.id ? ' open' : ''}${t.match ? ' matched' : t.approved === false ? ' review' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
       <div class="t-side">${t.match ? `<button class="ic ic-match" data-action="open-tx" data-id="${t.id}" title="${t.match.kind === 'update' ? 'Bank description updated. Click to compare and approve' : 'Matched to a bank line. Click to compare and approve'}" aria-label="${t.match.kind === 'update' ? 'Updated' : 'Matched'}">${t.match.kind === 'update' ? ICON.redo : ICON.link}</button>` : t.approved === false ? `<button class="ic ic-approve" data-action="approve" data-id="${t.id}" title="Approve" aria-label="Approve">${ICON.tick}</button>` : ''}</div>
-      <button class="tx-main" data-action="${isPhone() ? 'open-tx' : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
+      <button class="tx-main" data-action="${isPhone() ? 'tx-peek' : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
         <span class="t-date">${esc(dateLabel(t.date))}</span>
         <span class="t-payee" title="${esc(t.payee || '')}">${esc(t.payee || (t.transfer ? 'Transfer' : t.bank) || 'No payee')}${t.receipt ? `<i class="ricon" title="Has a receipt">${ICON.receipt}</i>` : ''}</span>
         <span class="t-cat" title="${esc(t.transfer ? 'Transfer' : t.splits && t.splits.length ? 'Split' : t.cat ? catPath(t.cat) : 'Uncategorized')}">${txCatLabel(t)}<span class="t-acct">${esc(acctName(t.acct))}</span></span>
@@ -1741,6 +1745,7 @@
         <span class="t-amt ${t.amt > 0 ? 'pos' : ''}${REC_FLAGS[t.id] ? ' flagamt' : ''}"${REC_FLAGS[t.id] ? ` title="${esc(REC_FLAGS[t.id].map(([sh, lo]) => sh + ' ' + lo).join('\n'))}"` : ''}${twinIds(t.id) ? ` data-action="show-twins" data-ids="${twinIds(t.id)}"` : ''}>${txAmt(t.amt)}</span>
       </button>
       <div class="t-clr">${cl}</div>
+      <button class="tx-pen" data-action="open-tx" data-id="${t.id}" aria-label="Edit this transaction" title="Edit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>`;
   }
   // side by side: what was already in YNABB, and what the bank file says
@@ -3151,6 +3156,15 @@
     'legacy-import': (el) => openLegacyImport(el.dataset.key),
     'approve-updates': () => approve(filteredTx().filter((t) => t.match && t.match.kind === 'update').map((t) => t.id)),
     'more-tx': () => { UI.limit += 200; render(); },
+    // phone: a tap opens a transaction in place to show more; the pencil opens the full edit
+    'tx-peek': (el) => {
+      const id = el.dataset.id;
+      UI.peekTx = UI.peekTx === id ? null : id;
+      document.querySelectorAll('.txr.open').forEach((r) => r.classList.remove('open'));
+      const r = UI.peekTx && document.querySelector(`.txr[data-row="${UI.peekTx}"]`);
+      if (r) r.classList.add('open');
+    },
+    'tx-line': (el) => { try { localStorage.setItem('zeroline-txline', el.dataset.v); } catch (e) { /* ignore */ } document.documentElement.dataset.txline = el.dataset.v; render(); },
     import: (el) => openImport(el.dataset.id),
     'add-acct': () => openAcct(null),
     'edit-acct': (el) => openAcct(el.dataset.id),

@@ -1012,7 +1012,6 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .tx-tools [data-action="add-tx"] svg { width: 20px; height: 20px; }
 :root[data-layout="phone"] .tx-tools [data-action="toggle-filters"] { height: 38px; }
 :root[data-layout="phone"] .ts-count.plain { display: none; }
-:root[data-layout="phone"] .tx-sum:has(.ts-count.plain):not(:has(button, .chip)) { display: none; }
 :root[data-layout="phone"] .tx-tools [data-action="add-tx"] { order: 2; }
 :root[data-layout="phone"] .txl.by-day > .tx-day:first-of-type { padding-top: 4px; }
 :root[data-layout="phone"] .tx-day { display: block; padding: 14px 4px 5px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
@@ -1023,11 +1022,38 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .txl.by-day .tx-day + .txr:has(+ .tx-day), :root[data-layout="phone"] .txl.by-day .tx-day + .txr:last-child { border-radius: 12px; }
 :root[data-layout="phone"] .txl.by-day .t-date { display: none; }
 :root[data-layout="phone"] .txr > .t-clr { display: none; }
-:root[data-layout="phone"] .tx-main { grid-template-areas: "payee amt" "cat cat" "desc desc" "date date"; padding: 10px 14px; row-gap: 3px; }
+:root[data-layout="phone"] .tx-main { grid-template-areas: "payee amt"; padding: 12px 14px; align-items: center; column-gap: 12px; }
+:root[data-layout="phone"] .tx-main .t-cat { display: none; }
+:root[data-layout="phone"] .t-payee { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Note view: your note in place of the payee; no note, the payee in grey */
+:root[data-layout="phone"] .tx-main .t-desc { display: none; }
+:root[data-layout="phone"][data-txline="note"] .tx-main:has(.d-memo) .t-payee { display: none; }
+:root[data-layout="phone"][data-txline="note"] .tx-main:has(.d-memo) .t-desc { display: block; grid-area: payee; font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-layout="phone"][data-txline="note"] .tx-main .d-memo { font-style: normal; }
+:root[data-layout="phone"][data-txline="note"] .tx-main:not(:has(.d-memo)) .t-payee { color: var(--muted); font-weight: 500; }
+.tx-pen { display: none; }
+/* a tapped transaction opens in place: category and account, note, the bank's words, and a pencil */
+:root[data-layout="phone"] .txr { position: relative; }
+:root[data-layout="phone"] .txr.open { background: var(--surface-2); }
+:root[data-layout="phone"] .txr.open .tx-main { grid-template-areas: "payee amt" "cat cat" "desc desc"; row-gap: 5px; padding-bottom: 12px; }
+:root[data-layout="phone"] .txr.open .tx-main .t-cat, :root[data-layout="phone"] .txr.open .tx-main .t-desc { padding-right: 40px; }
+:root[data-layout="phone"] .txr.open .tx-main .t-payee { display: block; color: var(--ink); font-weight: 600; }
+:root[data-layout="phone"] .txr.open .tx-main .t-cat { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 13.5px; }
+:root[data-layout="phone"] .txr.open .tx-main .t-desc { display: block; grid-area: desc; font-size: 13px; white-space: normal; overflow: visible; }
+:root[data-layout="phone"] .txr.open .t-desc .d-bank { display: block; margin-top: 2px; color: var(--muted); }
+:root[data-layout="phone"] .txr.open .t-desc .d-memo { font-style: italic; }
+:root[data-layout="phone"][data-txline="note"] .txr.open .tx-main:has(.d-memo) .t-payee { display: block; }
+:root[data-layout="phone"][data-txline="note"] .txr.open .tx-main:has(.d-memo) .t-desc { grid-area: desc; font-size: 13px; white-space: normal; }
+:root[data-layout="phone"][data-txline="note"] .txr.open .tx-main:not(:has(.d-memo)) .t-payee { color: var(--ink); font-weight: 600; }
+:root[data-layout="phone"] .txr.open .tx-pen { display: inline-grid; place-items: center; position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border: 0; border-radius: 8px; background: none; color: var(--muted); -webkit-tap-highlight-color: transparent; }
+:root[data-layout="phone"] .txr.open .tx-pen svg { width: 19px; height: 19px; }
+:root[data-layout="phone"] .txr.open .tx-pen:active { background: var(--surface); color: var(--ink); }
+:root[data-layout="phone"] .tx-sum { align-items: center; }
+:root[data-layout="phone"] .tl-ctl { margin-left: auto; }
+:root[data-layout="phone"] .tl-ctl button { padding: 4px 12px; font-size: 13px; }
 :root[data-layout="phone"] .t-payee { font-size: 15px; }
 :root[data-layout="phone"] .t-amt { font-size: 15px; }
 :root[data-layout="phone"] .t-desc .d-bank, :root[data-layout="phone"] .t-desc .d-sep { display: none; }
-:root[data-layout="phone"] .t-desc:not(:has(.d-memo)) { display: none; }
 /* the needs, wants and freedom bar and its coloured dots stay on the computer for now */
 :root[data-layout="phone"] .kdot:not(.debt-ic) { display: none; }
 #ptr { position: fixed; left: 50%; top: env(safe-area-inset-top, 0px); transform: translate(-50%, -50px); opacity: 0; z-index: 300; display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none; }

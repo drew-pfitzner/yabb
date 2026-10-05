@@ -754,7 +754,7 @@
 
   // ---------- category sheet ----------
   function openCat(id) {
-    let editingTarget = false;
+    let editingTarget = false, moreOpen = false;
     const paint = () => {
       D = snapshot();
       const c = D.cats[id];
@@ -767,48 +767,58 @@
         .sort((a, b) => (a.date < b.date ? 1 : -1));
       const moves = S.moves(UI.month).filter((mv) => mv.from === id || mv.to === id);
       const pathTxt = D.tree.path[id].slice(0, -1).join(' › ');
-      let html = `${pathTxt ? `<p class="crumb">${esc(pathTxt)}</p>` : ''}
-        <div class="field"><label for="cat-name">Name</label><input id="cat-name" value="${esc(c.name)}" autocomplete="off"></div>
-        <div class="stats">
-          ${leaf ? `<div><span>Carried in</span><b>${money(r.carry)}</b></div>` : ''}
-          <div><span>Assigned</span><b>${money(leaf ? r.assigned : g.assigned)}</b></div>
-          <div><span>Spent</span><b>${money(-(leaf ? r.activity : g.activity))}</b></div>
-          <div><span>Available</span><b class="${(leaf ? r.available : g.available) < 0 ? 'neg' : ''}">${money(leaf ? r.available : g.available)}</b></div>
+      const title = $('#sheet-title'); if (title) title.textContent = c.name;
+      // 1. where the money stands: Available in its pill, the other numbers small beside it
+      const num = leaf ? r : g;
+      const av = num.available;
+      const st = leaf ? r.status : pot ? g.status : av < 0 ? 'over' : av > 0 ? 'pos' : 'zero';
+      let html = `${pathTxt ? `<p class="crumb">In ${esc(pathTxt)}</p>` : ''}
+        <div class="cat-sum">
+          <div class="cs-avl"><span class="cs-lbl">Available</span><span class="pill st-${st}">${money(av)}</span></div>
+          <div class="cs-nums">
+            <span>Assigned <b>${money(num.assigned)}</b></span>
+            <span>Spent <b>${money(-num.activity)}</b></span>
+            ${leaf && r.carry ? `<span>From last month <b>${money(r.carry)}</b></span>` : ''}
+          </div>
         </div>`;
-      if (leaf) {
-        html += `<div class="row-btns"><button class="btn primary" data-saction="move">${r.available < 0 ? 'Cover it now' : 'Move money'}</button>${r.available < 0 ? `<span class="hint bad">In the red by ${money(-r.available)}. It stays red until you cover it or top it up.</span>` : ''}</div>`;
-        html += `<h3>Target</h3>` + (editingTarget ? targetEditor(c, r) : targetSummary(c, r));
-      } else if (pot) {
-        const own = D.month.rows[id];
-        html += `<p class="hint">The numbers above are the total for everything in ${esc(c.name)}. Unallocated is the part not given to a subcategory: <b class="${own.available < 0 ? 'neg' : ''}">${money(own.available)}</b>.</p>`;
-        html += `<div class="row-btns"><button class="btn primary" data-saction="move">Move money in or out</button></div>`;
-        html += `<h3>Target for all of ${esc(c.name)}</h3>`;
-        if (g.targetShort > 0 && !editingTarget) html += `<div class="warn-box">The targets inside ${esc(c.name)} need ${money(g.kidsNeed)} this month, but ${poss(esc(c.name))} target only gives ${money(g.target.need)}. Raise ${poss(esc(c.name))} target, or lower a target inside it. Fund targets won't take the extra ${money(g.targetShort)} on its own.</div>`;
-        html += editingTarget ? targetEditor(c, g) : targetSummary(c, g);
-      } else {
-        html += `<p class="hint">This is a heading. Its numbers are the totals of the categories under it.</p>`;
+      if (leaf || pot) html += `<div class="row-btns cs-move"><button class="btn primary" data-saction="move">${av < 0 ? 'Cover it now' : 'Move money'}</button>${av < 0 ? '<span class="hint bad">It stays red until it\'s covered.</span>' : ''}</div>`;
+      else {
+        html += `<p class="hint">A heading: these are the totals of the categories under it.</p>`;
         const own = D.month.rows[id];
         if (own && (own.available || own.assigned)) html += `<div class="warn-box">${money(own.available)} is held in ${esc(c.name)} itself, from before it had subcategories. <div class="row-btns"><button class="btn sm primary" data-saction="move">Move it into a subcategory</button></div></div>`;
       }
-      const ownK = c.kind || '', par = c.parent ? kindOf(c.parent) : null;
-      const pa = payAcct(id);
-      if (pa) html += `<h3>Type</h3><p class="hint">The minimum payment${minPayOf(pa) ? ` (${money(minPayOf(pa))} a month)` : ''} counts as a <b>need</b>. Anything you put in on top counts as <b>savings, investing &amp; debt</b>. ${minPayOf(pa) ? '' : 'No minimum is set yet, so it all counts as savings, investing &amp; debt. '}<button class="linkish" data-saction="edit-acct">Set the minimum on ${esc(pa.name)}</button></p>`;
-      else html += `<h3>Type</h3><div class="seg-ctl kind-ctl" role="group" aria-label="Type">
-          <button data-saction="kind" data-v="" aria-pressed="${!ownK}">${c.parent ? `Same as group${par ? ` (${KIND_SHORT[par]})` : ''}` : 'Not tagged'}</button>
-          ${KINDS.map(([k, , l]) => `<button data-saction="kind" data-v="${k}" aria-pressed="${ownK === k}">${esc(l)}</button>`).join('')}
-        </div>`;
-      html += `<h3>Organise</h3>
-        <div class="field"><label for="cat-parent">Sits under</label><select id="cat-parent">${parentOptions(id, c.parent)}</select></div>
-        <div class="row-btns">
-          ${payAcct(id) ? `<span class="hint">This pays ${esc(payAcct(id).name)}. It stays while the account is a card or loan.</span>` : `<button class="btn" data-saction="add-sub">${ICON.plus} Add subcategory</button>
-          <button class="btn" data-saction="hide">${c.hidden ? 'Unhide' : 'Hide'}</button>
-          <button class="btn danger" data-saction="delete">Delete</button>`}
-        </div>
-        <div class="field"><label for="cat-note">Note</label><textarea id="cat-note" rows="2" placeholder="Anything to remember about this category">${esc(c.note || '')}</textarea></div>`;
-      html += `<h3>${esc(monthLabel(UI.month))} activity</h3>`;
-      html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">No transactions this month.</p>';
+      // 2. its target
+      if (leaf || pot) {
+        html += `<h3>Target</h3>`;
+        if (pot && g.targetShort > 0 && !editingTarget) html += `<div class="warn-box">The targets inside ${esc(c.name)} need ${money(g.kidsNeed)} this month, ${money(g.targetShort)} more than ${poss(esc(c.name))} own target.</div>`;
+        html += editingTarget ? targetEditor(c, num) : targetSummary(c, num);
+      }
+      // 3. this month's spending
+      html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
+      html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">Nothing spent yet this month.</p>';
       if (moves.length) {
-        html += `<h3>Money moved this month</h3><ul class="mini-tx">${moves.map((mv) => `<li><span>${esc(new Date(mv.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span><span>${mv.from === id ? 'To ' + esc(catName(mv.to)) : 'From ' + esc(catName(mv.from))}</span><b>${mv.from === id ? '−' : '+'}${money(mv.amt)}</b></li>`).join('')}</ul>`;
+        html += `<h3>Money moved</h3><ul class="mini-tx">${moves.map((mv) => `<li><span>${esc(new Date(mv.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span><span>${mv.from === id ? 'To ' + esc(catName(mv.to)) : 'From ' + esc(catName(mv.from))}</span><b>${mv.from === id ? '−' : '+'}${money(mv.amt)}</b></li>`).join('')}</ul>`;
+      }
+      // 4. everything else, folded away until it's wanted
+      html += `<button class="more-toggle" data-saction="more" aria-expanded="${moreOpen}">More options <span aria-hidden="true">${moreOpen ? ICON.down : ICON.right}</span></button>`;
+      if (moreOpen) {
+        const ownK = c.kind || '', par = c.parent ? kindOf(c.parent) : null;
+        const pa = payAcct(id);
+        html += `<div class="more-box">
+          <div class="field"><label for="cat-name">Name</label><input id="cat-name" value="${esc(c.name)}" autocomplete="off"></div>
+          ${pa ? `<div class="field"><label>Type</label><p class="hint">The minimum payment${minPayOf(pa) ? ` (${money(minPayOf(pa))} a month)` : ''} counts as a need, and anything on top as savings, investing &amp; debt. <button class="linkish" data-saction="edit-acct">Set the minimum on ${esc(pa.name)}</button></p></div>`
+            : `<div class="field"><label>Type</label><div class="seg-ctl kind-ctl" role="group" aria-label="Type">
+              <button data-saction="kind" data-v="" aria-pressed="${!ownK}">${c.parent ? `Same as group${par ? ` (${KIND_SHORT[par]})` : ''}` : 'Not tagged'}</button>
+              ${KINDS.map(([k, , l]) => `<button data-saction="kind" data-v="${k}" aria-pressed="${ownK === k}">${esc(l)}</button>`).join('')}
+            </div></div>`}
+          <div class="field"><label for="cat-parent">Group</label><select id="cat-parent">${parentOptions(id, c.parent)}</select></div>
+          <div class="field"><label for="cat-note">Note</label><textarea id="cat-note" rows="2" placeholder="Anything to remember about this category">${esc(c.note || '')}</textarea></div>
+          <div class="row-btns">
+            ${pa ? `<span class="hint">This pays ${esc(pa.name)}. It stays while the account is a card or loan.</span>` : `<button class="btn sm" data-saction="add-sub">${ICON.plus} Add subcategory</button>
+            <button class="btn sm" data-saction="hide">${c.hidden ? 'Unhide' : 'Hide'}</button>
+            <button class="btn sm danger" data-saction="delete">Delete</button>`}
+          </div>
+        </div>`;
       }
       setSheetBody(html);
     };
@@ -820,6 +830,7 @@
     paint();
     sheet.actions = {
       'move': () => openMove(id),
+      more: () => { moreOpen = !moreOpen; paint(); },
       kind: async (el) => { await putCat(Object.assign({}, D.cats[id], { kind: el.dataset.v || null })); paint(); },
       'add-sub': () => promptNewCat(id),
       'edit-acct': () => { const pa = payAcct(id); if (pa) openAcct(pa.id); },

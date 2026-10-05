@@ -3394,13 +3394,12 @@
     const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom + 5); // 5: the line's height, so the box's edge hands over to it seamlessly
     if (on) document.documentElement.style.setProperty('--rta-c', getComputedStyle(box).backgroundColor);
     top.classList.toggle('rta-gone', on);
-    // the list is trimmed where headings stick, with rounded corners, so a stuck heading looks like the top of the list
+    // a stuck heading gets the rounded top of the list (painted by the heading itself, so nothing shows through)
     const bud = $('.bud');
     if (bud) {
-      const cut = isPhone() && UI.view === 'budget' ? top.getBoundingClientRect().bottom + (on ? 7 : 0) - bud.getBoundingClientRect().top : 0;
-      bud.style.clipPath = cut > 0 ? `inset(${cut}px 0 0 0 round 12px 12px 0 0)` : '';
       const stick = top.getBoundingClientRect().bottom + (on ? 7 : 0);
-      bud.querySelectorAll('.brow.parent.top').forEach((h) => h.classList.toggle('stuck', cut > 0 && Math.abs(h.getBoundingClientRect().top - stick) < 1.5));
+      const scrolled = isPhone() && UI.view === 'budget' && bud.getBoundingClientRect().top < stick;
+      bud.querySelectorAll('.brow.parent.top').forEach((h) => h.classList.toggle('stuck', scrolled && Math.abs(h.getBoundingClientRect().top - stick) < 1.5));
     }
   }
   window.addEventListener('scroll', rtaLine, { passive: true });

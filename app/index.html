@@ -780,6 +780,13 @@ button.pm-chip { cursor: pointer; padding-right: 10px; }
 .tc-st.under { color: var(--warn); } .tc-st.ok { color: var(--good); } .tc-st.goal { color: var(--goal); }
 .tc-btn { width: 100%; justify-content: center; margin-top: 6px; }
 .tc-what { font-size: 15px; display: grid; gap: 4px; }
+.spent-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; width: 100%; margin: 14px 0 0; padding: 14px 12px 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); text-align: left; color: var(--ink); -webkit-tap-highlight-color: transparent; }
+.spent-row:active { background: var(--surface-2); }
+.sr-l { display: grid; gap: 2px; }
+.sr-lbl { font-weight: 600; font-size: 15px; }
+.sr-n { font-size: 13px; color: var(--muted); }
+.sr-amt { font-size: 17px; }
+.sr-go svg { width: 18px; height: 18px; color: var(--muted); display: block; }
 .more-toggle { display: flex; align-items: center; gap: 6px; width: 100%; margin: 18px 0 0; padding: 12px 0; border: 0; border-top: 1px solid var(--line); background: none; font-weight: 600; font-size: 14px; color: var(--ink); text-align: left; }
 .more-toggle svg { width: 16px; height: 16px; color: var(--muted); }
 .back-link { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 10px -4px; padding: 4px 6px; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 15px; }

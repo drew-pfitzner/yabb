@@ -801,9 +801,12 @@
         const own = D.month.rows[id];
         if (own && (own.available || own.assigned)) html += `<div class="warn-box">${money(own.available)} is held in ${esc(c.name)} itself, from before it had subcategories. <div class="row-btns"><button class="btn sm primary" data-saction="move">Move it into a subcategory</button></div></div>`;
       }
-      // 3. this month's spending
-      html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
-      html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">Nothing spent yet this month.</p>';
+      // 3. this month's spending: on a phone, one line that opens Transactions filtered to it
+      if (isPhone()) {
+        const spent = (leaf ? r : g).activity;
+        html += `<button class="spent-row" data-saction="see-spent"><span class="sr-l"><span class="sr-lbl">Spent in ${esc(monthLabel(UI.month))}</span><span class="sr-n">${txs.length ? `${txs.length} ${txs.length === 1 ? 'transaction' : 'transactions'}` : 'Nothing yet'}</span></span><b class="sr-amt">${money(-spent)}</b><span class="sr-go" aria-hidden="true">${ICON.right}</span></button>`;
+      } else html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
+      if (!isPhone()) html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">Nothing spent yet this month.</p>';
       if (moves.length) {
         html += `<h3>Money moved</h3><ul class="mini-tx">${moves.map((mv) => `<li><span>${esc(new Date(mv.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span><span>${mv.from === id ? 'To ' + esc(catName(mv.to)) : 'From ' + esc(catName(mv.from))}</span><b>${mv.from === id ? '−' : '+'}${money(mv.amt)}</b></li>`).join('')}</ul>`;
       }
@@ -819,6 +822,7 @@
     paint();
     sheet.actions = {
       'move': () => openMove(id),
+      'see-spent': () => { closeSheet(); actions.spent({ dataset: { id } }); },
       more: () => { view = 'more'; paint(); const b = $('#sheet .sheet-b'); if (b) b.scrollTop = 0; },
       back: () => { view = 'main'; paint(); const b = $('#sheet .sheet-b'); if (b) b.scrollTop = 0; },
       kind: async (el) => {

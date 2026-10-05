@@ -1501,6 +1501,8 @@
     const updates = review ? list.filter((t) => t.match && t.match.kind === 'update').length : 0;
     const matches = review ? list.filter((t) => t.match && t.match.kind !== 'update').length : 0;
     const shown = list.slice(0, UI.limit);
+    // a phone groups the list under date headings, so rows don't each repeat their date
+    const byDay = isPhone() && UI.sort.k === 'date';
     REC_FLAGS = UI.rec && D.accounts[UI.rec.acct] ? recFlags(UI.rec.acct) : UI.bc ? bcFlags() : {};
     // nothing left to check in this filtered view: go back to the full list
     if (UI.only && !list.some((t) => (UI.onlyWhat === 'double' ? twinIds(t.id) : REC_FLAGS[t.id]))) {
@@ -1512,7 +1514,7 @@
     return `${acctBalanceHead()}
       <div class="tx-tools">
         <div class="tools-l">
-          <button class="btn sm primary" data-action="add-tx">${ICON.plus} Add</button>
+          <button class="btn sm primary" data-action="add-tx" aria-label="Add a transaction">${ICON.plus}<span class="add-lbl"> Add</span></button>
           <button class="btn sm" data-action="import">Import from bank</button>
           <div class="filt-wrap">
           <button class="btn sm ${UI.showFilters || activeFilters ? 'on' : ''}" data-action="toggle-filters" aria-expanded="${UI.showFilters}">Filters${activeFilters ? ` <b class="count">${activeFilters}</b>` : ''} ${ICON.down}</button>
@@ -1529,12 +1531,12 @@
           </div>` : ''}
           </div>
         </div>
-        <div class="search"><span aria-hidden="true">${ICON.search}</span><input id="txq" type="search" data-live="0" placeholder="Search payee, bank description, note, amount, date, category" value="${esc(UI.q)}" aria-label="Search transactions"></div>
+        <div class="search"><span aria-hidden="true">${ICON.search}</span><input id="txq" type="search" data-live="0" placeholder="${isPhone() ? 'Search' : 'Search payee, bank description, note, amount, date, category'}" value="${esc(UI.q)}" aria-label="Search transactions"></div>
       </div>
       <div class="tx-sum">
         <div class="ts-l">
           ${UI.only ? `<button class="chip fchip" data-action="clear-only" title="Back to the full list">${UI.onlyWhat === 'balance' ? 'Could explain the difference' : 'Possible doubles'} only <span aria-hidden="true">×</span></button>` : filterChips()}
-          <span class="ts-count">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
+          <span class="ts-count${activeFilters || UI.q || UI.only ? '' : ' plain'}">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
         </div>
         <div class="ts-r">
           ${list.length > 1 && (activeFilters || UI.q || UI.only) ? `<button class="btn sm" data-action="select-all" title="${MAC ? '⌘' : 'Ctrl+'}A">Select all ${list.length}</button>` : ''}
@@ -1545,9 +1547,9 @@
         </div>
       </div>
       <datalist id="payee-list-inline">${payeeNames().map((p) => `<option value="${esc(p)}">`).join('')}</datalist>
-      <div class="txl ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
+      <div class="txl${byDay ? ' by-day' : ''} ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
         ${shown.length ? txHeader() : ''}
-        ${multiBar()}${shown.map((t) => txRow(t) + bcMark(t)).join('') || `<p class="empty-note">${D.tx.length ? 'No transactions match.' : 'No transactions yet. Add one, or import a file from your bank.'}</p>`}
+        ${multiBar()}${shown.map((t, i) => (byDay && (i === 0 || shown[i - 1].date !== t.date) ? `<div class="tx-day" role="presentation">${esc(dateLabel(t.date))}</div>` : '') + txRow(t) + bcMark(t)).join('') || `<p class="empty-note">${D.tx.length ? 'No transactions match.' : 'No transactions yet. Add one, or import a file from your bank.'}</p>`}
       </div>
       ${list.length > shown.length ? `<div class="row-btns center"><button class="btn" data-action="more-tx">Show more (${list.length - shown.length} left)</button></div>` : ''}`;
   }

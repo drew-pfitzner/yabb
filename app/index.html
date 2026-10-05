@@ -1001,6 +1001,33 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .field input, :root[data-layout="phone"] .field select, :root[data-layout="phone"] .field textarea, :root[data-layout="phone"] .split select, :root[data-layout="phone"] .split input, :root[data-layout="phone"] .search input, :root[data-layout="phone"] .asg { font-size: 16px; }
 }
 .b-edit { display: none; }
+.tx-day { display: none; }
+/* phone transactions: less is more */
+:root[data-layout="phone"] .tx-tools { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; }
+:root[data-layout="phone"] .tx-tools .search { order: -1; flex: 1 1 auto; min-width: 0; }
+:root[data-layout="phone"] .tx-tools .tools-l { flex: none; flex-wrap: nowrap; gap: 6px; }
+:root[data-layout="phone"] .tx-tools [data-action="import"] { display: none; }
+:root[data-layout="phone"] .tx-tools .add-lbl { display: none; }
+:root[data-layout="phone"] .tx-tools [data-action="add-tx"] { width: 38px; height: 38px; padding: 0; justify-content: center; border-radius: 10px; }
+:root[data-layout="phone"] .tx-tools [data-action="add-tx"] svg { width: 20px; height: 20px; }
+:root[data-layout="phone"] .tx-tools [data-action="toggle-filters"] { height: 38px; }
+:root[data-layout="phone"] .ts-count.plain { display: none; }
+:root[data-layout="phone"] .tx-sum:has(.ts-count.plain):not(:has(button, .chip)) { display: none; }
+:root[data-layout="phone"] .tx-tools [data-action="add-tx"] { order: 2; }
+:root[data-layout="phone"] .txl.by-day > .tx-day:first-of-type { padding-top: 4px; }
+:root[data-layout="phone"] .tx-day { display: block; padding: 14px 4px 5px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+:root[data-layout="phone"] .txl.by-day { border: 0; background: none; box-shadow: none; overflow: visible; }
+:root[data-layout="phone"] .txl.by-day .txr { background: var(--surface); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+:root[data-layout="phone"] .txl.by-day .tx-day + .txr { border-top: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+:root[data-layout="phone"] .txl.by-day .txr:has(+ .tx-day), :root[data-layout="phone"] .txl.by-day .txr:last-child { border-radius: 0 0 12px 12px; border-bottom: 1px solid var(--line); }
+:root[data-layout="phone"] .txl.by-day .tx-day + .txr:has(+ .tx-day), :root[data-layout="phone"] .txl.by-day .tx-day + .txr:last-child { border-radius: 12px; }
+:root[data-layout="phone"] .txl.by-day .t-date { display: none; }
+:root[data-layout="phone"] .txr > .t-clr { display: none; }
+:root[data-layout="phone"] .tx-main { grid-template-areas: "payee amt" "cat cat" "desc desc" "date date"; padding: 10px 14px; row-gap: 3px; }
+:root[data-layout="phone"] .t-payee { font-size: 15px; }
+:root[data-layout="phone"] .t-amt { font-size: 15px; }
+:root[data-layout="phone"] .t-desc .d-bank, :root[data-layout="phone"] .t-desc .d-sep { display: none; }
+:root[data-layout="phone"] .t-desc:not(:has(.d-memo)) { display: none; }
 /* the needs, wants and freedom bar and its coloured dots stay on the computer for now */
 :root[data-layout="phone"] .kdot:not(.debt-ic) { display: none; }
 #ptr { position: fixed; left: 50%; top: env(safe-area-inset-top, 0px); transform: translate(-50%, -50px); opacity: 0; z-index: 300; display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none; }

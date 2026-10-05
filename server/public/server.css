@@ -54,3 +54,4 @@ td .btn { margin: 2px 4px 2px 0; }
 .chip.accent { background: var(--accent-soft); color: var(--accent); }
 .current td:first-child { box-shadow: inset 3px 0 var(--accent); }
 td select { min-width: 140px; }
+#backups td:first-child, #backups td:nth-child(3) { white-space: nowrap; }

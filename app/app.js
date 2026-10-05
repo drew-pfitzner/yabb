@@ -364,11 +364,13 @@
       }
     }
     let rows = '';
-    const walk = (ids) => {
+    // each top-level group is wrapped in its own box, so on a phone its heading sticks only until the group ends
+    const walk = (ids, top) => {
       for (const id of ids) {
         const c = tree.byId[id];
         if (c.hidden && !UI.showHidden) continue;
         if (visible && !visible.has(id)) continue;
+        if (top) rows += '<div class="bgrp">';
         rows += tree.isLeaf(id) ? leafRow(id) : tree.isPot(id) ? potRow(id) : parentRow(id);
         if (!tree.isLeaf(id) && !UI.collapsed[id]) {
           const own = M.rows[id];
@@ -377,9 +379,10 @@
           else if (own.available || own.activity || own.assigned) rows += ownMoneyRow(id);
           walk(tree.children[id]);
         }
+        if (top) rows += '</div>';
       }
     };
-    walk(tree.roots);
+    walk(tree.roots, true);
     for (const id of M.orphans) rows += orphanRow(id);
 
     const underCount = D.tree.roots.reduce((n, id) => n + M.roll[id].underCount, 0);
@@ -3391,7 +3394,7 @@
   function rtaLine() {
     const top = $('.top'), box = $('.rta');
     if (!top) return;
-    const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom + 12); // 12: the line's height, so the box's edge hands over to it seamlessly
+    const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom + 5); // 5: the line's height, so the box's edge hands over to it seamlessly
     if (on) document.documentElement.style.setProperty('--rta-c', getComputedStyle(box).backgroundColor);
     top.classList.toggle('rta-gone', on);
   }

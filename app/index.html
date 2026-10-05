@@ -971,7 +971,7 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .main { max-width: 560px; padding: 0 12px calc(78px + env(safe-area-inset-bottom, 0px)); }
   :root[data-layout="phone"] .tabbar { max-width: 560px; margin: 0 auto; }
   :root[data-layout="phone"] .topnav, :root[data-layout="phone"] .top-break { display: none; }
-  :root[data-layout="phone"] .top { padding: 6px 0; }
+  :root[data-layout="phone"] .main > .top { padding: 6px 0; }
   :root[data-layout="phone"] .monthsw h1 { font-size: 17px; min-width: 0; }
   :root[data-layout="phone"] .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--surface); border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px)); }
   :root[data-layout="phone"] .tabbar .nav-btn { flex-direction: column; gap: 2px; font-size: 11px; padding: 5px 2px; justify-content: center; align-items: center; }
@@ -1001,6 +1001,13 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .field input, :root[data-layout="phone"] .field select, :root[data-layout="phone"] .field textarea, :root[data-layout="phone"] .split select, :root[data-layout="phone"] .split input, :root[data-layout="phone"] .search input, :root[data-layout="phone"] .asg { font-size: 16px; }
 }
 .b-edit { display: none; }
+/* group headings (Bills, Everyday…) have no bar of their own, on the computer and the phone */
+.brow.parent > .b-bar { display: none; }
+:root[data-layout="desktop"] .brow.parent { grid-template-areas: "name tgt asg act avl"; padding-bottom: 5px; }
+:root[data-layout="phone"] .brow.parent { grid-template-areas: "name name avl"; }
+:root[data-layout="phone"] .brow.parent.open { grid-template-areas: "name name name" "asg act avl"; }
+/* phone: categories inside a sub-group (like Subscriptions) step in under its name */
+:root[data-layout="phone"] .brow[style*="--d:2"], :root[data-layout="phone"] .brow[style*="--d:3"], :root[data-layout="phone"] .brow[style*="--d:4"] { padding-left: 35px; position: relative; }
 .tx-day { display: none; }
 /* phone transactions: less is more */
 :root[data-layout="phone"] .tx-tools { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; }
@@ -1049,17 +1056,49 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .txr.open .tx-pen:active { background: var(--surface); color: var(--ink); }
 /* phone: the header stays at the top (clear of the clock and battery); headings stick under it */
 .page-name { display: none; }
-:root[data-layout="phone"] .top::after { content: ""; position: absolute; left: 12px; right: 12px; top: 100%; height: 12px; border-radius: 0 0 12px 12px; background: var(--rta-c, var(--accent)); opacity: 0; pointer-events: none; }
+:root[data-layout="phone"] .main > .top::after { content: ""; position: absolute; left: 12px; right: 12px; top: 100%; height: 5px; border-radius: 0 0 12px 12px / 0 0 5px 5px; background: var(--rta-c, var(--accent)); opacity: 0; pointer-events: none; }
 /* the bottom edge of the Ready to Assign box, peeking out under the header */
-:root[data-layout="phone"] .top.rta-gone::after { opacity: 1; }
-:root[data-layout="phone"] .top.rta-gone ~ #view .brow.parent.top { top: calc(var(--hdr, 50px) + 14px); }
+:root[data-layout="phone"] .main > .top.rta-gone::after { opacity: 1; }
+/* the gap between the line and a stuck heading is filled with the page background, so nothing shows through */
+:root[data-layout="phone"] .main > .top.rta-gone { box-shadow: 0 13px 0 var(--bg); }
+:root[data-layout="phone"] .main > .top.rta-gone ~ #view .brow.parent.top { top: calc(var(--hdr, 50px) + 13px); } /* the 5px line, then the same 8px gap as under the All categories row */
 /* the pie on its own at the left of the phone header */
 :root[data-layout="phone"] .brand { font-size: 0; gap: 0; margin-right: 2px; flex: none; }
 :root[data-layout="phone"] .brand svg { width: 24px; height: 24px; }
-:root[data-layout="phone"] .top { position: sticky; top: 0; z-index: 30; background: var(--bg); margin: 0 -12px 8px; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
+:root[data-layout="phone"] .main > .top { position: sticky; top: 0; z-index: 30; background: var(--bg); margin: 0 -12px 8px; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
 :root[data-layout="phone"] .page-name:not([hidden]) { display: block; margin-right: auto; font: 700 18px/1.1 var(--display); letter-spacing: -.01em; }
-:root[data-layout="phone"] .bud { overflow: clip; }
-:root[data-layout="phone"] .brow.parent.top { position: sticky; top: var(--hdr, 50px); z-index: 5; }
+/* phone: each group is its own rounded card. The rows draw the card's edges, and each heading always paints
+   the card's rounded top itself, so a stuck heading never shows a square corner while you scroll */
+:root[data-layout="phone"] .bud { border: 0; background: none; border-radius: 0; overflow: clip; }
+/* a group box: on the computer it changes nothing; on a phone it's the card, and its heading is pushed up when the group ends */
+.bgrp { display: contents; }
+:root[data-layout="phone"] .bgrp { display: block; margin-bottom: 12px; border-radius: 12px; overflow: clip; }
+:root[data-layout="phone"] .bgrp > .brow:last-child { margin-bottom: 0; }
+:root[data-layout="phone"] .bgrp > .brow { background-color: var(--surface); box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line); }
+:root[data-layout="phone"] .bgrp > .brow.parent.top { box-shadow: none; background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
+    radial-gradient(circle at 0 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right top / 12px 12px no-repeat,
+    linear-gradient(var(--line), var(--line)) center top / calc(100% - 24px) 1px no-repeat,
+    linear-gradient(var(--line), var(--line)) left 0 top 12px / 1px 100% no-repeat,
+    linear-gradient(var(--line), var(--line)) right 0 top 12px / 1px 100% no-repeat, var(--head-bg); }
+/* the last row of each group: the card's rounded bottom, then a gap */
+:root[data-layout="phone"] .bgrp > .brow:last-child { border-bottom: 0; box-shadow: none; background: radial-gradient(circle at 100% 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left bottom / 12px 12px no-repeat,
+    radial-gradient(circle at 0 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right bottom / 12px 12px no-repeat,
+    linear-gradient(var(--line), var(--line)) center bottom / calc(100% - 24px) 1px no-repeat,
+    linear-gradient(var(--line), var(--line)) left 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
+    linear-gradient(var(--line), var(--line)) right 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
+    var(--surface); }
+:root[data-layout="phone"] .bgrp > .brow.open:last-child { background: radial-gradient(circle at 100% 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left bottom / 12px 12px no-repeat,
+    radial-gradient(circle at 0 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right bottom / 12px 12px no-repeat,
+    linear-gradient(var(--line), var(--line)) center bottom / calc(100% - 24px) 1px no-repeat,
+    linear-gradient(var(--line), var(--line)) left 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
+    linear-gradient(var(--line), var(--line)) right 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
+    var(--surface-2); }
+:root[data-layout="phone"] .bgrp > .brow.parent.top:last-child { background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
+    radial-gradient(circle at 0 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right top / 12px 12px no-repeat,
+    linear-gradient(var(--line), var(--line)) center top / calc(100% - 24px) 1px no-repeat,
+    linear-gradient(var(--line), var(--line)) left 0 top 12px / 1px 100% no-repeat,
+    linear-gradient(var(--line), var(--line)) right 0 top 12px / 1px 100% no-repeat, var(--head-bg); margin-bottom: 0; }
+:root[data-layout="phone"] .brow.parent.top { position: sticky; top: var(--hdr, 50px); z-index: 5; margin-bottom: 0; }
 :root[data-layout="phone"] .txl.by-day .tx-day { position: sticky; top: var(--hdr, 50px); z-index: 5; }
 :root[data-layout="phone"] .tx-sum { align-items: center; }
 :root[data-layout="phone"] .tl-ctl { margin-left: auto; }
@@ -1074,11 +1113,11 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 #ptr.ready { color: var(--ink); }
 #ptr.ready svg { transform: rotate(180deg); }
 /* ---------- phone budget: one tidy line per category; tap one to see and change its numbers ---------- */
-:root[data-layout="phone"] .top { flex-wrap: nowrap; gap: 6px; }
-:root[data-layout="phone"] .top .monthsw { margin-right: auto; }
-:root[data-layout="phone"] .sync span, :root[data-layout="phone"] .top .layout-btn { font-size: 0; }
-:root[data-layout="phone"] .top .layout-btn { padding: 6px; gap: 0; }
-:root[data-layout="phone"] .top .layout-btn svg { width: 18px; height: 18px; }
+:root[data-layout="phone"] .main > .top { flex-wrap: nowrap; gap: 6px; }
+:root[data-layout="phone"] .main > .top .monthsw { margin-right: auto; }
+:root[data-layout="phone"] .sync span, :root[data-layout="phone"] .main > .top .layout-btn { font-size: 0; }
+:root[data-layout="phone"] .main > .top .layout-btn { padding: 6px; gap: 0; }
+:root[data-layout="phone"] .main > .top .layout-btn svg { width: 18px; height: 18px; }
 :root[data-layout="phone"] .rta-msg, :root[data-layout="phone"] .month-sum { display: none; }
 :root[data-layout="phone"] .rta { row-gap: 4px; }
 :root[data-layout="phone"] .bud-tools { flex-wrap: nowrap; gap: 6px; }

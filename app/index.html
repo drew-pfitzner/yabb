@@ -989,11 +989,16 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow.open .b-name { flex-wrap: wrap; row-gap: 3px; }
 :root[data-layout="phone"] .brow.open .tline { display: block; flex-basis: 100%; order: 9; margin: 0; padding-left: 23px; white-space: normal; font-size: 12.5px; }
 :root[data-layout="phone"] .brow.open .b-edit { display: inline-flex; margin-left: auto; }
+/* less is more: an opened category says only what needs doing, not the target's details */
+:root[data-layout="phone"] .brow.open .tline .tdesc, :root[data-layout="phone"] .brow.open .tline .st.funded { display: none; }
+:root[data-layout="phone"] .brow.open .tline:not(:has(.st:not(.funded))) { display: none; }
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; padding: 0; text-align: left; font-size: 14px; min-width: 0; }
 :root[data-layout="phone"] .brow.open .b-asg { padding-left: 23px; }
 :root[data-layout="phone"] .brow.open .m-lbl { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 :root[data-layout="phone"] .brow.open .asg { width: 100%; max-width: 110px; font-size: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
 :root[data-layout="phone"] .brow.open .b-avl { align-self: start; }
+:root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num { min-height: 36px; display: flex; align-items: center; }
+:root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-self: start; }
 /* even margins on both sides: no indent steps or spacer on a phone (the group headers show what's inside what) */
 :root[data-layout="phone"] .brow { padding-left: 12px; padding-right: 12px; }
 :root[data-layout="phone"] .brow .twisty-sp { display: none; }

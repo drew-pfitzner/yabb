@@ -54,6 +54,9 @@
   applyLayout();
   function barPref() { try { return localStorage.getItem('zeroline-bar') || 'thick'; } catch (e) { return 'thick'; } }
   document.documentElement.dataset.bar = barPref();
+  // phone transactions show one line each: the payee, or your note (remembered on this device)
+  function txLine() { try { return localStorage.getItem('zeroline-txline') === 'note' ? 'note' : 'payee'; } catch (e) { return 'payee'; } }
+  document.documentElement.dataset.txline = txLine();
   // the Target column and the needs/wants/savings bar start off every time the page opens; the buttons show them for now
   const SHOW = { tgt: false, pct: false };
   const tgtOn = () => SHOW.tgt, pctOn = () => SHOW.pct;
@@ -275,6 +278,12 @@
     lb.title = isPhone ? 'Switch to the computer layout' : 'Switch to the phone layout';
     const ms = $('#monthsw');
     ms.hidden = UI.view !== 'budget';
+    const pn = $('#pagename');
+    const pname = { tx: 'Transactions', accounts: 'Accounts', settings: 'Settings' }[UI.view];
+    if (pn) { pn.hidden = !pname; pn.textContent = pname || ''; }
+    // sticky headings sit just under the header, whatever its height
+    document.documentElement.style.setProperty('--hdr', ($('.top') ? $('.top').offsetHeight : 50) + 'px');
+    requestAnimationFrame(rtaLine);
     $('#monthlabel').textContent = monthLabel(UI.month);
     const review = D ? D.tx.filter((t) => t.approved === false).length : 0;
     const badge = $('#txbadge');
@@ -390,7 +399,7 @@
         ${UI.budgetFilter.indexOf('kind:') === 0 ? `<button class="chip" data-action="bfilter" data-v="all" title="Show all categories">Only ${esc(UI.budgetFilter === 'kind:none' ? 'not tagged' : (KINDS.find((x) => x[0] === UI.budgetFilter.slice(5)) || [0, ''])[1].toLowerCase())} ✕</button>` : ''}
         <div class="tools-r">
           <button class="btn sm icon-cycle${tgtOn() ? ' on' : ''}" data-action="tgt-toggle" aria-pressed="${tgtOn()}" aria-label="${tgtOn() ? 'Hide' : 'Show'} the Target column" title="${tgtOn() ? 'Hide' : 'Show'} the Target column"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.7" fill="none"/><circle cx="10" cy="10" r="3.6" stroke="currentColor" stroke-width="1.7" fill="none"/><circle cx="10" cy="10" r="1.1" fill="currentColor"/></svg></button>
-          <button class="btn sm icon-cycle pct-btn${pctOn() ? ' on' : ''}" data-action="pct-toggle" aria-pressed="${pctOn()}" title="${pctOn() ? 'Hide' : 'Show'} the needs, wants and savings bar">%</button>
+          <button class="btn sm icon-cycle pct-btn${pctOn() ? ' on' : ''}" data-action="pct-toggle" aria-pressed="${pctOn()}" title="${pctOn() ? 'Hide' : 'Show'} the needs, wants and freedom bar">%</button>
           <button class="btn sm icon-cycle desk-only" data-action="bar-cycle" aria-label="${BAR_LABEL[barPref()]}. Click to change." title="${BAR_LABEL[barPref()]} (click to change)">${BAR_ICON[barPref()]}</button>
           <button class="btn sm phone-only" data-action="collapse-all">${Object.keys(UI.collapsed).length ? 'Expand all' : 'Collapse all'}</button>
           <button class="btn sm ${UI.editCats ? 'on' : ''}" data-action="edit-cats" aria-pressed="${UI.editCats}">${UI.editCats ? 'Done' : '<span class="desk-only">Edit categories</span><span class="phone-only">Edit</span>'}</button>
@@ -502,7 +511,7 @@
   function editControls(id) {
     if (!UI.editCats) return '';
     const own = D.cats[id].kind, eff = kindOf(id);
-    const kchip = payAcct(id) ? '<span class="kchip tx-need" title="The minimum payment is a need; anything extra is savings, investing &amp; debt">Need + Save</span>' : `<button class="kchip tx-${eff || 'none'}${own ? '' : ' inh'}" data-action="kind-cycle" data-id="${id}" title="${own ? kindLabel(own) : eff ? `${kindLabel(eff)} (from the group above)` : 'Not tagged'}. Click to change.">${eff ? KIND_SHORT[eff] : 'Tag'}</button>`;
+    const kchip = payAcct(id) ? '<span class="kchip tx-need" title="The minimum payment is a need; anything extra is freedom">Need + Freedom</span>' : `<button class="kchip tx-${eff || 'none'}${own ? '' : ' inh'}" data-action="kind-cycle" data-id="${id}" title="${own ? kindLabel(own) : eff ? `${kindLabel(eff)} (from the group above)` : 'Not tagged'}. Click to change.">${eff ? KIND_SHORT[eff] : 'Tag'}</button>`;
     return `<span class="edit-ctl">${kchip}
       <button class="icon-btn" data-action="cat-up" data-id="${id}" aria-label="Move up">${ICON.up}</button>
       <button class="icon-btn" data-action="cat-down" data-id="${id}" aria-label="Move down">${ICON.down}</button>
@@ -517,9 +526,10 @@
   }
   const tgtDesc = (id, info) => (info ? targetLine(id, info).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-  // ---------- needs, wants, savings (the 50/30/20 check) ----------
-  const KINDS = [['need', 'Needs', 'Need'], ['want', 'Wants', 'Want'], ['save', 'Savings, investing & debt', 'Savings, investing & debt']];
-  const KIND_SHORT = { need: 'Need', want: 'Want', save: 'Save' };
+  // ---------- needs, wants, freedom (the 50/30/20 check) ----------
+  // 'save' is the stored id; people see it as Freedom (savings, investing and paying off debt)
+  const KINDS = [['need', 'Needs', 'Need'], ['want', 'Wants', 'Want'], ['save', 'Freedom', 'Freedom']];
+  const KIND_SHORT = { need: 'Need', want: 'Want', save: 'Freedom' };
   const kindLabel = (k) => (KINDS.find((x) => x[0] === k) || [0, 'Not tagged', 'Not tagged'])[2];
   // a category's type: its own tag, or the nearest group above it that has one
   function kindOf(id) {
@@ -554,7 +564,7 @@
     const tot = { need: 0, want: 0, save: 0, none: 0 };
     const add = (id, v) => {
       if (!v) return;
-      // paying a debt: the minimum is a need, anything on top is savings, investing & debt
+      // paying a debt: the minimum is a need, anything on top is freedom
       const a = payAcct(id);
       if (a && v > 0) { const m = Math.min(v, minPayOf(a)); tot.need += m; tot.save += v - m; return; }
       tot[kindOf(id) || 'none'] += v;
@@ -583,7 +593,7 @@
         <button class="linkish" data-action="split-goals">Change goal</button>
       </div>`;
     if (sum <= 0) return `<section class="nws">${head}<p class="hint">${basis === 'targets' ? 'No targets this month yet.' : 'Nothing budgeted this month yet.'}</p></section>`;
-    const names = { need: 'Needs', want: 'Wants', save: 'Savings, investing & debt', none: 'Not tagged' };
+    const names = { need: 'Needs', want: 'Wants', save: 'Freedom', none: 'Not tagged' };
     const short = { need: 'Needs', want: 'Wants', save: 'Savings', none: 'Not tagged' };
     const pct = (v) => Math.round((v / sum) * 100);
     const seg = (k, p, click, extra) => {
@@ -613,7 +623,7 @@
         <div class="grid3">
           <div class="field"><label for="sg-need">Needs %</label><input id="sg-need" type="number" min="0" max="100" inputmode="numeric" value="${g.need}"></div>
           <div class="field"><label for="sg-want">Wants %</label><input id="sg-want" type="number" min="0" max="100" inputmode="numeric" value="${g.want}"></div>
-          <div class="field"><label for="sg-save">Savings, investing & debt %</label><input id="sg-save" type="number" min="0" max="100" inputmode="numeric" value="${g.save}"></div>
+          <div class="field"><label for="sg-save">Freedom %</label><input id="sg-save" type="number" min="0" max="100" inputmode="numeric" value="${g.save}"></div>
         </div><p id="sg-sum" class="hint"></p>`,
       foot: '<button class="btn primary" data-saction="save">Save</button><button class="btn" data-saction="reset">Use 50/30/20</button>',
     });
@@ -762,7 +772,7 @@
       return `<button class="back-link" data-saction="back">${ICON.left} Back</button>
         <div class="field"><label for="cat-name">Name</label><input id="cat-name" value="${esc(c.name)}" autocomplete="off"></div>
         <div class="field"><label>Counts as</label>
-          ${pa ? `<p class="hint">The minimum payment is a need; anything extra is saving. <button class="linkish" data-saction="edit-acct">Set the minimum</button></p>`
+          ${pa ? `<p class="hint">The minimum payment is a need; anything extra is freedom. <button class="linkish" data-saction="edit-acct">Set the minimum</button></p>`
             : `<div class="seg-ctl kind-ctl" role="group" aria-label="Counts as">${KINDS.map(([k]) => `<button data-saction="kind" data-v="${k}" aria-pressed="${eff === k}">${KIND_SHORT[k]}</button>`).join('')}</div>
             ${!ownK && par ? `<p class="fine">Same as ${esc(grp)}</p>` : ''}`}
         </div>
@@ -800,9 +810,12 @@
         const own = D.month.rows[id];
         if (own && (own.available || own.assigned)) html += `<div class="warn-box">${money(own.available)} is held in ${esc(c.name)} itself, from before it had subcategories. <div class="row-btns"><button class="btn sm primary" data-saction="move">Move it into a subcategory</button></div></div>`;
       }
-      // 3. this month's spending
-      html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
-      html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">Nothing spent yet this month.</p>';
+      // 3. this month's spending: on a phone, one line that opens Transactions filtered to it
+      if (isPhone()) {
+        const spent = (leaf ? r : g).activity;
+        html += `<button class="spent-row" data-saction="see-spent"><span class="sr-l"><span class="sr-lbl">Spent in ${esc(monthLabel(UI.month))}</span><span class="sr-n">${txs.length ? `${txs.length} ${txs.length === 1 ? 'transaction' : 'transactions'}` : 'Nothing yet'}</span></span><b class="sr-amt">${money(-spent)}</b><span class="sr-go" aria-hidden="true">${ICON.right}</span></button>`;
+      } else html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
+      if (!isPhone()) html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">Nothing spent yet this month.</p>';
       if (moves.length) {
         html += `<h3>Money moved</h3><ul class="mini-tx">${moves.map((mv) => `<li><span>${esc(new Date(mv.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span><span>${mv.from === id ? 'To ' + esc(catName(mv.to)) : 'From ' + esc(catName(mv.from))}</span><b>${mv.from === id ? '−' : '+'}${money(mv.amt)}</b></li>`).join('')}</ul>`;
       }
@@ -818,6 +831,7 @@
     paint();
     sheet.actions = {
       'move': () => openMove(id),
+      'see-spent': () => { closeSheet(); actions.spent({ dataset: { id } }); },
       more: () => { view = 'more'; paint(); const b = $('#sheet .sheet-b'); if (b) b.scrollTop = 0; },
       back: () => { view = 'main'; paint(); const b = $('#sheet .sheet-b'); if (b) b.scrollTop = 0; },
       kind: async (el) => {
@@ -1496,6 +1510,8 @@
     const updates = review ? list.filter((t) => t.match && t.match.kind === 'update').length : 0;
     const matches = review ? list.filter((t) => t.match && t.match.kind !== 'update').length : 0;
     const shown = list.slice(0, UI.limit);
+    // a phone groups the list under date headings, so rows don't each repeat their date
+    const byDay = isPhone() && UI.sort.k === 'date';
     REC_FLAGS = UI.rec && D.accounts[UI.rec.acct] ? recFlags(UI.rec.acct) : UI.bc ? bcFlags() : {};
     // nothing left to check in this filtered view: go back to the full list
     if (UI.only && !list.some((t) => (UI.onlyWhat === 'double' ? twinIds(t.id) : REC_FLAGS[t.id]))) {
@@ -1507,7 +1523,7 @@
     return `${acctBalanceHead()}
       <div class="tx-tools">
         <div class="tools-l">
-          <button class="btn sm primary" data-action="add-tx">${ICON.plus} Add</button>
+          <button class="btn sm primary" data-action="add-tx" aria-label="Add a transaction">${ICON.plus}<span class="add-lbl"> Add</span></button>
           <button class="btn sm" data-action="import">Import from bank</button>
           <div class="filt-wrap">
           <button class="btn sm ${UI.showFilters || activeFilters ? 'on' : ''}" data-action="toggle-filters" aria-expanded="${UI.showFilters}">Filters${activeFilters ? ` <b class="count">${activeFilters}</b>` : ''} ${ICON.down}</button>
@@ -1524,14 +1540,15 @@
           </div>` : ''}
           </div>
         </div>
-        <div class="search"><span aria-hidden="true">${ICON.search}</span><input id="txq" type="search" data-live="0" placeholder="Search payee, bank description, note, amount, date, category" value="${esc(UI.q)}" aria-label="Search transactions"></div>
+        <div class="search"><span aria-hidden="true">${ICON.search}</span><input id="txq" type="search" data-live="0" placeholder="${isPhone() ? 'Search' : 'Search payee, bank description, note, amount, date, category'}" value="${esc(UI.q)}" aria-label="Search transactions"></div>
       </div>
       <div class="tx-sum">
         <div class="ts-l">
           ${UI.only ? `<button class="chip fchip" data-action="clear-only" title="Back to the full list">${UI.onlyWhat === 'balance' ? 'Could explain the difference' : 'Possible doubles'} only <span aria-hidden="true">×</span></button>` : filterChips()}
-          <span class="ts-count">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
+          <span class="ts-count${activeFilters || UI.q || UI.only ? '' : ' plain'}">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
         </div>
         <div class="ts-r">
+          ${isPhone() ? `<div class="seg-ctl tl-ctl" role="group" aria-label="Show"><button data-action="tx-line" data-v="payee" aria-pressed="${txLine() === 'payee'}">Payee</button><button data-action="tx-line" data-v="note" aria-pressed="${txLine() === 'note'}">Note</button></div>` : ''}
           ${list.length > 1 && (activeFilters || UI.q || UI.only) ? `<button class="btn sm" data-action="select-all" title="${MAC ? '⌘' : 'Ctrl+'}A">Select all ${list.length}</button>` : ''}
           ${matches ? `<span class="hint">${matches} matched ${matches === 1 ? 'transaction needs' : 'transactions need'} approving one by one</span>` : ''}
           ${updates ? `<button class="btn sm" data-action="approve-updates">Approve ${updates} description ${updates === 1 ? 'update' : 'updates'}</button>` : ''}
@@ -1540,9 +1557,9 @@
         </div>
       </div>
       <datalist id="payee-list-inline">${payeeNames().map((p) => `<option value="${esc(p)}">`).join('')}</datalist>
-      <div class="txl ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
+      <div class="txl${byDay ? ' by-day' : ''} ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
         ${shown.length ? txHeader() : ''}
-        ${multiBar()}${shown.map((t) => txRow(t) + bcMark(t)).join('') || `<p class="empty-note">${D.tx.length ? 'No transactions match.' : 'No transactions yet. Add one, or import a file from your bank.'}</p>`}
+        ${multiBar()}${shown.map((t, i) => (byDay && (i === 0 || shown[i - 1].date !== t.date) ? `<div class="tx-day" role="presentation">${esc(dateLabel(t.date))}</div>` : '') + txRow(t) + bcMark(t)).join('') || `<p class="empty-note">${D.tx.length ? 'No transactions match.' : 'No transactions yet. Add one, or import a file from your bank.'}</p>`}
       </div>
       ${list.length > shown.length ? `<div class="row-btns center"><button class="btn" data-action="more-tx">Show more (${list.length - shown.length} left)</button></div>` : ''}`;
   }
@@ -1723,9 +1740,9 @@
   function txRow(t) {
     if (UI.editTx === t.id && !isPhone()) return txEditRow(t);
     const cl = t.cleared === 'r' ? `<span class="clr r" title="Reconciled">${ICON.lock}</span>` : `<button class="clr ${t.cleared === 'c' ? 'c' : 'u'}" data-action="toggle-clear" data-id="${t.id}" aria-label="${t.cleared === 'c' ? 'Cleared. Mark as not cleared' : 'Not cleared. Mark as cleared'}" title="${t.cleared === 'c' ? 'Cleared by the bank' : 'Not yet cleared'}">C</button>`;
-    return `<div class="txr${t.match ? ' matched' : t.approved === false ? ' review' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
+    return `<div class="txr${UI.peekTx === t.id ? ' open' : ''}${t.match ? ' matched' : t.approved === false ? ' review' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
       <div class="t-side">${t.match ? `<button class="ic ic-match" data-action="open-tx" data-id="${t.id}" title="${t.match.kind === 'update' ? 'Bank description updated. Click to compare and approve' : 'Matched to a bank line. Click to compare and approve'}" aria-label="${t.match.kind === 'update' ? 'Updated' : 'Matched'}">${t.match.kind === 'update' ? ICON.redo : ICON.link}</button>` : t.approved === false ? `<button class="ic ic-approve" data-action="approve" data-id="${t.id}" title="Approve" aria-label="Approve">${ICON.tick}</button>` : ''}</div>
-      <button class="tx-main" data-action="${isPhone() ? 'open-tx' : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
+      <button class="tx-main" data-action="${isPhone() ? 'tx-peek' : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
         <span class="t-date">${esc(dateLabel(t.date))}</span>
         <span class="t-payee" title="${esc(t.payee || '')}">${esc(t.payee || (t.transfer ? 'Transfer' : t.bank) || 'No payee')}${t.receipt ? `<i class="ricon" title="Has a receipt">${ICON.receipt}</i>` : ''}</span>
         <span class="t-cat" title="${esc(t.transfer ? 'Transfer' : t.splits && t.splits.length ? 'Split' : t.cat ? catPath(t.cat) : 'Uncategorized')}">${txCatLabel(t)}<span class="t-acct">${esc(acctName(t.acct))}</span></span>
@@ -1734,6 +1751,7 @@
         <span class="t-amt ${t.amt > 0 ? 'pos' : ''}${REC_FLAGS[t.id] ? ' flagamt' : ''}"${REC_FLAGS[t.id] ? ` title="${esc(REC_FLAGS[t.id].map(([sh, lo]) => sh + ' ' + lo).join('\n'))}"` : ''}${twinIds(t.id) ? ` data-action="show-twins" data-ids="${twinIds(t.id)}"` : ''}>${txAmt(t.amt)}</span>
       </button>
       <div class="t-clr">${cl}</div>
+      <button class="tx-pen" data-action="open-tx" data-id="${t.id}" aria-label="Edit this transaction" title="Edit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>`;
   }
   // side by side: what was already in YNABB, and what the bank file says
@@ -2695,7 +2713,7 @@
             <div class="field"><label for="ac-min">Minimum payment each month</label><input id="ac-min" inputmode="decimal" placeholder="${a.type === 'credit' ? 'from your statement' : 'same as the repayment'}" value="${a.minPay != null ? plain(a.minPay) : ''}"></div>
             <div class="field" id="ac-limit-f"><label for="ac-limit">Credit limit</label><input id="ac-limit" inputmode="decimal" placeholder="optional" value="${a.limit ? plain(a.limit) : ''}"></div>
           </div>
-          <p class="hint">The minimum payment counts as a need in "Where this month's budget is going". Anything extra counts as savings, investing &amp; debt. For a loan, leave it blank to use the repayment. ${isNew ? 'A repayment amount becomes the monthly target for its payment category.' : ''}</p>
+          <p class="hint">The minimum payment counts as a need in "Where this month's budget is going". Anything extra counts as freedom. For a loan, leave it blank to use the repayment. ${isNew ? 'A repayment amount becomes the monthly target for its payment category.' : ''}</p>
         </div>
         ${!isNew ? `<label class="check"><input type="checkbox" id="ac-closed" ${a.closed ? 'checked' : ''}> Closed (hide from lists, keep its history)</label>` : ''}`,
       foot: `<button class="btn primary" data-saction="save">${isNew ? 'Add account' : 'Save'}</button>${!isNew && !hasTx ? '<button class="btn danger" data-saction="delete">Delete</button>' : ''}`,
@@ -3144,6 +3162,15 @@
     'legacy-import': (el) => openLegacyImport(el.dataset.key),
     'approve-updates': () => approve(filteredTx().filter((t) => t.match && t.match.kind === 'update').map((t) => t.id)),
     'more-tx': () => { UI.limit += 200; render(); },
+    // phone: a tap opens a transaction in place to show more; the pencil opens the full edit
+    'tx-peek': (el) => {
+      const id = el.dataset.id;
+      UI.peekTx = UI.peekTx === id ? null : id;
+      document.querySelectorAll('.txr.open').forEach((r) => r.classList.remove('open'));
+      const r = UI.peekTx && document.querySelector(`.txr[data-row="${UI.peekTx}"]`);
+      if (r) r.classList.add('open');
+    },
+    'tx-line': (el) => { try { localStorage.setItem('zeroline-txline', el.dataset.v); } catch (e) { /* ignore */ } document.documentElement.dataset.txline = el.dataset.v; render(); },
     import: (el) => openImport(el.dataset.id),
     'add-acct': () => openAcct(null),
     'edit-acct': (el) => openAcct(el.dataset.id),
@@ -3360,6 +3387,15 @@
       location.reload();
     });
   })();
+  // phone budget: once Ready to Assign scrolls up under the header, the header gets a line in its colour
+  function rtaLine() {
+    const top = $('.top'), box = $('.rta');
+    if (!top) return;
+    const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom + 12); // 12: the line's height, so the box's edge hands over to it seamlessly
+    if (on) document.documentElement.style.setProperty('--rta-c', getComputedStyle(box).backgroundColor);
+    top.classList.toggle('rta-gone', on);
+  }
+  window.addEventListener('scroll', rtaLine, { passive: true });
   // still saving: ask before the page closes
   window.addEventListener('beforeunload', (ev) => { if (Object.values(S._queue || {}).some((q) => q.busy)) { ev.preventDefault(); ev.returnValue = ''; } });
   document.addEventListener('change', async (ev) => {

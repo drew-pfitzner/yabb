@@ -961,6 +961,10 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .field input, :root[data-layout="phone"] .field select, :root[data-layout="phone"] .field textarea, :root[data-layout="phone"] .split select, :root[data-layout="phone"] .split input, :root[data-layout="phone"] .search input, :root[data-layout="phone"] .asg { font-size: 16px; }
 }
 .b-edit { display: none; }
+#ptr { position: fixed; left: 50%; top: env(safe-area-inset-top, 0px); transform: translate(-50%, -50px); opacity: 0; z-index: 300; display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none; }
+#ptr svg { width: 16px; height: 16px; transition: transform .15s; }
+#ptr.ready { color: var(--ink); }
+#ptr.ready svg { transform: rotate(180deg); }
 /* ---------- phone budget: one tidy line per category; tap one to see and change its numbers ---------- */
 :root[data-layout="phone"] .top { flex-wrap: nowrap; gap: 6px; }
 :root[data-layout="phone"] .top .monthsw { margin-right: auto; }

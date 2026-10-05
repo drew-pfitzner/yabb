@@ -3288,6 +3288,45 @@
     if (fn) { ev.preventDefault(); fn(a, ev); }
   });
   document.addEventListener('mousedown', (ev) => { if ((ev.shiftKey || ev.metaKey) && ev.target.closest('.txl .txr')) ev.preventDefault(); });
+  // pull down from the top to reload: the home-screen app has no refresh button
+  (function pullToRefresh() {
+    const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (!standalone) return;
+    const ind = document.createElement('div');
+    ind.id = 'ptr'; ind.setAttribute('aria-hidden', 'true');
+    ind.innerHTML = '<svg viewBox="0 0 20 20"><path d="M10 4v10M5.5 9.5L10 14l4.5-4.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Pull to refresh</span>';
+    document.body.appendChild(ind);
+    const GO = 80;
+    let y0 = null, pull = 0;
+    const show = (d) => {
+      ind.style.transform = `translate(-50%, ${Math.min(d, GO + 30) - 50}px)`;
+      ind.style.opacity = Math.min(1, d / 40);
+      ind.classList.toggle('ready', d >= GO);
+      ind.querySelector('span').textContent = d >= GO ? 'Let go to refresh' : 'Pull to refresh';
+    };
+    const reset = () => { y0 = null; pull = 0; ind.style.transition = 'transform .2s, opacity .2s'; show(0); setTimeout(() => { ind.style.transition = ''; }, 200); };
+    document.addEventListener('touchstart', (ev) => {
+      // only from the very top of the page, and not inside a sheet, menu or the guide
+      if (window.scrollY > 0 || ev.touches.length !== 1 || ev.target.closest('#sheet:not([hidden]), .ctx-menu, .cbx-pop, #zl-guide, #lightbox')) return;
+      y0 = ev.touches[0].clientY; pull = 0;
+    }, { passive: true });
+    document.addEventListener('touchmove', (ev) => {
+      if (y0 == null) return;
+      pull = (ev.touches[0].clientY - y0) * 0.6;
+      if (pull <= 0 || window.scrollY > 0) { if (pull < 0) reset(); return; }
+      show(pull);
+    }, { passive: true });
+    document.addEventListener('touchend', () => {
+      if (y0 == null) return;
+      const go = pull >= GO;
+      reset();
+      if (!go) return;
+      // never throw away changes that are still on their way to the server
+      if (Object.values(S._queue || {}).some((q) => q.busy)) { toast('Still saving. Try again in a moment.'); return; }
+      ind.classList.add('ready'); show(GO); ind.querySelector('span').textContent = 'Refreshing';
+      location.reload();
+    });
+  })();
   // still saving: ask before the page closes
   window.addEventListener('beforeunload', (ev) => { if (Object.values(S._queue || {}).some((q) => q.busy)) { ev.preventDefault(); ev.returnValue = ''; } });
   document.addEventListener('change', async (ev) => {

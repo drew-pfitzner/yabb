@@ -1,7 +1,7 @@
-/* Zero Line storage. One interface, two backends:
-   - cloud: the claude.ai artifact database (live sync between devices and people)
-   - local: this browser only (preview / signed out)
-   To move to another host later, write a third backend with the same shape.
+/* Zero Line storage. One interface, three backends:
+   - server: YABB's own server (server/server.js): logins, live sync between devices and people
+   - cloud: the claude.ai artifact database (while the app still runs there)
+   - local: this browser only (opened from plain files, e.g. python3 -m http.server)
 
    Layout (collections → documents):
      meta/cats      {items: {catId: cat}}
@@ -17,7 +17,7 @@
   const LOCAL_KEY = 'zeroline-local-v1';
 
   const Store = {
-    mode: 'loading', // 'cloud' | 'local'
+    mode: 'loading', // 'server' | 'cloud' | 'local'
     data: { meta: {}, months: {}, tx: {} },
     loaded: { meta: false, months: false, tx: false },
     status: 'idle', // 'idle' | 'saving' | 'error'
@@ -57,7 +57,11 @@
   Store.init = async function () {
     let db = null;
     try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
-    if (!db) return initLocal();
+    if (!db) {
+      const me = await serverMe();
+      if (me === 'signed-out') { location.href = '/login'; return; }
+      return me ? initServer(me) : initLocal();
+    }
     Store.db = db;
     Store.mode = 'cloud';
     try { Store.user = await window.claude.use('user'); } catch (e) { Store.user = null; }
@@ -90,6 +94,96 @@
     }
     emit('mode');
   };
+
+  // ---------- YABB server ----------
+  const LOST = 'Lost the connection to YABB. Trying again…';
+  async function api(method, url, body, headers) {
+    let r;
+    try {
+      r = await fetch(url, {
+        method, credentials: 'same-origin',
+        headers: Object.assign({ 'X-Requested-With': 'yabb' }, body !== undefined && !(body instanceof Blob) ? { 'Content-Type': 'application/json' } : {}, headers),
+        body: body === undefined || body instanceof Blob ? body : JSON.stringify(body),
+      });
+    } catch (e) { throw { code: 'unavailable' }; }
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) return j;
+    const code = r.status === 401 ? 'revoked' : r.status === 413 ? (url === '/api/blob' ? 'too_large' : 'invalid_argument')
+      : r.status === 429 ? 'resource_exhausted' : r.status >= 500 ? 'unavailable' : (j.code || 'failed');
+    throw { code, message: j.error };
+  }
+  // the signed-in person, 'signed-out', or null when there's no YABB server (plain files)
+  async function serverMe() {
+    try {
+      const r = await fetch('/api/me', { credentials: 'same-origin' });
+      if (r.status === 401) return 'signed-out';
+      if (!r.ok || !/json/.test(r.headers.get('content-type') || '')) return null;
+      return await r.json();
+    } catch (e) { return null; }
+  }
+  // a document as the server has it, with this browser's unsent edits on top
+  function withQueued(coll, id, doc) {
+    const q = Store._queue[coll + '/' + id];
+    if (q && q.inflight) doc = deepMerge(doc, q.inflight);
+    if (q && q.patch) doc = deepMerge(doc, q.patch);
+    return doc;
+  }
+  function initServer(me) {
+    Store.mode = 'server';
+    Store.account = me;
+    Store.me = { id: me.id, name: me.name };
+    let people = null;
+    Store.user = {
+      me: async () => Store.me,
+      can: async () => true,
+      profiles: async (ids) => {
+        people = people || api('GET', '/api/people').catch(() => ({}));
+        const all = await people, out = {};
+        for (const id of ids) if (all[id]) out[id] = { name: all[id].name, isMe: id === Store.me.id };
+        return out;
+      },
+    };
+    Store.assets = { upload: (blob, opts) => api('POST', '/api/blob', blob, { 'Content-Type': (opts && opts.type) || blob.type }) };
+    Store.downloads = {
+      save: async ({ filename, data }) => {
+        const url = URL.createObjectURL(new Blob([data], { type: /\.json$/.test(filename) ? 'application/json' : 'text/csv' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      },
+    };
+    const es = new EventSource('/api/events');
+    // the whole budget arrives first (and again after every reconnect), then each change as it happens
+    es.addEventListener('snapshot', (e) => {
+      const all = JSON.parse(e.data);
+      for (const c of COLLS) {
+        const next = {};
+        for (const id in all[c] || {}) next[id] = all[c][id];
+        for (const path in Store._queue) if (path.startsWith(c + '/')) { const id = path.slice(c.length + 1); next[id] = withQueued(c, id, next[id]); }
+        Store.data[c] = next;
+        Store.loaded[c] = true;
+      }
+      if (Store.error === LOST) { Store.status = 'idle'; Store.error = null; }
+      emit('remote');
+    });
+    es.addEventListener('doc', (e) => {
+      const { coll, id, doc } = JSON.parse(e.data);
+      if (!Store.data[coll]) return;
+      Store.data[coll][id] = withQueued(coll, id, doc);
+      emit('remote');
+    });
+    es.onerror = async () => {
+      const still = await serverMe();
+      if (still === 'signed-out') {
+        es.close();
+        Store.status = 'error'; Store.error = 'You have been signed out. Reload the page to sign in again.';
+      } else { Store.status = 'error'; Store.error = LOST; }
+      emit('error');
+    };
+    emit('caps');
+    emit('mode');
+  }
 
   function initLocal() {
     Store.mode = 'local';
@@ -185,6 +279,7 @@
   }
 
   async function writeOne(coll, id, patch) {
+    if (Store.mode === 'server') return api('PATCH', '/api/doc/' + coll + '/' + encodeURIComponent(id), patch);
     const ref = Store.db.collection(coll).doc(id);
     const key = coll + '/' + id;
     if (!Store._exists[key]) {
@@ -200,7 +295,7 @@
     if (c === 'invalid_argument') return Store.canWrite ? 'A change could not be saved. If this keeps happening, this month may have too many transactions for one record.' : 'You have view-only access, so changes are not saved.';
     if (c === 'quota_exceeded') return 'The budget database is full. Export a backup and remove old data.';
     if (c === 'resource_exhausted') return 'Saving too quickly. Wait a moment and try again.';
-    if (c === 'revoked') return 'Access to this budget changed. Reload to continue.';
+    if (c === 'revoked') return Store.mode === 'server' ? 'You have been signed out. Reload the page to sign in again.' : 'Access to this budget changed. Reload to continue.';
     return 'A change could not be saved. Check your connection and try again.';
   }
 
@@ -210,6 +305,7 @@
     Store.data[coll][id] = body;
     if (Store.mode === 'local') { saveLocal(); emit('local'); return; }
     emit('local');
+    if (Store.mode === 'server') { await api('PUT', '/api/doc/' + coll + '/' + encodeURIComponent(id), body); return; }
     await Store.db.collection(coll).doc(id).set(stripNulls(body));
     Store._exists[coll + '/' + id] = true;
   };

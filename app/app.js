@@ -263,7 +263,7 @@
     st.className = 'sync ' + cls;
     st.querySelector('span').textContent = label;
     $('#banner').innerHTML = mode === 'local'
-      ? '<div class="banner">Preview mode: changes are saved in this browser only. Open the app from its claude.ai link while signed in to sync between your devices.</div>'
+      ? '<div class="banner">Preview mode: changes are saved in this browser only. Open YABB from its web address and sign in to sync between your devices.</div>'
       : (S.status === 'error' && S.error ? `<div class="banner bad">${esc(S.error)}</div>` : '');
     $$('[data-nav]').forEach((b) => b.setAttribute('aria-current', b.dataset.nav === UI.view ? 'page' : 'false'));
     const lb = $('#layoutbtn');
@@ -296,8 +296,10 @@
         <button class="btn" data-action="starter">Start with a suggested category list</button>
         <button class="btn" data-action="add-group">Start with no categories</button>
         <label class="btn" for="ynab-file">Move my budget from YNAB</label><input type="file" id="ynab-file" accept=".zip,.csv,application/zip,text/csv" multiple hidden data-live="0">
+        <label class="btn" for="restore-file">Restore a YABB backup</label><input type="file" id="restore-file" accept=".json,application/json" hidden data-live="0">
       </div>
       <p class="fine">You can rename, nest, hide or delete any category later.</p>
+      ${S.mode === 'server' ? `<p class="fine">Signed in as ${esc(S.account.name)} · <a class="linkish" href="/account">Account and password</a> · <a class="linkish" href="#" data-action="sign-out">Sign out</a></p>` : ''}
     </section>`;
   }
 
@@ -1771,7 +1773,7 @@
           <div class="row-btns"><label class="btn sm" for="rfile">Replace</label><button class="btn sm" data-saction="rm-receipt">Remove</button></div>
           <input type="file" id="rfile" accept="image/*,application/pdf" hidden></div>`;
       }
-      if (!S.assets) return `<p class="hint">${S.mode === 'local' ? 'Receipts can be attached when you use the app from its claude.ai link.' : 'Attaching receipts needs edit access to this budget.'}</p>`;
+      if (!S.assets) return `<p class="hint">${S.mode === 'local' ? 'Receipts can be attached when you sign in to YABB.' : 'Attaching receipts needs edit access to this budget.'}</p>`;
       return `<label class="btn sm" for="rfile">${ICON.receipt} Add photo or PDF</label><input type="file" id="rfile" accept="image/*,application/pdf" hidden><span id="rstat" class="hint"></span>`;
     };
     const readForm = () => {
@@ -2810,10 +2812,14 @@
         ${[['auto', `Automatic (${detectedLayout() === 'phone' ? 'phone' : 'computer'} for this device)`], ['desktop', 'Computer layout'], ['phone', 'Phone layout']].map(([v, l]) => `<option value="${v}" ${layoutPref() === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <p class="fine">Each device remembers its own choice.</p>
 
-      <h2>Sharing with your partner</h2>
+      ${S.mode === 'server' ? `<h2>Your login</h2>
+      <p>Signed in as <b>${esc(S.account.name)}</b>${S.account.budget ? `, using the <b>${esc(S.account.budget.name)}</b> budget` : ''}. Everyone who shares this budget has their own login, and changes sync live between you on phones and computers.</p>
+      <p class="fine">${S.account.admin ? 'Add people, make new budgets and reset passwords on the account page.' : 'To add someone, ask the admin to make them a login.'}</p>
+      <div class="row-btns"><a class="btn" href="/account">${S.account.admin ? 'Account and admin' : 'Account and password'}</a><button class="btn" data-action="sign-out">Sign out</button></div>
+` : `<h2>Sharing with your partner</h2>
       <p>Open the share menu on this page in claude.ai and invite your partner as an <b>Editor</b>. They need their own claude.ai account. Everything syncs live between both of you, on phones and computers. Editors can also attach receipts. Anyone given view-only access can't see the budget data.</p>
       <p class="fine">Status: ${S.mode === 'cloud' ? 'syncing through claude.ai' : 'saving in this browser only'}.</p>
-
+`}
       <h2>Backup</h2>
       <p>Download everything (categories, targets, accounts, transactions, assignments) as one file. Keep a copy now and then, and use it to move to another app later.</p>
       <div class="row-btns">
@@ -3179,6 +3185,7 @@
     'rec-finish': () => recFinish(0),
     'rec-adjust': () => recFinish(recState().diff),
     'export-json': exportJSON,
+    'sign-out': async () => { await fetch('/api/logout', { method: 'POST', headers: { 'X-Requested-With': 'yabb' } }).catch(() => {}); location.href = '/login'; },
     'export-csv': exportCSV,
     'rm-rule': (el) => guard(S.write('meta', 'rules', { items: { [el.dataset.k]: null } })),
     'close-sheet': closeSheet,

@@ -32,10 +32,35 @@
     if (!s) return 0;
     if (!/^[0-9.+\-*/()]+$/.test(s)) return NaN;
     try {
-      // tokens are restricted to digits and arithmetic above
-      const v = Function('"use strict";return (' + s + ')')();
+      const v = calc(s);
       return Number.isFinite(v) ? Math.round(v * 100) : NaN;
     } catch (e) { return NaN; }
+  }
+  // + - * / and brackets, worked out by hand so no text is ever run as code (lets the server forbid eval)
+  function calc(s) {
+    let i = 0;
+    const num = () => {
+      if (s[i] === '(') { i++; const v = sum(); if (s[i++] !== ')') throw new Error('bracket'); return v; }
+      if (s[i] === '-') { i++; return -num(); }
+      if (s[i] === '+') { i++; return num(); }
+      const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
+      if (!m) throw new Error('number');
+      i += m[0].length;
+      return parseFloat(m[0]);
+    };
+    const prod = () => {
+      let v = num();
+      while (s[i] === '*' || s[i] === '/') { const op = s[i++], r = num(); v = op === '*' ? v * r : v / r; }
+      return v;
+    };
+    const sum = () => {
+      let v = prod();
+      while (s[i] === '+' || s[i] === '-') { const op = s[i++], r = prod(); v = op === '+' ? v + r : v - r; }
+      return v;
+    };
+    const v = sum();
+    if (i !== s.length) throw new Error('extra');
+    return v;
   }
 
   // ---------- category tree ----------

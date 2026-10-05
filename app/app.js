@@ -390,7 +390,7 @@
         ${UI.budgetFilter.indexOf('kind:') === 0 ? `<button class="chip" data-action="bfilter" data-v="all" title="Show all categories">Only ${esc(UI.budgetFilter === 'kind:none' ? 'not tagged' : (KINDS.find((x) => x[0] === UI.budgetFilter.slice(5)) || [0, ''])[1].toLowerCase())} ✕</button>` : ''}
         <div class="tools-r">
           <button class="btn sm icon-cycle${tgtOn() ? ' on' : ''}" data-action="tgt-toggle" aria-pressed="${tgtOn()}" aria-label="${tgtOn() ? 'Hide' : 'Show'} the Target column" title="${tgtOn() ? 'Hide' : 'Show'} the Target column"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.7" fill="none"/><circle cx="10" cy="10" r="3.6" stroke="currentColor" stroke-width="1.7" fill="none"/><circle cx="10" cy="10" r="1.1" fill="currentColor"/></svg></button>
-          <button class="btn sm icon-cycle pct-btn${pctOn() ? ' on' : ''}" data-action="pct-toggle" aria-pressed="${pctOn()}" title="${pctOn() ? 'Hide' : 'Show'} the needs, wants and savings bar">%</button>
+          <button class="btn sm icon-cycle pct-btn${pctOn() ? ' on' : ''}" data-action="pct-toggle" aria-pressed="${pctOn()}" title="${pctOn() ? 'Hide' : 'Show'} the needs, wants and freedom bar">%</button>
           <button class="btn sm icon-cycle desk-only" data-action="bar-cycle" aria-label="${BAR_LABEL[barPref()]}. Click to change." title="${BAR_LABEL[barPref()]} (click to change)">${BAR_ICON[barPref()]}</button>
           <button class="btn sm phone-only" data-action="collapse-all">${Object.keys(UI.collapsed).length ? 'Expand all' : 'Collapse all'}</button>
           <button class="btn sm ${UI.editCats ? 'on' : ''}" data-action="edit-cats" aria-pressed="${UI.editCats}">${UI.editCats ? 'Done' : '<span class="desk-only">Edit categories</span><span class="phone-only">Edit</span>'}</button>
@@ -502,7 +502,7 @@
   function editControls(id) {
     if (!UI.editCats) return '';
     const own = D.cats[id].kind, eff = kindOf(id);
-    const kchip = payAcct(id) ? '<span class="kchip tx-need" title="The minimum payment is a need; anything extra is savings, investing &amp; debt">Need + Save</span>' : `<button class="kchip tx-${eff || 'none'}${own ? '' : ' inh'}" data-action="kind-cycle" data-id="${id}" title="${own ? kindLabel(own) : eff ? `${kindLabel(eff)} (from the group above)` : 'Not tagged'}. Click to change.">${eff ? KIND_SHORT[eff] : 'Tag'}</button>`;
+    const kchip = payAcct(id) ? '<span class="kchip tx-need" title="The minimum payment is a need; anything extra is freedom">Need + Freedom</span>' : `<button class="kchip tx-${eff || 'none'}${own ? '' : ' inh'}" data-action="kind-cycle" data-id="${id}" title="${own ? kindLabel(own) : eff ? `${kindLabel(eff)} (from the group above)` : 'Not tagged'}. Click to change.">${eff ? KIND_SHORT[eff] : 'Tag'}</button>`;
     return `<span class="edit-ctl">${kchip}
       <button class="icon-btn" data-action="cat-up" data-id="${id}" aria-label="Move up">${ICON.up}</button>
       <button class="icon-btn" data-action="cat-down" data-id="${id}" aria-label="Move down">${ICON.down}</button>
@@ -517,9 +517,10 @@
   }
   const tgtDesc = (id, info) => (info ? targetLine(id, info).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-  // ---------- needs, wants, savings (the 50/30/20 check) ----------
-  const KINDS = [['need', 'Needs', 'Need'], ['want', 'Wants', 'Want'], ['save', 'Savings, investing & debt', 'Savings, investing & debt']];
-  const KIND_SHORT = { need: 'Need', want: 'Want', save: 'Save' };
+  // ---------- needs, wants, freedom (the 50/30/20 check) ----------
+  // 'save' is the stored id; people see it as Freedom (savings, investing and paying off debt)
+  const KINDS = [['need', 'Needs', 'Need'], ['want', 'Wants', 'Want'], ['save', 'Freedom', 'Freedom']];
+  const KIND_SHORT = { need: 'Need', want: 'Want', save: 'Freedom' };
   const kindLabel = (k) => (KINDS.find((x) => x[0] === k) || [0, 'Not tagged', 'Not tagged'])[2];
   // a category's type: its own tag, or the nearest group above it that has one
   function kindOf(id) {
@@ -554,7 +555,7 @@
     const tot = { need: 0, want: 0, save: 0, none: 0 };
     const add = (id, v) => {
       if (!v) return;
-      // paying a debt: the minimum is a need, anything on top is savings, investing & debt
+      // paying a debt: the minimum is a need, anything on top is freedom
       const a = payAcct(id);
       if (a && v > 0) { const m = Math.min(v, minPayOf(a)); tot.need += m; tot.save += v - m; return; }
       tot[kindOf(id) || 'none'] += v;
@@ -583,7 +584,7 @@
         <button class="linkish" data-action="split-goals">Change goal</button>
       </div>`;
     if (sum <= 0) return `<section class="nws">${head}<p class="hint">${basis === 'targets' ? 'No targets this month yet.' : 'Nothing budgeted this month yet.'}</p></section>`;
-    const names = { need: 'Needs', want: 'Wants', save: 'Savings, investing & debt', none: 'Not tagged' };
+    const names = { need: 'Needs', want: 'Wants', save: 'Freedom', none: 'Not tagged' };
     const short = { need: 'Needs', want: 'Wants', save: 'Savings', none: 'Not tagged' };
     const pct = (v) => Math.round((v / sum) * 100);
     const seg = (k, p, click, extra) => {
@@ -613,7 +614,7 @@
         <div class="grid3">
           <div class="field"><label for="sg-need">Needs %</label><input id="sg-need" type="number" min="0" max="100" inputmode="numeric" value="${g.need}"></div>
           <div class="field"><label for="sg-want">Wants %</label><input id="sg-want" type="number" min="0" max="100" inputmode="numeric" value="${g.want}"></div>
-          <div class="field"><label for="sg-save">Savings, investing & debt %</label><input id="sg-save" type="number" min="0" max="100" inputmode="numeric" value="${g.save}"></div>
+          <div class="field"><label for="sg-save">Freedom %</label><input id="sg-save" type="number" min="0" max="100" inputmode="numeric" value="${g.save}"></div>
         </div><p id="sg-sum" class="hint"></p>`,
       foot: '<button class="btn primary" data-saction="save">Save</button><button class="btn" data-saction="reset">Use 50/30/20</button>',
     });
@@ -762,7 +763,7 @@
       return `<button class="back-link" data-saction="back">${ICON.left} Back</button>
         <div class="field"><label for="cat-name">Name</label><input id="cat-name" value="${esc(c.name)}" autocomplete="off"></div>
         <div class="field"><label>Counts as</label>
-          ${pa ? `<p class="hint">The minimum payment is a need; anything extra is saving. <button class="linkish" data-saction="edit-acct">Set the minimum</button></p>`
+          ${pa ? `<p class="hint">The minimum payment is a need; anything extra is freedom. <button class="linkish" data-saction="edit-acct">Set the minimum</button></p>`
             : `<div class="seg-ctl kind-ctl" role="group" aria-label="Counts as">${KINDS.map(([k]) => `<button data-saction="kind" data-v="${k}" aria-pressed="${eff === k}">${KIND_SHORT[k]}</button>`).join('')}</div>
             ${!ownK && par ? `<p class="fine">Same as ${esc(grp)}</p>` : ''}`}
         </div>
@@ -2695,7 +2696,7 @@
             <div class="field"><label for="ac-min">Minimum payment each month</label><input id="ac-min" inputmode="decimal" placeholder="${a.type === 'credit' ? 'from your statement' : 'same as the repayment'}" value="${a.minPay != null ? plain(a.minPay) : ''}"></div>
             <div class="field" id="ac-limit-f"><label for="ac-limit">Credit limit</label><input id="ac-limit" inputmode="decimal" placeholder="optional" value="${a.limit ? plain(a.limit) : ''}"></div>
           </div>
-          <p class="hint">The minimum payment counts as a need in "Where this month's budget is going". Anything extra counts as savings, investing &amp; debt. For a loan, leave it blank to use the repayment. ${isNew ? 'A repayment amount becomes the monthly target for its payment category.' : ''}</p>
+          <p class="hint">The minimum payment counts as a need in "Where this month's budget is going". Anything extra counts as freedom. For a loan, leave it blank to use the repayment. ${isNew ? 'A repayment amount becomes the monthly target for its payment category.' : ''}</p>
         </div>
         ${!isNew ? `<label class="check"><input type="checkbox" id="ac-closed" ${a.closed ? 'checked' : ''}> Closed (hide from lists, keep its history)</label>` : ''}`,
       foot: `<button class="btn primary" data-saction="save">${isNew ? 'Add account' : 'Save'}</button>${!isNew && !hasTx ? '<button class="btn danger" data-saction="delete">Delete</button>' : ''}`,

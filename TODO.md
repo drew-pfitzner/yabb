@@ -23,6 +23,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Done
 
+- 2026-10-05: **Phone app, round two (Dani).** 'Save' is now **Freedom** (Needs, Wants and Freedom). Phone: a header that stays put with the pie logo, sticky group and date headings, and the Ready to Assign box turning into a line in its colour. Transactions: grouped by day, one line each with a Payee/Note switch, tap to see more. A category's settings show 'Spent this month', which opens Transactions filtered to it.
 - 2026-10-05: **Phone app and tidier budget (Dani).** Add YNABB to the home screen as an app (sharp icon, full screen) with pull-down-to-refresh. Phone Budget page: one slim line per category; tap one to see Assigned, Spent and Available, with a pencil for its settings. Category settings: a target card, this month's transactions, and More options on its own page (Name, Counts as Need/Want/Save, Group, Note). On the computer, the Target column and % bar start off each time.
 - 2026-10-05: **Real budget moved to the A6** (Family budget: 701 transactions, no receipts to carry across). Backed up straight away, restore-checked, and confirmed in iCloud.
 - 2026-10-05: **Git autopilot.** `/ship`, `/sync` and `/undo` in Claude Code; sessions start by fetching from GitHub; GitHub checks every pull request (scripts load, tests, Docker build, no private data); `main` only takes pull requests that pass, and merges them automatically.

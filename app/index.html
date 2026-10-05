@@ -960,6 +960,35 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .split input[id^="sp-memo"] { grid-column: 1 / 3; }
   :root[data-layout="phone"] .field input, :root[data-layout="phone"] .field select, :root[data-layout="phone"] .field textarea, :root[data-layout="phone"] .split select, :root[data-layout="phone"] .split input, :root[data-layout="phone"] .search input, :root[data-layout="phone"] .asg { font-size: 16px; }
 }
+.b-edit { display: none; }
+/* ---------- phone budget: one tidy line per category; tap one to see and change its numbers ---------- */
+:root[data-layout="phone"] .top { flex-wrap: nowrap; gap: 6px; }
+:root[data-layout="phone"] .top .monthsw { margin-right: auto; }
+:root[data-layout="phone"] .sync span, :root[data-layout="phone"] .top .layout-btn { font-size: 0; }
+:root[data-layout="phone"] .top .layout-btn { padding: 6px; gap: 0; }
+:root[data-layout="phone"] .top .layout-btn svg { width: 18px; height: 18px; }
+:root[data-layout="phone"] .rta-msg, :root[data-layout="phone"] .month-sum { display: none; }
+:root[data-layout="phone"] .rta { row-gap: 4px; }
+:root[data-layout="phone"] .bud-tools { flex-wrap: nowrap; gap: 6px; }
+:root[data-layout="phone"] .bud-tools .seg-ctl button { font-size: 13px; padding: 6px 10px; white-space: nowrap; }
+:root[data-layout="phone"] .bud-tools .tools-r { margin-left: auto; }
+:root[data-layout="phone"] .bud-tools .icon-cycle, :root[data-layout="phone"] .bud-tools [data-action="collapse-all"] { display: none !important; }
+:root[data-layout="phone"] .brow { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "name name avl" "bar bar bar"; padding: 9px 12px 9px calc(12px + var(--d) * 12px); row-gap: 7px; min-height: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:root[data-layout="phone"] .brow .b-tgt, :root[data-layout="phone"] .brow .b-asg, :root[data-layout="phone"] .brow .b-act, :root[data-layout="phone"] .brow .tline, :root[data-layout="phone"] .brow .b-edit { display: none; }
+:root[data-layout="phone"] .brow .b-name { flex-wrap: nowrap; }
+:root[data-layout="phone"] .brow .cname { font-size: 15px; }
+:root[data-layout="phone"] .brow .b-avl { justify-self: end; }
+:root[data-layout="phone"] .brow .b-bar { max-width: none; }
+:root[data-layout="phone"] .brow.open { grid-template-areas: "name name avl" "bar bar bar" "asg act tgt"; background: var(--surface-2); }
+:root[data-layout="phone"] .brow.open .b-name { flex-wrap: wrap; row-gap: 3px; }
+:root[data-layout="phone"] .brow.open .tline { display: block; flex-basis: 100%; order: 9; margin: 0; padding-left: 23px; white-space: normal; font-size: 12.5px; }
+:root[data-layout="phone"] .brow.open .b-edit { display: inline-flex; margin-left: auto; }
+:root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; padding: 0; text-align: left; font-size: 14px; min-width: 0; }
+:root[data-layout="phone"] .brow.open .b-asg { padding-left: 23px; }
+:root[data-layout="phone"] .brow.open .m-lbl { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+:root[data-layout="phone"] .brow.open .asg { width: 100%; max-width: 110px; font-size: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+:root[data-layout="phone"] .brow.open .b-avl { align-self: start; }
+:root[data-layout="phone"] .brow.debt .kdot.debt-ic { left: calc(12px + var(--d) * 12px); top: 9px; transform: none; }
 @media (prefers-reduced-motion: no-preference) {
   .sheet { animation: rise .18s ease-out; }
   @keyframes rise { from { transform: translateY(14px); opacity: .6; } to { transform: none; opacity: 1; } }

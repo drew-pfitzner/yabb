@@ -392,7 +392,7 @@
           <button class="btn sm icon-cycle pct-btn${pctOn() ? ' on' : ''}" data-action="pct-toggle" aria-pressed="${pctOn()}" title="${pctOn() ? 'Hide' : 'Show'} the needs, wants and savings bar">%</button>
           <button class="btn sm icon-cycle desk-only" data-action="bar-cycle" aria-label="${BAR_LABEL[barPref()]}. Click to change." title="${BAR_LABEL[barPref()]} (click to change)">${BAR_ICON[barPref()]}</button>
           <button class="btn sm phone-only" data-action="collapse-all">${Object.keys(UI.collapsed).length ? 'Expand all' : 'Collapse all'}</button>
-          <button class="btn sm ${UI.editCats ? 'on' : ''}" data-action="edit-cats" aria-pressed="${UI.editCats}">${UI.editCats ? 'Done editing' : 'Edit categories'}</button>
+          <button class="btn sm ${UI.editCats ? 'on' : ''}" data-action="edit-cats" aria-pressed="${UI.editCats}">${UI.editCats ? 'Done' : '<span class="desk-only">Edit categories</span><span class="phone-only">Edit</span>'}</button>
         </div>
       </div>
       <div class="bud" role="table" aria-label="Budget for ${esc(monthLabel(UI.month))}">
@@ -634,13 +634,20 @@
     return `<button class="link-btn${on ? ' on' : ''}" data-action="link-toggle" data-id="${id}" aria-pressed="${on}" aria-label="${tip}" title="${tip}">${on ? ICON_LINK : ICON_UNLINK}</button>`;
   }
 
+  // phone: one category at a time shows its Assigned, Spent and Target (no re-render, so typing isn't interrupted)
+  function toggleCatRow(id) {
+    UI.openCat = UI.openCat === id ? null : id;
+    document.querySelectorAll('.brow.open').forEach((r) => r.classList.remove('open'));
+    const r = UI.openCat && document.querySelector(`.brow[data-cat="${UI.openCat}"]`);
+    if (r) r.classList.add('open');
+  }
   function leafRow(id) {
     const r = D.month.rows[id], c = D.cats[id], depth = D.tree.depth[id];
-    return `<div class="brow leaf st-${r.status}${c.hidden ? ' hidden-cat' : ''}${payAcct(id) ? ' debt' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
+    return `<div class="brow leaf st-${r.status}${c.hidden ? ' hidden-cat' : ''}${payAcct(id) ? ' debt' : ''}${UI.openCat === id ? ' open' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
       <div class="b-name">
         <span class="twisty-sp"></span>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>
-        ${editControls(id)}
+        ${editControls(id)}<button class="btn xs b-edit" data-action="cat-edit" data-id="${id}">Edit</button>
         ${tlineHTML(targetLine(id, r))}
       </div>
       <div class="b-bar">${bar(r.parts)}</div>
@@ -656,7 +663,7 @@
     const collapsed = !!UI.collapsed[id];
     const st = g.overCount ? 'over' : g.underCount ? 'under' : g.available > 0 ? 'pos' : 'zero';
     const flag = g.overCount ? `<span class="st over">${g.overCount} in the red</span>` : g.under ? `<span class="st under">Needs ${money(g.under)}</span>` : '';
-    return `<div class="brow parent${depth === 0 ? ' top' : ''}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}${D.tree.children[id].some((k) => payAcct(k)) ? ' debt-grp' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
+    return `<div class="brow parent${depth === 0 ? ' top' : ''}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}${D.tree.children[id].some((k) => payAcct(k)) ? ' debt-grp' : ''}${UI.openCat === id ? ' open' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
       <div class="b-name">
         <button class="twisty" data-action="toggle" data-id="${id}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${esc(c.name)}">${collapsed ? ICON.right : ICON.down}</button>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>${D.tree.children[id].some((k) => payAcct(k)) ? '<span class="debt-chip">Cards &amp; loans</span>' : ''}
@@ -678,7 +685,7 @@
     let line = c.target ? targetLine(id, g) : '';
     if (g.targetShort > 0) line = `<span class="st under">Targets inside need ${money(g.kidsNeed)} this month, ${money(g.targetShort)} more than ${poss(esc(c.name))} target</span>` + (line ? `<span class="tdesc">${line.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</span>` : '');
     if (!line) line = g.overCount ? `<span class="st over">${g.overCount} in the red</span>` : g.under ? `<span class="st under">Needs ${money(g.under)}</span>` : '';
-    return `<div class="brow pot st-${g.status}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
+    return `<div class="brow pot st-${g.status}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}${UI.openCat === id ? ' open' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
       <div class="b-name">
         <button class="twisty" data-action="toggle" data-id="${id}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${esc(c.name)}">${collapsed ? ICON.right : ICON.down}</button>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>
@@ -3056,7 +3063,8 @@
       saveUI(); render();
     },
     bfilter: (el) => { UI.budgetFilter = el.dataset.v; UI.view = 'budget'; render(); },
-    cat: (el) => openCat(el.dataset.id),
+    cat: (el) => (isPhone() && el.closest('.brow') && !UI.editCats ? toggleCatRow(el.dataset.id) : openCat(el.dataset.id)),
+    'cat-edit': (el) => openCat(el.dataset.id),
     move: (el) => openMove(el.dataset.id),
     'auto-assign': autoAssign,
     'goto-review': () => { UI.view = 'tx'; UI.f = { acct: '', cat: '', from: '', to: '', min: '', max: '', status: 'review' }; UI.showFilters = false; saveUI(); render(); },
@@ -3265,6 +3273,9 @@
       else { ev.preventDefault(); const fn = sheet.actions[s.dataset.saction]; if (fn) fn(s, ev); return; }
     }
     const a = ev.target.closest('[data-action]');
+    // phone: a tap anywhere on a category opens or closes its details
+    const br = !a && isPhone() && UI.view === 'budget' && !UI.editCats && ev.target.closest('.brow[data-cat]');
+    if (br && !ev.target.closest('input, select, textarea, label')) { toggleCatRow(br.dataset.cat); return; }
     if (!a) {
       // a click anywhere else on a row (the icon or C columns, the gaps) selects it too
       const row = !isPhone() && ev.target.closest('.txl .txr[data-row]:not(.editing)');

@@ -447,7 +447,12 @@ const redirect = (res, to) => { res.writeHead(303, Object.assign({}, SECURITY_HE
 function checkSameSite(req) {
   if (req.headers['x-requested-with'] !== 'yabb') fail(403, 'Blocked.');
   const origin = req.headers.origin;
-  if (origin && new URL(origin).host !== req.headers.host) fail(403, 'Blocked.');
+  if (!origin) return;
+  // behind Tailscale the public name can arrive as X-Forwarded-Host
+  const hosts = [req.headers.host].concat(TRUST_PROXY ? String(req.headers['x-forwarded-host'] || '').split(',').map((h) => h.trim()) : []);
+  let host = '';
+  try { host = new URL(origin).host; } catch (e) { /* not a URL: blocked below */ }
+  if (!hosts.includes(host)) fail(403, 'Blocked.');
 }
 
 async function route(req, res) {

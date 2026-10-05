@@ -1,0 +1,5 @@
+*
+!package.json
+!app/
+!server/server.js
+!server/public/

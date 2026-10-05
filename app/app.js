@@ -283,6 +283,7 @@
     if (pn) { pn.hidden = !pname; pn.textContent = pname || ''; }
     // sticky headings sit just under the header, whatever its height
     document.documentElement.style.setProperty('--hdr', ($('.top') ? $('.top').offsetHeight : 50) + 'px');
+    requestAnimationFrame(rtaLine);
     $('#monthlabel').textContent = monthLabel(UI.month);
     const review = D ? D.tx.filter((t) => t.approved === false).length : 0;
     const badge = $('#txbadge');
@@ -3386,6 +3387,15 @@
       location.reload();
     });
   })();
+  // phone budget: once Ready to Assign scrolls up under the header, the header gets a line in its colour
+  function rtaLine() {
+    const top = $('.top'), box = $('.rta');
+    if (!top) return;
+    const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom < top.getBoundingClientRect().bottom);
+    if (on) document.documentElement.style.setProperty('--rta-c', getComputedStyle(box).backgroundColor);
+    top.classList.toggle('rta-gone', on);
+  }
+  window.addEventListener('scroll', rtaLine, { passive: true });
   // still saving: ask before the page closes
   window.addEventListener('beforeunload', (ev) => { if (Object.values(S._queue || {}).some((q) => q.busy)) { ev.preventDefault(); ev.returnValue = ''; } });
   document.addEventListener('change', async (ev) => {

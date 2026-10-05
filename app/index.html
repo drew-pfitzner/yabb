@@ -1049,6 +1049,9 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .txr.open .tx-pen:active { background: var(--surface); color: var(--ink); }
 /* phone: the header stays at the top (clear of the clock and battery); headings stick under it */
 .page-name { display: none; }
+:root[data-layout="phone"] .top { transition: box-shadow .15s; }
+:root[data-layout="phone"] .top.rta-gone { box-shadow: 0 4px 0 var(--rta-c, var(--accent)); }
+:root[data-layout="phone"] .top.rta-gone ~ #view .brow.parent.top { top: calc(var(--hdr, 50px) + 4px); }
 /* the pie on its own at the left of the phone header */
 :root[data-layout="phone"] .brand { font-size: 0; gap: 0; margin-right: 2px; flex: none; }
 :root[data-layout="phone"] .brand svg { width: 24px; height: 24px; }

@@ -3391,7 +3391,7 @@
   function rtaLine() {
     const top = $('.top'), box = $('.rta');
     if (!top) return;
-    const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom + 12); // 12: the line's height, so the box's edge hands over to it seamlessly
+    const on = !!(isPhone() && UI.view === 'budget' && box && box.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom + 5); // 5: the line's height, so the box's edge hands over to it seamlessly
     if (on) document.documentElement.style.setProperty('--rta-c', getComputedStyle(box).backgroundColor);
     top.classList.toggle('rta-gone', on);
   }

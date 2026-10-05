@@ -72,221 +72,190 @@
   // ---------- the steps ----------
   // ch: which chapter. when(): show this step at all. body(): what's on the card. bind(card): make it work.
   // next(): runs when moving on; return false to stay.
-  const CH = ['Welcome', 'Why bother', 'Practice', 'Uneven pay', 'Your money', 'Your plan', 'Using it'];
+  const CH = ['The envelopes', 'Bigger picture', 'In YNABB', 'Your money', 'Your plan', 'Using it'];
   const S = [];
   const step = (o) => S.push(o);
 
-  step({ id: 'hello', ch: 0, title: 'Hi! Let\'s sort out your money, together.', nextLabel: 'Let\'s start',
-    body: () => big('This isn\'t a maths test. YNABB does all the adding up for you.') +
-      p('Your only job is to decide what your money is <b>for</b>. That\'s it.') +
-      p('We\'ll go one small step at a time:') +
-      `<ol class="g-chapters"><li><b>Why bother</b>: what a plan can do for you</li><li><b>Practice</b>: try it on a pretend person first. Nothing real, nothing to break.</li><li><b>Uneven pay</b>: what to do when money comes in bits and pieces</li><li><b>Your money</b>: where your money is, and what you owe</li><li><b>Your plan</b>: what your money is for</li><li><b>Using it</b>: the few things you\'ll do each week</li></ol>` +
-      soft('About 35 minutes all up. You can close this any time. It remembers where you were.') });
+  // ---------- envelope pictures: little animations do the explaining ----------
+  // an envelope with a label written on it, and (optionally) what's inside underneath
+  const env = (label, amt, cls) => `<div class="ge ${cls || ''}"><svg viewBox="0 0 64 42"><rect x="1.5" y="1.5" width="61" height="39" rx="4"/><path d="M2.5 3.5 L32 23 L61.5 3.5"/></svg><span class="ge-l">${label}</span>${amt != null ? `<b class="ge-a">${amt}</b>` : ''}</div>`;
+  // put something at x (a % across) and y (px down) in a picture
+  const at = (x, y, html, style) => `<div class="gs-at" style="--x:${x}%;--y:${y}px;${style || ''}">${html}</div>`;
+  // a bank note flying from one spot to another, after a delay
+  const fly = (sx, sy, ex, ey, d, t, cls) => `<i class="gn ${cls || ''}" style="--sx:${sx}%;--sy:${sy}px;--ex:${ex}%;--ey:${ey}px;--d:${d}s;--t:${t || 1.1}s">$</i>`;
+  // something that appears after a delay (and, with "out", disappears again later)
+  const show = (d, html, out) => `<span class="gs-show" style="--d:${d}s${out != null ? `;--o:${out}s` : ''}"${out != null ? ' data-out' : ''}>${html}</span>`;
+  const pic = (h, inner, still) => `<div class="gs" style="--h:${h}px" aria-hidden="true">${inner}</div>` + (still ? '' : '<button class="g-replay" data-replay>↻ Play again</button>');
+  const XS = [12.5, 37.5, 62.5, 87.5];
 
-  // ---- why bother ----
-  step({ id: 'yes', ch: 1, title: 'A budget doesn\'t say no. It says yes, on purpose.',
-    body: () => big('Knowing your numbers is a superpower.') +
-      p('When you know where your money is going, you stop wondering "can I afford this?" You <b>know</b>. And you can say yes to the things you really care about, without the guilt or the 2am worry.') +
-      `<ul class="g-wins">
-        <li>Booking the holiday, knowing it\'s already paid for</li>
-        <li>Christmas without the January dread</li>
-        <li>Saying yes to the school excursion straight away</li>
-        <li>The car breaks down, and it\'s annoying, not a crisis</li>
-        <li>Watching a debt shrink, month by month</li>
-      </ul>` +
-      p('That\'s what this is for. Not less fun. <b>More choice.</b>') });
+  // a quick check: recalling it beats re-reading it. opts: [answer, right?, what we say back]
+  const quiz = (o) => step({ id: o.id, ch: o.ch, title: o.title,
+    body: () => {
+      const a = (st.quiz || {})[o.id];
+      return p(o.q) + `<div class="g-choices col">${o.opts.map(([t, right], i) => `<button class="g-choice ${a === i ? (right ? 'on' : 'meh') : ''}" data-q="${i}">${t}</button>`).join('')}</div>` +
+        (a != null ? (o.opts[a][1] ? ok(o.opts[a][2]) : `<div class="g-hm">${o.opts[a][2]}</div>`) : '');
+    },
+    bind: (card) => $$('[data-q]', card).forEach((b) => b.addEventListener('click', () => { (st.quiz || (st.quiz = {}))[o.id] = Number(b.dataset.q); save(); draw(); })) });
+
+  // ---- the envelopes: every idea taught with cash and envelopes first, YNABB comes later ----
+  step({ id: 'hello', ch: 0, title: 'Budgeting is simpler than you think', nextLabel: 'Show me',
+    body: () => pic(110, XS.map((x, i) => at(x, 30, env(['Rent', 'Food', 'Power', 'Fun'][i]))).join(''), true) +
+      big('It all comes down to envelopes. Let me show you.') +
+      soft('Takes about 15 minutes. Stop any time and pick up where you left off.') });
+
+  step({ id: 'gran', ch: 0, title: 'Picture your great-grandma on payday',
+    body: () => {
+      const names = ['Rent', 'Food', 'Power', 'Fun'], amts = ['$450', '$250', '$100', '$200'];
+      return pic(186, at(50, 10, '<div class="gs-cash"><i></i><i></i><i></i><span>Payday</span></div>') +
+        [0, 1, 2, 3, 4, 5, 6, 7].map((i) => fly(50, 40, XS[i % 4], 114, i * 0.32)).join('') +
+        names.map((n, i) => at(XS[i], 112, env(n, show((i + 4) * 0.32 + 1.1, amts[i])))).join('')) +
+        p('She\'d take her pay out as cash and split it into envelopes, <b>one for each thing she needed.</b>') +
+        p('When the Food envelope ran empty, that was it until next payday.');
+    } });
+
+  const FILL = [['Rent', 450], ['Food', 250], ['Power', 100], ['Fun', 200]];
+  const filled = () => st.fill || (st.fill = {});
+  const onTable = () => 1000 - FILL.reduce((a, [n]) => a + (filled()[n] || 0), 0);
+  step({ id: 'fill', ch: 0, title: 'Give every dollar a job',
+    body: () => {
+      const f = filled(), left = onTable();
+      return p('You\'ve just been paid <b>$1,000</b>. Tap each envelope to fill it.') +
+        `<div class="g-left ${left === 0 ? 'done' : ''}">On the table: <b>$${left}</b></div>` +
+        `<div class="g-envs">${FILL.map(([n, need]) => `<button class="g-env ${f[n] ? 'on' : ''} ${st.fillJust === n ? 'just' : ''}" data-fillenv="${n}" ${f[n] ? 'disabled' : ''}>${env(n, f[n] ? '$' + f[n] + ' ✓' : 'needs $' + need)}</button>`).join('')}</div>` +
+        (left === 0 ? ok('Every dollar has a job. <b>That\'s the heart of budgeting.</b>') : '') +
+        (Object.keys(f).length ? `<button class="g-link" data-act="refill">Start again</button>` : '');
+    },
+    bind: (card) => {
+      $$('[data-fillenv]', card).forEach((b) => b.addEventListener('click', () => { const n = b.dataset.fillenv, need = FILL.find((x) => x[0] === n)[1]; filled()[n] = Math.min(need, onTable()); st.fillJust = n; save(); draw(); }));
+      const r = $('[data-act="refill"]', card); if (r) r.addEventListener('click', () => { st.fill = {}; st.fillJust = null; save(); draw(); });
+    },
+    canNext: () => onTable() === 0, needMsg: 'Tap each envelope until the table is empty.' });
+
+  step({ id: 'notyet', ch: 0, title: 'Only use money you\'ve already got',
+    body: () => pic(112, at(30, 24, env('Fun', '$0')) + at(72, 30, '<div class="gs-ghost">$<small>Thursday\'s pay</small></div>'), true) +
+      p('She couldn\'t fill an envelope with money she didn\'t have yet. Pay coming on Thursday? <b>Wait until it lands</b>, then share it out.') });
+
+  step({ id: 'know', ch: 0, title: 'Know where your money goes',
+    body: () => pic(122,
+      at(28, 30, env('Food', show(0, '$250', 1.2) + show(1.3, '$180'))) +
+      fly(28, 40, 76, 48, 0.2, 1.1) +
+      at(76, 34, '<div class="gs-shop"><span class="gs-ic">🛒</span><small>Groceries $70</small></div>')) +
+      p('Every time she spent, it came out of an envelope. So she always knew <b>what was left</b>, and <b>what it went on</b>.') });
+
+  step({ id: 'true', ch: 0, title: 'Plan for the big, rare bills',
+    body: () => pic(150,
+      Array.from({ length: 12 }, (_, i) => fly(50, -18, 50, 30, i * 0.28, 0.8)).join('') +
+      at(50, 26, env('Car rego', show(4, '$900 ready ✓'))) +
+      at(50, 114, '<div class="gs-months">' + 'JFMAMJJASOND'.split('').map((m, i) => `<i style="--d:${i * 0.28 + 0.6}s">${m}</i>`).join('') + '</div>')) +
+      p('Rego, Christmas, birthdays. They\'re not surprises, just bills that don\'t come every month.') +
+      p('The trick: <b>divide the yearly cost by 12</b>. Rego is $900 a year, so its envelope gets $75 a month, and the money\'s waiting when the bill arrives.') });
+
+  step({ id: 'roll', ch: 0, title: 'Roll with the punches',
+    body: () => pic(122,
+      at(26, 30, env('Food', show(0, '<span class="neg">−$30</span>', 1.4) + show(1.5, '$0 ✓'))) +
+      fly(74, 40, 26, 40, 0.3, 1.2, 'arc') +
+      at(74, 30, env('Fun', show(0, '$200', 1.4) + show(1.5, '$170')))) +
+      p('Life happens. Overspent on food? Move a bit across from Fun.') +
+      p('<b>Changing the plan isn\'t failing.</b> It\'s what a plan is for.') });
+
+  quiz({ id: 'q-roll', ch: 0, title: 'Quick check',
+    q: 'It\'s Wednesday and the Food envelope is empty. What would great-grandma do?',
+    opts: [
+      ['Move some across from Fun', true, 'Exactly. The plan bends, and nothing\'s broken.'],
+      ['Put it on a credit card', false, 'Not quite. That spends money she hasn\'t got. Moving it from another envelope keeps her on track.'],
+      ['Give up on envelopes', false, 'Never! One empty envelope just means it\'s time to shuffle some money.'],
+    ] });
+
+  // ---- the bigger picture ----
+  step({ id: 'choose', ch: 1, title: 'Choose what matters most',
+    body: () => pic(122,
+      at(26, 30, env('Takeaway', show(0, '$120', 1.4) + show(1.5, '$60'))) +
+      [0, 1].map((i) => fly(26, 40, 74, 40, 0.3 + i * 0.4, 1.2, 'arc')).join('') +
+      at(74, 30, env('Holiday', show(0, '$0', 1.8) + show(1.9, '$60')))) +
+      p('Each dollar can only do one job. Spend a bit less on takeaway, and that money can go towards a holiday.') +
+      p('Small trade-offs let you <b>say yes to what you love most</b>.') });
 
   const DREAMS = [['holiday', 'A holiday', 'Holiday'], ['calm', 'Less stress about bills', null], ['debt', 'Paying off what I owe', null], ['cushion', 'A safety cushion', 'Emergency fund'], ['treats', 'Treats without guilt', 'Treats'], ['house', 'A house deposit', 'House deposit'], ['car', 'A better car', 'New car'], ['kids', 'Things for the kids', 'Kids\' extras']];
-  step({ id: 'dream', ch: 1, title: 'What would you love your money to do?',
+  step({ id: 'dream', ch: 1, title: 'What would you love to say yes to?',
     body: () => {
       const d = st.dreams || (st.dreams = []);
-      return p('Tap as many as you like. There are no wrong answers.') +
-        `<div class="g-choices">${DREAMS.map(([k, l]) => `<button class="g-choice ${d.includes(k) ? 'on' : ''}" data-dream="${k}">${d.includes(k) ? '\u2713 ' : ''}${l}</button>`).join('')}</div>` +
-        `<p class="g-q">Something else?</p><span class="g-own"><input id="g-dream-own" placeholder="e.g. A new couch" value="${esc(st.dreamOwn || '')}" aria-label="Something else you'd love"></span>` +
-        (d.length || st.dreamOwn ? ok('Lovely. We\'ll build these into your plan, so they actually happen.') : '');
+      return p('Pick any you like. They\'ll get their own envelopes later.') +
+        `<div class="g-choices">${DREAMS.map(([k, l]) => `<button class="g-choice ${d.includes(k) ? 'on' : ''}" data-dream="${k}">${d.includes(k) ? '✓ ' : ''}${l}</button>`).join('')}</div>` +
+        `<span class="g-own"><input id="g-dream-own" placeholder="Something else?" value="${esc(st.dreamOwn || '')}" aria-label="Something else you'd love"></span>`;
     },
     bind: (card) => {
       $$('[data-dream]', card).forEach((b) => b.addEventListener('click', () => { const d = st.dreams, i = d.indexOf(b.dataset.dream); if (i >= 0) d.splice(i, 1); else d.push(b.dataset.dream); save(); draw(); }));
-      const o = $('#g-dream-own', card); if (o) o.addEventListener('change', () => { st.dreamOwn = o.value.trim(); save(); draw(); });
+      const o = $('#g-dream-own', card); if (o) o.addEventListener('change', () => { st.dreamOwn = o.value.trim(); save(); });
     } });
 
-  // ---- practice with a pretend person ----
-  // Sam's pretend budget lives only in the guide. Nothing real changes.
-  const SAM = [
-    ['Rent', 500, 'need'], ['Groceries', 250, 'need'], ['Phone', 50, 'need'],
-    ['Car rego', 75, 'need', '$900 a year, so $75 a month'], ['Fun', 100, 'want'], ['Weekend away', 0, 'dream', 'Sam\'s dream'],
-  ];
-  const samJobs = () => st.sam || (st.sam = Object.fromEntries(SAM.map(([n]) => [n, 0])));
-  const samLeft = () => 1200 - Object.values(samJobs()).reduce((a, b) => a + b, 0);
-  const IDEAL = { Rent: 500, Groceries: 250, Phone: 50, 'Car rego': 75, Fun: 100, 'Weekend away': 225 };
-  const samTable = (opts) => {
-    const j = opts && opts.ideal ? IDEAL : samJobs(), left = samLeft();
-    return `<div class="g-sam">${SAM.map(([n, want, kind, note]) => {
-      const v = j[n] + (opts && opts.spent && opts.spent[n] ? -opts.spent[n] : 0);
-      return `<div class="g-sam-row ${v < 0 ? 'red' : ''} ${kind === 'dream' ? 'dream' : ''}">
-        <span class="g-sam-n">${n}${note ? `<small>${note}</small>` : ''}</span>
-        ${opts && opts.edit ? `<button class="g-pm" data-sam="${n}" data-d="-25" aria-label="Take $25 from ${n}" ${j[n] <= 0 ? 'disabled' : ''}>\u2212</button>` : ''}
-        <b class="g-sam-v">${v < 0 ? '\u2212$' + (-v) : '$' + v}</b>
-        ${opts && opts.edit ? `<button class="g-pm" data-sam="${n}" data-d="25" aria-label="Give $25 to ${n}" ${left <= 0 ? 'disabled' : ''}>+</button>${want && j[n] < want ? `<button class="g-fill" data-fill="${n}">Fill to $${want}</button>` : !want && left > 0 ? `<button class="g-fill" data-rest="${n}">Give it the rest</button>` : `<span></span>`}` : ''}
-      </div>`;
-    }).join('')}</div>`;
-  };
+  const ORDER = [['Rent', 100], ['Food', 100], ['Power', 100], ['Fuel', 60], ['Fun', 0]];
+  step({ id: 'uneven', ch: 1, title: 'Paid in bits? Fill the essentials first',
+    body: () => pic(188, ORDER.map(([n, pct], i) => at(50, 8 + i * 37, `<div class="gs-line"><span>${n}</span><div class="gs-bar"><i style="--w:${pct}%;--d:${i * 0.7}s"></i></div></div>`, 'width:86%')).join('')) +
+      p('Rent, food, power and getting to work come first. <b>Everything else gets what\'s left.</b>') });
 
-  step({ id: 'sam', ch: 2, title: 'Meet Sam',
-    body: () => p('Before your real numbers, let\'s practise on a pretend person. Nothing you do here is real, and nothing can break.') +
-      `<div class="g-person"><div class="g-face" aria-hidden="true">S</div><div><b>This is Sam.</b> Sam has never really budgeted. Money comes in, money goes out, and Sam\'s never quite sure where it went.<br><br>Sam just got paid. There\'s <b>$1,200</b> in the bank. And Sam would love a <b>weekend away</b> one day, about $600.</div></div>` +
-      p('Let\'s help Sam make a plan.') });
+  step({ id: 'short', ch: 1, title: 'When there isn\'t enough to go around',
+    body: () => `<ul class="g-wins"><li>Put fun and savings on hold for now</li><li>Call anyone you owe early. Most will help.</li><li>Try not to cover the gap with a credit card</li></ul>` +
+      p('<b>Knowing</b> you\'re short is far less scary than not knowing.') });
 
-  step({ id: 'sam-jobs', ch: 2, title: 'Give every dollar a job',
-    body: () => {
-      const left = samLeft();
-      return p('Here\'s the big idea: when money comes in, you give <b>every dollar</b> a job, until there\'s none left without one.') +
-        p('Help Sam. Tap <b>Fill</b> for each thing Sam needs, then give the rest to the weekend away.') +
-        samTable({ edit: true }) +
-        `<div class="g-left ${left === 0 ? 'done' : ''}">Still needs a job: <b>$${left}</b></div>` +
-        (left === 0 ? ok(`That\'s it. That\'s budgeting. Every dollar knows what it\'s for, and the weekend away already has <b>$${samJobs()['Weekend away']}</b>.`) : '');
-    },
-    bind: (card) => {
-      $$('[data-sam]', card).forEach((b) => b.addEventListener('click', () => { const j = samJobs(), d = Number(b.dataset.d); j[b.dataset.sam] = Math.max(0, j[b.dataset.sam] + Math.min(d, samLeft())); save(); draw(); }));
-      $$('[data-rest]', card).forEach((b) => b.addEventListener('click', () => { samJobs()[b.dataset.rest] += samLeft(); save(); draw(); }));
-      $$('[data-fill]', card).forEach((b) => b.addEventListener('click', () => { const j = samJobs(), n = b.dataset.fill, want = SAM.find((x) => x[0] === n)[1]; j[n] += Math.min(want - j[n], samLeft()); save(); draw(); }));
-    },
-    canNext: () => samLeft() === 0, needMsg: 'Give all of Sam\'s $1,200 a job first. Tip: whatever\'s left can go to the weekend away.' });
+  step({ id: 'freedom', ch: 1, title: 'Work towards freedom',
+    body: () => pic(118,
+      at(50, 16, '<div class="gs-line"><span>I owe</span><div class="gs-bar owe"><i style="--f:100%;--w:0%;--d:.4s;--t:2.4s"></i></div></div>', 'width:86%') +
+      at(50, 64, '<div class="gs-line"><span>Saved</span><div class="gs-bar"><i style="--w:70%;--d:2.6s;--t:2s"></i></div></div>', 'width:86%')) +
+      p('Pay the minimum on every debt, then put any extra on <b>one at a time</b>.') +
+      p('Once it\'s gone, that money moves to the next one, then to <b>saving and investing for future you</b>.') });
 
-  step({ id: 'sam-rego', ch: 2, title: 'Did you spot the car rego?',
-    body: () => p('Sam\'s rego only comes once a year: <b>$900</b>. That used to be a nasty shock.') +
-      p('So Sam puts <b>$75</b> aside every month instead. By the time the bill comes, the $900 is sitting there waiting.') +
-      ok('Big bills, made small. Christmas, birthdays, car service, insurance: they all work this way.') });
+  step({ id: 'ahead', ch: 1, title: 'Get a month ahead',
+    body: () => pic(194,
+      at(50, 6, '<small class="gs-cap">This month</small>') +
+      [25, 50, 75].map((x, i) => at(x, 22, env(['Rent', 'Food', 'Power'][i], '✓'))).join('') +
+      at(50, 98, '<small class="gs-cap">Next month</small>') +
+      [25, 50, 75].map((x, i) => fly(x, 60, x, 124, i * 0.5, 1)).join('') +
+      [25, 50, 75].map((x, i) => at(x, 114, env(['Rent', 'Food', 'Power'][i], show(i * 0.5 + 1, '✓')))).join('')) +
+      p('Got some spare? Start filling next month\'s envelopes. Bit by bit, you\'ll be living on last month\'s pay, and <b>payday stops being stressful</b>.') });
 
-  step({ id: 'now', ch: 2, title: 'Only the money you have right now',
-    body: () => p('Sam\'s next pay comes on Thursday. Can Sam give it jobs today?') +
-      `<div class="g-choices"><button class="g-choice ${st.q1 === 'yes' ? 'on' : ''}" data-q1="yes">Yes</button><button class="g-choice ${st.q1 === 'no' ? 'on' : ''}" data-q1="no">Not yet</button></div>` +
-      (st.q1 === 'no' ? ok('Exactly. When it lands, then it gets jobs. That way you never plan with money that isn\'t there yet.') : st.q1 === 'yes' ? `<div class="g-hm">Close! It\'s not in the bank yet, so it waits. When it lands on Thursday, then it gets its jobs.</div>` : ''),
-    bind: (card) => $$('[data-q1]', card).forEach((b) => b.addEventListener('click', () => { st.q1 = b.dataset.q1; save(); draw(); })) });
+  quiz({ id: 'q-bonus', ch: 1, title: 'One more',
+    q: 'A surprise $300 lands. Which envelope should it go in?',
+    opts: [
+      ['Extra on a debt', true, 'Good choice. And so is any other! It\'s your money, and you decide what matters most.'],
+      ['Next month\'s bills', true, 'Good choice. And so is any other! It\'s your money, and you decide what matters most.'],
+      ['The holiday', true, 'Good choice. And so is any other! It\'s your money, and you decide what matters most.'],
+    ] });
 
-  step({ id: 'sam-over', ch: 2, title: 'Uh oh, Sam overspent',
-    body: () => {
-      const moved = st.samMv;
-      return p('Two weeks later, Sam\'s groceries came to <b>$280</b>, not $250. Groceries is <b>$30 in the red</b>.') +
-        p('This happens to <b>everyone</b>. It\'s not a fail. Sam just moves $30 from somewhere else. Where should it come from?') +
-        samTable({ ideal: true, spent: { Groceries: moved ? 250 : 280, ...(moved ? { [moved]: 30 } : {}) } }) +
-        `<div class="g-choices">${['Fun', 'Weekend away'].map((n) => `<button class="g-choice ${moved === n ? 'on' : ''}" data-mv="${n}">Move $30 from ${n}</button>`).join('')}</div>` +
-        (moved ? ok(`Done. Groceries is back to $0. Sam made a choice on purpose${moved === 'Fun' ? ', and the weekend away is untouched' : ''}. No guilt, no starting over.`) : '');
-    },
-    bind: (card) => $$('[data-mv]', card).forEach((b) => b.addEventListener('click', () => { st.samMv = b.dataset.mv; save(); draw(); })),
-    canNext: () => !!st.samMv, needMsg: 'Pick where Sam\'s $30 comes from. Either is fine!' });
+  // ---- in YNABB ----
+  step({ id: 'cat', ch: 2, title: 'YNABB is just like the envelopes',
+    body: () => pic(128,
+      at(24, 8, '<small class="gs-cap">Envelope</small>') + at(75, 8, '<small class="gs-cap">In YNABB</small>') +
+      [0, 1, 2].map((i) => fly(24, -20, 24, 52, i * 0.45, 1)).join('') +
+      at(24, 36, env('Food', show(1.9, '$250'))) +
+      at(50, 42, '<b class="gs-eq">=</b>') +
+      at(75, 50, `<div class="gs-row"><span>Food</span>${show(1.9, '<b class="pill st-pos">$250</b>')}<div class="gs-bar"><i></i></div></div>`)) +
+      p('Each envelope is a <b>category</b>, and the green bubble shows what\'s inside. No cash needed.') });
 
-  step({ id: 'sam-dream', ch: 2, title: 'A few months later\u2026',
-    body: () => `<div class="g-person"><div class="g-face happy" aria-hidden="true">S</div><div>Sam kept doing this every payday. A little to the weekend away each time.<br><br>In March, the weekend away fund hit <b>$600</b>. Sam booked it that night. <b>Paid for, no guilt, no credit card.</b></div></div>` +
-      big('That\'s what a budget is for. Not "no". "Yes, and here\'s how."') });
+  step({ id: 'rta', ch: 2, title: 'Money on the table is Ready to Assign',
+    body: () => pic(118,
+      at(24, 22, show(0, '<div class="gs-cash"><i></i><i></i><i></i></div>', 2.2) + '<small class="gs-cap">On the table</small>') +
+      [0, 1, 2].map((i) => fly(24, 30, 24, 110, 1.2 + i * 0.25, 0.9)).join('') +
+      at(50, 34, '<b class="gs-eq">=</b>') +
+      at(75, 30, `<div class="gs-rta"><small>Ready to Assign</small><b>${show(0, '$1,000', 2.2)}${show(2.3, '$0 ✓')}</b></div>`)) +
+      p('New pay lands in <b>Ready to Assign</b>. Share it out into your envelopes until it reads <b>$0</b>.') });
 
-  step({ id: 'ahead', ch: 2, title: 'Getting ahead, a little at a time',
-    body: () => p('Right now, most people pay this week\'s bills with this week\'s pay. That\'s really normal.') +
-      p('As the plan settles, a small cushion builds up. One day you\'re paying this month\'s bills with <b>last month\'s</b> money, and payday stops being stressful.') +
-      tip('You don\'t have to do anything special for this. It happens slowly, just by following the plan.') });
+  step({ id: 'card', ch: 2, title: 'Paying by card works the same way',
+    body: () => pic(122,
+      at(26, 30, env('Food', show(0, '$250', 1.2) + show(1.3, '$180'))) +
+      fly(26, 40, 74, 40, 0.2, 1.1) +
+      at(50, 10, '<span class="gs-ic">💳</span>') +
+      at(74, 30, env('Visa', show(0, '$0', 1.2) + show(1.3, '$70')))) +
+      p('Spend $70 on the Visa and $70 moves from Food into the <b>Visa envelope</b>, ready for the bill.') });
 
-  step({ id: 'debt', ch: 2, title: 'If you owe money',
-    body: () => p('Lots of people do. Credit cards, Afterpay, a car loan, the ATO. No judgement here.') +
-      `<ol class="g-steps"><li>Always pay at least the <b>minimum</b> on everything.</li><li>If there\'s any extra, put it on <b>one</b> debt at a time.</li><li>When that one\'s gone, move on to the next.</li></ol>` +
-      p('YNABB keeps track of all of it, and shows you when each one will be paid off. Watching that date get closer is very satisfying.') });
-
-  // ---- uneven pay: Jo ----
-  // Jo's month, most important first. [name, needs, why]
-  const JO = [['Rent', 1000, 'A roof'], ['Groceries', 500, 'Food'], ['Electricity', 150, 'Lights on'], ['Fuel', 160, 'Getting to work'], ['Phone', 50], ['Kids', 120], ['Fun', 100], ['Savings', 100]];
-  const joHas = () => st.jo || (st.jo = Object.fromEntries(JO.map(([n]) => [n, 0])));
-  // hand money out from the top of the list down, filling each gap in turn
-  function joFill(amount, has) {
-    let left = amount;
-    for (const [n, need] of JO) { if (left <= 0) break; const add = Math.min(need - has[n], left); if (add > 0) { has[n] += add; left -= add; } }
-    return left;
-  }
-  const joTable = (has, title) => `<div class="g-sam">${title ? `<div class="g-sam-row g-sam-h"><span>${title}</span><b>has / needs</b></div>` : ''}${JO.map(([n, need, why]) => {
-    const h = has[n], full = h >= need;
-    return `<div class="g-sam-row jo ${full ? 'full' : h > 0 ? 'part' : 'none'}"><span class="g-sam-n">${n}${why ? `<small>${why}</small>` : ''}</span><span class="g-jo-bar"><i style="width:${Math.round(Math.min(1, h / need) * 100)}%"></i></span><b class="g-sam-v">$${h} <small>/ $${need}</small></b></div>`;
-  }).join('')}</div>`;
-  const INCOME = [['pay1', 'Payday: Jo\'s part-time job', 800], ['sale', 'Sold the old pram on Marketplace', 120], ['pay2', 'Payday again', 800], ['babysit', 'Babysitting for a neighbour', 90]];
-
-  step({ id: 'jo', ch: 3, title: 'Meet Jo',
-    body: () => `<div class="g-person"><div class="g-face jo" aria-hidden="true">J</div><div><b>This is Jo.</b> Jo works part-time, so pay changes from month to month. Some months there\'s a bit extra from selling things or babysitting. Some months, there just isn\'t enough.<br><br>Jo\'s month costs about <b>$2,180</b>. The job brings in about <b>$1,600</b>.</div></div>` +
-      p('This happens to <b>so many people</b>. A plan doesn\'t magically make more money. But it means the most important things get paid, and nothing catches Jo by surprise.') +
-      soft('Your pay is always the same? You can skip this part.') +
-      `<div class="g-row"><button class="g-link" data-act="skipjo">Skip to setting up my money</button></div>`,
-    bind: (card) => { const b = $('[data-act="skipjo"]', card); if (b) b.addEventListener('click', () => jumpTo(4)); } });
-
-  step({ id: 'jo-first', ch: 3, title: 'Money lands. What gets it first?',
-    body: () => {
-      const pick = st.joQ;
-      const good = ['Rent', 'Groceries', 'Electricity', 'Fuel'];
-      const opts = ['Fun', 'Rent', 'Savings', 'Groceries', 'Kids'];
-      return p('Payday: <b>$800</b> lands. Jo\'s month needs $2,180, so it won\'t cover everything yet.') +
-        p('<b>Which should get money first?</b>') +
-        `<div class="g-choices">${opts.map((n) => `<button class="g-choice ${pick === n ? 'on' : ''}" data-joq="${n}">${n}</button>`).join('')}</div>` +
-        (pick ? (good.includes(pick)
-          ? ok('Yes. First things first: <b>a roof, food, power, and getting to work</b>. Keep those safe and everything else can wait a little.')
-          : `<div class="g-hm">${pick === 'Kids' ? 'Lovely instinct! But the kids need a roof and food first.' : 'Not first, but it still matters.'} The first things are <b>a roof, food, power, and getting to work</b>. Then everything else.</div>`) : '');
-    },
-    bind: (card) => $$('[data-joq]', card).forEach((b) => b.addEventListener('click', () => { st.joQ = b.dataset.joq; save(); draw(); })),
-    canNext: () => !!st.joQ, needMsg: 'Tap one. There\'s no wrong guess.' });
-
-  step({ id: 'jo-in', ch: 3, title: 'Every time money lands, fill the next gap',
-    body: () => {
-      const got = st.joIn || (st.joIn = []);
-      const has = Object.fromEntries(JO.map(([n]) => [n, 0]));
-      let leftover = 0;
-      for (const k of got) leftover += joFill(INCOME.find((x) => x[0] === k)[2], has);
-      const next = INCOME.find((x) => !got.includes(x[0]));
-      return p('Jo\'s list goes from <b>most important at the top</b> to least at the bottom. Each time money comes in, it fills the next gap, top down. Tap to see the month play out.') +
-        (next ? `<div class="g-row"><button class="g-btn" data-act="income">+ $${next[2]}: ${next[1]}</button></div>` : '') +
-        joTable(has, 'Jo\'s month') +
-        (got.length ? `<p class="g-soft">Came in so far: ${got.map((k) => '$' + INCOME.find((x) => x[0] === k)[2]).join(' + ')} = <b>$${got.reduce((a, k) => a + INCOME.find((x) => x[0] === k)[2], 0)}</b></p>` : '') +
-        (!next ? `<div class="g-hm">That\'s all the money for this month: <b>$1,810</b>. The roof, food, power and fuel are all covered. That\'s the most important part. But the phone, Kids, Fun and Savings are short. Jo is <b>$370</b> short altogether.</div>` : '');
-    },
-    bind: (card) => { const b = $('[data-act="income"]', card); if (b) b.addEventListener('click', () => { const next = INCOME.find((x) => !st.joIn.includes(x[0])); st.joIn.push(next[0]); save(); draw(); }); },
-    canNext: () => (st.joIn || []).length === INCOME.length, needMsg: 'Tap the money button until all of Jo\'s money for the month is in.' });
-
-  const SHORT = [
-    ['pause', 'Pause Fun and Savings this month', true, 'Totally fine. They\'re not gone, just paused. They come back when there\'s more.'],
-    ['ask', 'Ask the school if the excursion can be paid next week', true, 'Great move. Talking to people early almost always helps. Bills, school, even the ATO usually have options if you ask before it\'s late.'],
-    ['extra', 'Look for an extra shift, or sell something else', true, 'Yes. Any extra goes straight into the next gap on the list.'],
-    ['card', 'Put the gap on the credit card', false, 'Try to avoid this if you can. It makes next month harder, because now there\'s a bill too. If it\'s truly the only way, that\'s okay, but put it in the plan so it doesn\'t surprise you.'],
-    ['hide', 'Stop looking at the budget for a while', false, 'Very understandable! But this is exactly when the plan helps most. Knowing it\'s $370 short is much less scary than not knowing at all.'],
-  ];
-  step({ id: 'jo-short', ch: 3, title: 'When there isn\'t enough to go around',
-    body: () => {
-      const picked = st.joShort || (st.joShort = []);
-      return p('Jo is $370 short this month. It\'s stressful, but it\'s not a disaster, because Jo <b>knows</b>. Tap each idea to see if it helps.') +
-        `<div class="g-choices col">${SHORT.map(([k, l, good]) => `<button class="g-choice ${picked.includes(k) ? (good ? 'on' : 'meh') : ''}" data-short="${k}">${picked.includes(k) ? (good ? '\u2713 ' : '\u2192 ') : ''}${l}</button>${picked.includes(k) ? `<div class="${good ? 'g-ok' : 'g-hm'} g-inline">${SHORT.find((x) => x[0] === k)[3]}</div>` : ''}`).join('')}</div>`;
-    },
-    bind: (card) => $$('[data-short]', card).forEach((b) => b.addEventListener('click', () => { const l = st.joShort, k = b.dataset.short; if (!l.includes(k)) l.push(k); save(); draw(); })) });
-
-  const EXTRA = [['next', 'Next month\'s rent, food and power', 1650], ['cushion', 'A cushion for slow months', 0], ['debt', 'Extra off the credit card', 0], ['treat', 'Something nice for the family', 0]];
-  step({ id: 'jo-extra', ch: 3, title: 'And when there\'s extra?',
-    body: () => {
-      const done = st.joX || (st.joX = []);
-      const left = 1500 - (done.includes('next') ? 1500 : 0);
-      return p('A good month! Jo\'s tax refund arrives: <b>$1,500</b>, and this month is already covered. What first?') +
-        `<div class="g-choices col">${EXTRA.map(([k, l]) => `<button class="g-choice ${done.includes(k) ? 'on' : ''}" data-extra="${k}">${l}</button>`).join('')}</div>` +
-        (done.length ? (done[0] === 'next'
-          ? ok('Perfect. That\'s called <b>getting ahead</b>: next month\'s most important things are already paid for, before next month even starts. With uneven pay, this is gold. A slow month just stops being scary.')
-          : `<div class="g-hm">That\'s not wrong, and it\'s Jo\'s money to choose! But with uneven pay, the strongest first move is usually <b>next month\'s essentials</b>. Then a cushion, then extra off debt, then treats.</div>`) : '') +
-        (done.includes('next') ? p('In YNABB, you do this by going to <b>next month</b> (the arrow at the top of the Budget page) and giving the money jobs there.') : '');
-    },
-    bind: (card) => $$('[data-extra]', card).forEach((b) => b.addEventListener('click', () => { const l = st.joX, k = b.dataset.extra; if (!l.includes(k)) l.unshift(k); save(); draw(); })) });
-
-  step({ id: 'recap', ch: 3, title: 'You already know how to do this',
-    body: () => `<div class="g-cards">
-        <div><b>1</b><span>Every dollar gets a job</span></div>
-        <div><b>2</b><span>Only plan with money you have</span></div>
-        <div><b>3</b><span>Make big bills small</span></div>
-        <div><b>4</b><span>When plans change, move money. No guilt.</span></div>
-        <div><b>5</b><span>When money lands, fill the most important gaps first</span></div>
-        <div><b>6</b><span>Got extra? Get next month sorted.</span></div>
-      </div>` + p('You just did all of this for Sam and Jo. Now let\'s do it for <b>you</b>. Have your banking app handy.') });
+  step({ id: 'recap', ch: 2, title: 'Your envelopes, in YNABB',
+    body: () => `<div class="g-map">${[['Envelope', 'Category'], ['Money on the table', 'Ready to Assign'], ['Big, rare bills', 'Targets'], ['Moving money across', 'Tap the bubble'], ['Where it went', 'The Spent column']]
+      .map(([a, b]) => `<div><span>${a}</span><i>→</i><b>${b}</b></div>`).join('')}</div>` +
+      p('Now let\'s set up <b>your</b> envelopes.') });
 
   // ---- your money ----
   const hasStuff = () => { const d = Z().data(); return Object.keys(d.accounts).length > 0 || Object.keys(d.cats).length > 0; };
   // decided once, when the guide is first opened, so adding accounts later doesn't bring this back
-  step({ id: 'fresh', ch: 4, title: 'There\'s already something in here', when: () => (st.hadStuff == null ? (st.hadStuff = hasStuff()) : st.hadStuff) && !st.freshDone,
+  step({ id: 'fresh', ch: 3, title: 'There\'s already something in here', when: () => (st.hadStuff == null ? (st.hadStuff = hasStuff()) : st.hadStuff) && !st.freshDone,
     body: () => p('This budget already has some accounts or categories in it.') +
       `<div class="g-choices col"><button class="g-choice ${st.fresh === 'keep' ? 'on' : ''}" data-fresh="keep">Keep it, and add to it</button><button class="g-choice ${st.fresh === 'clear' ? 'on' : ''}" data-fresh="clear">Start with a clean, empty budget</button></div>` +
       (st.fresh === 'clear' ? `<div class="g-hm">This removes everything in this budget, for everyone who uses it. <button class="g-link" data-act="backup">Download a copy first</button> if you might want it back.<div class="g-row"><button class="g-btn danger" data-act="clear">Yes, empty it and start fresh</button></div></div>` : ''),
@@ -298,12 +267,12 @@
     },
     canNext: () => st.fresh === 'keep' });
 
-  step({ id: 'accts', ch: 4, title: 'Where does your money live?',
+  step({ id: 'accts', ch: 3, title: 'Where does your money live?',
     body: () => {
       const d = Z().data();
       const list = Object.values(d.accounts).filter((a) => !a.closed);
       const t = ACCT_TYPES.find((x) => x[0] === st.atype);
-      return p('Add each place your money is, and each thing you owe on. Open your banking app to see the amounts. <b>Close enough is fine.</b>') +
+      return p('Add each bank account, and anything you owe. <b>Close enough is fine.</b>') +
         (list.length ? `<ul class="g-accts">${list.map((a) => { const b = (d.bal[a.id] || {}).balance || 0, owe = Z().DEBT_TYPES[a.type]; return `<li><span>${esc(a.name)}</span><b class="${owe ? 'owe' : ''}">${owe ? 'owe ' + money(-b) : money(b)}</b><button class="g-x" data-rm="${a.id}" aria-label="Remove ${esc(a.name)}" title="Remove">\u00D7</button></li>`; }).join('')}</ul>` : '') +
         `<div class="g-add">
           <p class="g-q">${list.length ? 'Anything else?' : 'What\'s the first one?'}</p>
@@ -312,7 +281,7 @@
             <label>What do you call it?<input id="g-aname" value="${esc(st.aname || t[2])}" autocomplete="off"></label>
             <label>${t[3] === 'owe' ? 'How much do you owe on it?' : t[3] === 'track' ? 'Roughly how much is in it?' : 'How much is in it right now?'}<span class="g-money"><i>$</i><input id="g-aamt" inputmode="decimal" placeholder="0" autocomplete="off"></span></label>
             <button class="g-btn" data-act="addacct">Add it</button>
-            ${t[3] === 'track' ? soft('This is kept separate. It shows what you have, but it isn\'t part of the spending plan.') : t[3] === 'owe' ? soft('This won\'t come out of your spending money. We\'ll make a plan to pay it down.') : ''}
+            ${t[3] === 'track' ? soft('Kept separate. Not for spending.') : t[3] === 'owe' ? soft('We\'ll make a plan to pay it down.') : ''}
           </div>` : ''}
         </div>`;
     },
@@ -336,21 +305,21 @@
     },
     canNext: () => Object.keys(Z().data().accounts).length > 0, needMsg: 'Add at least one account first. Your everyday bank account is a good start.' });
 
-  step({ id: 'total', ch: 4, title: 'Here\'s where you\'re starting',
+  step({ id: 'total', ch: 3, title: 'Here\'s where you\'re starting',
     body: () => {
       const d = Z().data(), accts = Object.values(d.accounts);
       const has = accts.filter((a) => a.type !== 'tracking' && !Z().DEBT_TYPES[a.type]).reduce((s, a) => s + ((d.bal[a.id] || {}).balance || 0), 0);
       const owe = accts.filter((a) => Z().DEBT_TYPES[a.type]).reduce((s, a) => s - ((d.bal[a.id] || {}).balance || 0), 0);
       return `<div class="g-stat"><span>Money you can plan with</span><b>${money(has)}</b></div>` +
-        (owe > 0 ? `<div class="g-stat owe"><span>What you owe</span><b>${money(owe)}</b></div>` + p('That\'s okay. Knowing the number is the hard part, and you\'ve just done it. We\'ll make a plan for it.') : '') +
-        p('Next: what is your money <b>for</b>?');
+        (owe > 0 ? `<div class="g-stat owe"><span>What you owe</span><b>${money(owe)}</b></div>` + p('That\'s okay. Knowing the number is the hard part, and it\'s done.') : '') +
+        p('Next, let\'s set up your envelopes.');
     } });
 
   // ---- your plan ----
-  step({ id: 'cats', ch: 5, title: 'What do you spend money on?',
+  step({ id: 'cats', ch: 4, title: 'Which envelopes do you need?',
     body: () => {
       const c = chosen();
-      return p('Tap to choose what fits your life. We\'ve picked some common ones to start. <b>You can change all of this later.</b>') +
+      return p('Tap the ones that fit your life. <b>You can change them any time.</b>') +
         GROUPS.map((g) => `<div class="g-group"><h3>${g.name} <small>${g.say}</small></h3><div class="g-choices">${g.items.map(([n]) => `<button class="g-choice sm ${c[g.key].includes(n) ? 'on' : ''}" data-cat="${g.key}" data-n="${esc(n)}">${c[g.key].includes(n) ? '\u2713 ' : ''}${esc(n)}</button>`).join('')}${c[g.key].filter((n) => !g.items.some(([x]) => x === n)).map((n) => `<button class="g-choice sm on" data-cat="${g.key}" data-n="${esc(n)}">\u2713 ${esc(n)}</button>`).join('')}<span class="g-own"><input data-own="${g.key}" placeholder="+ add your own" aria-label="Add your own to ${g.name}"></span></div></div>`).join('');
     },
     bind: (card) => {
@@ -377,14 +346,14 @@
 
   // one screen of amounts per group, so it's never a wall of boxes
   const AMT_SAY = {
-    bills: ['Roughly what do your bills cost?', 'Look at your last bill, or just guess. You can fix it any time.'],
-    every: ['And the everyday things?', 'Think about a normal week or month. A rough guess is perfect.'],
-    year: ['The once-a-year ones', 'Roughly what each costs in a year. We\'ll set a little aside each month, so it\'s there when it comes.'],
-    fun: ['What would feel good for fun?', 'Pick an amount that feels comfortable. This money is guilt-free.'],
-    save: ['Saving for future you', 'Even $20 a month counts. An emergency fund is the best first goal: it stops surprises becoming debt.'],
+    bills: ['What do your bills cost?', 'A rough guess is fine.'],
+    every: ['And the everyday things?', 'A normal week or month. Guess away.'],
+    year: ['The once-a-year ones', 'Roughly what each costs a year. We\'ll split it into monthly bits.'],
+    fun: ['How much for fun?', 'This money is yours to enjoy, guilt-free.'],
+    save: ['Saving for future you', 'Even $20 a month counts.'],
   };
   for (const g of GROUPS) {
-    step({ id: 'amt-' + g.key, ch: 5, title: AMT_SAY[g.key][0], when: () => chosen()[g.key].length > 0,
+    step({ id: 'amt-' + g.key, ch: 4, title: AMT_SAY[g.key][0], when: () => chosen()[g.key].length > 0,
       body: () => {
         const rows = chosen()[g.key].map((n) => {
           const k = g.key + ':' + n, f = st.freq[k] || g.freq, v = st.amts[k] || '';
@@ -407,13 +376,13 @@
   }
 
   const debts = () => Object.values(Z().data().accounts).filter((a) => Z().DEBT_TYPES[a.type] && !a.closed);
-  step({ id: 'debts', ch: 5, title: 'Paying what you owe', when: () => debts().length > 0,
-    body: () => p('How much do you pay on each one? For a credit card, use the <b>minimum</b> on your statement.') +
+  step({ id: 'debts', ch: 4, title: 'Paying what you owe', when: () => debts().length > 0,
+    body: () => p('How much do you pay on each? For a card, use the <b>minimum</b> on your statement.') +
       `<div class="g-amts">${debts().map((a) => {
         const f = st.debtFreq[a.id] || (a.type === 'bnpl' ? 'fortnight' : 'month'), v = st.debt[a.id] || '';
         const m = parse(v) ? perMonth(parse(v), f) : 0;
         return `<div class="g-amt"><span class="g-amt-n">${esc(a.name)}</span><span class="g-money"><i>$</i><input data-debt="${a.id}" inputmode="decimal" placeholder="0" value="${esc(v)}" autocomplete="off" aria-label="${esc(a.name)} payment"></span>${freqSel('d:' + a.id, f)}<span class="g-pm-out" data-dout="${a.id}">${m && f !== 'month' ? `\u2248 ${money(m)} a month` : ''}</span></div>`;
-      }).join('')}</div>` + soft('This becomes a "need" in your plan, so it always gets paid first.'),
+      }).join('')}</div>` + soft('These envelopes always get filled first.'),
     bind: (card) => {
       const upd = (id) => { const f = st.debtFreq[id] || 'month', v = parse(st.debt[id]); const o = $(`[data-dout="${id}"]`, card); if (o) o.textContent = v && f !== 'month' ? `\u2248 ${money(perMonth(v, f))} a month` : ''; };
       $$('[data-debt]', card).forEach((i) => i.addEventListener('input', () => { st.debt[i.dataset.debt] = i.value; save(); upd(i.dataset.debt); }));
@@ -426,21 +395,21 @@
       }
     } });
 
-  step({ id: 'assign', ch: 5, title: 'Now, give your money its jobs',
+  step({ id: 'assign', ch: 4, title: 'Time to fill your envelopes',
     body: () => {
       const d = Z().data(), m = d.month, plan = Z().plan();
       if (st.assigned) {
         const left = m.rta, still = m.underTotal;
         const ef = catIdByName('Emergency fund');
-        return ok('Done! Your money has its jobs.') +
-          (still > 0 ? p(`Your plan asks for <b>${money(still)}</b> more than you have right now. That\'s really common, especially at the start. The most important things were covered first. The rest gets filled in when you\'re next paid.`) : '') +
-          (left > 0 ? p(`You have <b>${money(left)}</b> left without a job. Lovely!`) + `<div class="g-choices col">${ef ? `<button class="g-choice" data-act="toef">Put it in my Emergency fund</button>` : ''}<button class="g-choice" data-act="keep">Leave it for now. I\'ll decide later.</button></div>` : '') +
-          (left === 0 && still === 0 ? p('Every dollar has a job, and every part of your plan is covered. That\'s a great place to be.') : '');
+        return ok('Done! Your envelopes are filled.') +
+          (still > 0 ? p(`You\'re <b>${money(still)}</b> short for now, which is really common. The important envelopes were filled first, and the rest can wait for payday.`) : '') +
+          (left > 0 ? p(`<b>${money(left)}</b> is still on the table. Lovely!`) + `<div class="g-choices col">${ef ? `<button class="g-choice" data-act="toef">Put it in my Emergency fund</button>` : ''}<button class="g-choice" data-act="keep">Leave it for now. I\'ll decide later.</button></div>` : '') +
+          (left === 0 && still === 0 ? p('Every envelope is full. Great place to be.') : '');
       }
-      return `<div class="g-stat"><span>Money waiting for a job</span><b>${money(m.rta)}</b></div>` +
-        p(`Your plan asks for <b>${money(m.underTotal)}</b> this month. Tap the button and YNABB hands out your money for you, most important things first.`) +
-        `<div class="g-row"><button class="g-btn big" data-act="fund" ${plan && Object.keys(plan.changes).length ? '' : 'disabled'}>Give my money its jobs</button></div>` +
-        (m.rta <= 0 ? soft('There\'s nothing waiting for a job right now. That\'s okay: when you\'re next paid, come back to this step.') : '');
+      return `<div class="g-stat"><span>On the table</span><b>${money(m.rta)}</b></div>` +
+        p(`Your envelopes need <b>${money(m.underTotal)}</b> this month. Tap below and YNABB fills them for you, most important first.`) +
+        `<div class="g-row"><button class="g-btn big" data-act="fund" ${plan && Object.keys(plan.changes).length ? '' : 'disabled'}>Fill my envelopes</button></div>` +
+        (m.rta <= 0 ? soft('There\'s nothing on the table right now. Come back to this step on payday.') : '');
     },
     bind: (card) => {
       const f = $('[data-act="fund"]', card);
@@ -450,59 +419,52 @@
       const k = $('[data-act="keep"]', card); if (k) k.addEventListener('click', () => go(1));
     } });
 
-  step({ id: 'planned', ch: 5, title: 'You did it',
+  step({ id: 'planned', ch: 4, title: 'Your envelopes are ready',
     body: () => big('That was the hardest part, and it\'s done.') +
       p('Your budget is set up. You can see it any time on the <b>Budget</b> page.') +
-      p('Last chapter: the few small things you\'ll do each week. It\'s quick, promise.') +
+      p('Last up: what to do each week. It\'s quick, promise.') +
       `<div class="g-row"><button class="g-link" data-act="peek">Have a look at my budget first</button></div>`,
-    bind: (card) => { const b = $('[data-act="peek"]', card); if (b) b.addEventListener('click', () => showMe('budget', '.bud', 'This is your budget. Each line is one job for your money.')); } });
+    bind: (card) => { const b = $('[data-act="peek"]', card); if (b) b.addEventListener('click', () => showMe('budget', '.bud', 'This is your budget. Each line is an envelope.')); } });
 
   // ---- using it ----
-  step({ id: 'spend', ch: 6, title: 'When you spend money',
-    body: () => p('Each time you spend, YNABB needs to know, so the right job gets smaller.') +
-      p('The easy way: <b>bring it in from your bank</b> every few days (next page). Or add one by hand with the <b>Add</b> button.') +
-      `<div class="g-row"><button class="g-btn ghost" data-show="add">Show me the Add button</button></div>`,
-    show: { add: ['tx', '[data-action="add-tx"]', 'Tap Add to put in something you\'ve bought. Pick what it was for, and you\'re done.'] } });
+  step({ id: 'u-spend', ch: 5, title: 'Keep YNABB up to date',
+    body: () => p('Bring in your spending from the bank, or tap <b>Add</b>. YNABB takes it out of the right envelope.') +
+      `<div class="g-row"><button class="g-btn ghost" data-show="add">Show me Add</button></div>`,
+    show: { add: ['tx', '[data-action="add-tx"]', 'Tap Add to put in something you\'ve bought.'] } });
 
-  step({ id: 'import', ch: 6, title: 'Bringing it in from your bank',
-    body: () => `<ol class="g-steps"><li>In your bank\'s website, open the account and look for <b>Export</b> or <b>Download transactions</b>.</li><li>Choose the <b>QIF</b> or <b>CSV</b> file.</li><li>In YNABB, tap <b>Import from bank</b> and choose that file.</li></ol>` +
-      p('YNABB skips anything it already has, and matches up anything you added by hand.') +
+  step({ id: 'import', ch: 5, title: 'Bringing in from your bank',
+    body: () => `<ol class="g-steps"><li>In your bank, find <b>Export</b> or <b>Download transactions</b>.</li><li>Choose <b>CSV</b> or <b>QIF</b>.</li><li>In YNABB, tap <b>Import from bank</b>.</li></ol>` +
+      soft('YNABB skips anything it already has.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="imp">Show me where</button></div>`,
-    show: { imp: ['tx', '[data-action="import"]', 'Import from bank is here. Choose the file you downloaded from your bank.'] } });
+    show: { imp: ['tx', '[data-action="import"]', 'Import from bank is here.'] } });
 
-  step({ id: 'review', ch: 6, title: 'Giving each one a job',
-    body: () => p('New transactions from the bank wait for you to say what they were for. Click one, choose its category, done.') +
-      p('YNABB learns as you go. Next time Woolies comes in, it\'ll already know it\'s Groceries.') +
-      tip('Five minutes, a couple of times a week, keeps it easy. Leaving it for a month makes it a chore.') });
+  step({ id: 'review', ch: 5, title: 'Pop each one in its envelope',
+    body: () => p('New spending waits for you. Tap it and choose its envelope.') +
+      soft('YNABB learns as you go, so Woolies soon lands in Groceries on its own.') });
 
-  step({ id: 'red', ch: 6, title: 'When something goes red',
-    body: () => p('Red means you spent more than you planned in that category. It happens!') +
-      p('Click the red amount, and move money from a category that has some spare. Remember the $30 groceries? Exactly like that.') +
+  step({ id: 'red', ch: 5, title: 'Red means an envelope\'s empty',
+    body: () => p('Tap the red amount and move money across from another envelope, just like before.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="avail">Show me where</button></div>`,
-    show: { avail: ['budget', '.bud-head span:last-child', 'This column shows what\'s left in each category. Click any amount to move money in or out.'] } });
+    show: { avail: ['budget', '.bud-head span:last-child', 'This column is what\'s in each envelope. Tap an amount to move money.'] } });
 
-  step({ id: 'match', ch: 6, title: 'Checking it matches the bank',
-    body: () => p('Every week or two, check that YNABB and your bank agree. Tap <b>Reconcile</b>, type what your bank says you have, and YNABB shows you if anything\'s missing.') +
-      p('If it matches, you know your plan is right. That\'s a lovely feeling.') +
+  step({ id: 'match', ch: 5, title: 'Check it matches your bank',
+    body: () => p('Every week or two, tap <b>Reconcile</b> and enter your bank balance. YNABB shows you anything that\'s missing.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rec">Show me where</button></div>`,
     show: { rec: ['tx', '[data-action="rec-pop"]', 'Reconcile is here. Type the balance your banking app shows.'] } });
 
-  step({ id: 'payday', ch: 6, title: 'When you get paid',
-    body: () => p('New money lands in <b>Ready to Assign</b>, at the top of your Budget page. It\'s waiting for a job.') +
-      p('Tap <b>Fund targets</b> and YNABB gives it jobs for you, the same as you did earlier. Anything left, you choose.') +
+  step({ id: 'payday', ch: 5, title: 'On payday, fill your envelopes',
+    body: () => p('Your pay waits in <b>Ready to Assign</b> at the top of the Budget page. Tap <b>Fund targets</b> and YNABB fills your envelopes for you.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rta">Show me where</button></div>`,
-    show: { rta: ['budget', '.rta, .rta-banner, [class*="rta"]', 'This is Ready to Assign: money waiting for a job.'] } });
+    show: { rta: ['budget', '.rta, .rta-banner, [class*="rta"]', 'Ready to Assign: money waiting for an envelope.'] } });
 
-  step({ id: 'forward', ch: 6, title: 'Got extra? Get next month sorted',
-    body: () => p('When this month is fully covered and there\'s money left, go to <b>next month</b> with the arrow at the top of the Budget page, and tap <b>Fund targets</b> there.') +
-      p('Next month\'s essentials are then paid for before it even starts. Just like Jo.') +
+  step({ id: 'forward', ch: 5, title: 'Got spare? Start on next month',
+    body: () => p('Use the arrow at the top to go to <b>next month</b>, then tap <b>Fund targets</b>.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="fwd">Show me where</button></div>`,
-    show: { fwd: ['budget', '[data-action="next-month"]', 'This arrow takes you to next month. Give spare money jobs there to get ahead.'] } });
+    show: { fwd: ['budget', '[data-action="next-month"]', 'This arrow goes to next month.'] } });
 
-  step({ id: 'routine', ch: 6, title: 'Your 10-minute check-in', nextLabel: 'Finish',
-    body: () => p('That\'s everything. Here\'s all you need to do, once or twice a week:') +
-      `<ol class="g-check"><li><b>Bring in</b> your spending from the bank</li><li><b>Give each one a job</b></li><li><b>Fix anything red</b> by moving money</li><li><b>On payday,</b> give the new money its jobs</li></ol>` +
-      dreamsLine() + big('You\'ve got this.') + soft('This guide is always under the Guide button at the top if you want a refresher.') });
+  step({ id: 'routine', ch: 5, title: 'Twice a week, about 10 minutes', nextLabel: 'Finish',
+    body: () => `<ol class="g-check"><li><b>Bring in</b> your spending</li><li><b>Pop each one</b> in its envelope</li><li><b>Fix any red</b> by moving money</li><li><b>Payday:</b> fill your envelopes</li></ol>` +
+      dreamsLine() + big('You\'ve got this.') + soft('You can come back to this guide any time from the Guide button.') });
 
   function dreamsLine() {
     const names = (st.dreams || []).map((k) => (DREAMS.find((x) => x[0] === k) || [])[1]).filter(Boolean);
@@ -556,7 +518,11 @@
       </article></div>`;
     const card = $('.g-card', root);
     if (s.bind) s.bind(card);
+    // replay a picture by swapping in a fresh copy, which restarts its animations
+    $$('[data-replay]', card).forEach((b) => b.addEventListener('click', () => { const g = b.previousElementSibling; g.replaceWith(g.cloneNode(true)); }));
     $$('[data-show]', card).forEach((b) => b.addEventListener('click', () => { const [view, sel, text] = s.show[b.dataset.show]; showMe(view, sel, text); }));
+    const chOn = $('.g-ch.on', root), chs2 = $('.g-chs', root); // keep this chapter in view when the names scroll sideways
+    if (chOn && chs2.scrollWidth > chs2.clientWidth) chs2.scrollLeft = chOn.offsetLeft - chs2.offsetLeft - (chs2.clientWidth - chOn.offsetWidth) / 2;
     $$('[data-ch]', root).forEach((b) => b.addEventListener('click', () => jumpTo(Number(b.dataset.ch))));
     $('[data-act="close"]', root).addEventListener('click', close);
     const back = $('[data-act="back"]', root); if (back) back.addEventListener('click', () => go(-1));
@@ -663,49 +629,23 @@
 .g-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
 .g-back { border: 0; background: none; font: 600 15px var(--ui); color: var(--muted); cursor: pointer; padding: 8px 4px; }
 .g-need { background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; margin-top: 12px; font-size: 15px; }
-.g-chapters, .g-steps, .g-check { padding-left: 22px; margin: 6px 0 14px; }
-.g-chapters li, .g-steps li, .g-check li { margin: 6px 0; }
+.g-steps, .g-check { padding-left: 22px; margin: 6px 0 14px; }
+.g-steps li, .g-check li { margin: 6px 0; }
 .g-check { list-style: none; padding-left: 0; }
 .g-check li { padding: 10px 14px; background: var(--surface-2); border-radius: 10px; }
-.g-jobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin: 10px 0; }
-.g-job { display: grid; grid-template-columns: 1fr 40px 64px 40px; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 12px; padding: 6px 8px 6px 14px; font-weight: 600; }
-.g-job b { text-align: center; font: 700 18px var(--display); }
-.g-pm { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font: 700 20px var(--ui); color: var(--accent); cursor: pointer; }
-.g-pm:disabled { opacity: .35; cursor: default; }
 .g-left { text-align: center; font-size: 17px; padding: 10px; border-radius: 12px; background: var(--warn-soft); }
 .g-left b { font: 700 22px var(--display); }
 .g-left.done { background: var(--good-soft); }
-.g-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin: 6px 0 16px; }
+.g-cards { display: grid; gap: 6px; margin: 6px 0 16px; }
+.g-choice.meh { border-color: var(--need); background: var(--warn-soft); }
+.g-map { display: grid; gap: 6px; margin: 6px 0 16px; }
+.g-map div { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; background: var(--surface-2); border-radius: 12px; padding: 10px 14px; }
+.g-map i { font-style: normal; color: var(--muted); }
+.g-map b { color: var(--accent); }
 .g-wins { list-style: none; padding: 0; margin: 8px 0 14px; display: grid; gap: 6px; }
 .g-wins li { padding: 9px 14px 9px 36px; background: var(--good-soft); border-radius: 10px; position: relative; }
 .g-wins li::before { content: '\u2713'; position: absolute; left: 14px; color: var(--good); font-weight: 700; }
-.g-person { display: flex; gap: 16px; align-items: flex-start; background: var(--surface-2); border-radius: 14px; padding: 16px; margin: 10px 0 14px; }
-.g-face { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font: 700 24px var(--display); }
-.g-face.happy { background: var(--good); }
-.g-sam { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 10px 0; }
-.g-sam-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 76px 40px 96px; gap: 6px; align-items: center; padding: 7px 10px 7px 14px; border-top: 1px solid var(--line); }
-.g-sam-row:first-child { border-top: 0; }
-.g-sam:not(:has(.g-pm)) .g-sam-row { grid-template-columns: minmax(0, 1fr) auto; }
-.g-sam-n { font-weight: 600; display: flex; flex-direction: column; }
-.g-sam-n small { font-weight: 400; color: var(--muted); font-size: 12.5px; }
-.g-sam-v { text-align: center; font: 700 17px var(--display); }
-.g-sam-row.red .g-sam-v { color: var(--on-bad); background: var(--bad); border-radius: 99px; padding: 2px 10px; }
-.g-sam-row.dream { background: var(--goal-soft); }
-.g-fill { border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 99px; padding: 5px 10px; font: 600 13px var(--ui); cursor: pointer; }
-@media (max-width: 560px) { .g-sam-row { grid-template-columns: minmax(0, 1fr) 36px 64px 36px; } .g-fill { grid-column: 1 / -1; justify-self: start; } }
-.g-face.jo { background: var(--accent); }
-.g-sam-h { background: var(--surface-2); font-size: 13px; color: var(--muted); font-weight: 600; }
-.g-sam-h, .g-sam-row.jo { grid-template-columns: minmax(0, 1fr) 110px 110px !important; }
-.g-sam-h b { grid-column: 3; text-align: center; font-weight: 600; }
-.g-sam-row.jo .g-sam-v small { font-weight: 400; color: var(--muted); font-size: 13px; }
-.g-jo-bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
-.g-jo-bar i { display: block; height: 100%; background: var(--need); border-radius: 4px; transition: width .4s; }
-.g-sam-row.jo.full .g-jo-bar i { background: var(--good); }
-.g-sam-row.jo.none .g-sam-v { color: var(--bad); }
-.g-choice.meh { border-color: var(--need); background: var(--warn-soft); }
-.g-inline { margin: -2px 0 6px !important; font-size: 15px; }
-.g-cards div { display: flex; gap: 12px; align-items: center; background: var(--surface-2); border-radius: 12px; padding: 12px 14px; font-weight: 600; }
-.g-cards b { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.g-cards > div { display: flex; gap: 12px; align-items: center; background: var(--surface-2); border-radius: 12px; padding: 9px 14px; font-weight: 600; }
 .g-stat { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; background: var(--good-soft); border-radius: 12px; padding: 14px 16px; margin: 8px 0; }
 .g-stat b { font: 700 26px var(--display); }
 .g-stat.owe { background: var(--goal-soft); }
@@ -738,13 +678,79 @@
 .g-amt .g-pm-out { grid-column: 2 / -1; font-size: 13px; color: var(--muted); margin-top: -4px; }
 .g-amt .g-pm-out:empty { display: none; }
 .g-freq { font: 15px var(--ui); padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+/* envelope pictures */
+.gs { position: relative; height: var(--h); background: var(--surface-2); border-radius: 14px; overflow: hidden; margin: 4px 0 2px; }
+.gs-at { position: absolute; left: var(--x); top: var(--y); transform: translateX(-50%); white-space: nowrap; text-align: center; }
+.ge { position: relative; width: 68px; display: inline-block; text-align: center; }
+.ge svg { display: block; width: 68px; height: 45px; }
+.ge rect { fill: #F3E3C3; stroke: #C29A5B; stroke-width: 1.5; }
+.ge path { fill: none; stroke: #C29A5B; stroke-width: 1.5; stroke-linejoin: round; }
+.ge-l { position: absolute; left: 0; right: 0; top: 26px; font: 700 11.5px var(--ui); color: #6B4A1E; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+.ge-a { display: grid; justify-items: center; margin-top: 3px; min-height: 20px; font: 700 15px var(--display); color: var(--ink); }
+.ge-a > * { grid-area: 1 / 1; }
+.ge.mini { width: 34px; flex: none; }
+.ge.mini svg { width: 34px; height: 23px; }
+.neg { color: var(--bad); }
+.gn { position: absolute; z-index: 2; left: var(--sx); top: var(--sy); width: 30px; height: 18px; margin-left: -15px; border-radius: 3px; background: #6FAE6A; border: 1px solid #4E8A4A; color: #fff; font: 700 11px/16px var(--ui); text-align: center; font-style: normal; opacity: 0; animation: gs-fly var(--t) ease-in-out var(--d) both; }
+.gn.arc { animation-name: gs-arc; }
+@keyframes gs-fly { 0% { left: var(--sx); top: var(--sy); opacity: 0; } 12% { opacity: 1; } 75% { left: var(--ex); top: var(--ey); opacity: 1; } 100% { left: var(--ex); top: var(--ey); opacity: 0; } }
+@keyframes gs-arc { 0% { left: var(--sx); top: var(--sy); opacity: 0; } 12% { opacity: 1; } 40% { left: calc((var(--sx) + var(--ex)) / 2); top: calc(var(--sy) - 34px); } 75% { left: var(--ex); top: var(--ey); opacity: 1; } 100% { left: var(--ex); top: var(--ey); opacity: 0; } }
+.gs-show { opacity: 0; animation: gs-in .4s ease var(--d) forwards; }
+.gs-show[data-out] { animation: gs-in .3s ease var(--d) forwards, gs-out .3s ease var(--o) forwards; }
+@keyframes gs-in { to { opacity: 1; } }
+@keyframes gs-out { from { opacity: 1; } to { opacity: 0; } }
+.gs-cash { position: relative; width: 64px; height: 50px; }
+.gs-cash i { position: absolute; left: 4px; width: 56px; height: 28px; border-radius: 4px; background: #6FAE6A; border: 1px solid #4E8A4A; }
+.gs-cash i:nth-child(1) { top: 0; transform: rotate(-6deg); }
+.gs-cash i:nth-child(2) { top: 3px; transform: rotate(4deg); }
+.gs-cash i:nth-child(3) { top: 6px; }
+.gs-cash span { position: absolute; left: 50%; top: 38px; transform: translateX(-50%); font: 700 12px var(--ui); color: var(--muted); }
+.gs-eq { font: 700 40px/1 var(--display); color: var(--muted); }
+.gs-row { width: 132px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 9px; display: grid; grid-template-columns: 1fr auto; gap: 7px 6px; align-items: center; text-align: left; font-weight: 600; font-size: 14px; }
+.gs-row .pill { min-width: 0; font-size: 13px; }
+.gs-row .gs-bar { grid-column: 1 / -1; }
+.gs-bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.gs-bar i { display: block; height: 100%; width: var(--f, 0); border-radius: 3px; background: var(--good); animation: gs-w var(--t, 1s) ease var(--d, 1.9s) forwards; }
+.gs-bar.owe i { background: var(--goal); }
+@keyframes gs-w { from { width: var(--f, 0); } to { width: var(--w, 100%); } }
+.gs-rta { display: grid; justify-items: center; gap: 2px; width: 132px; padding: 8px 0; border-radius: 12px; background: var(--good-soft); color: var(--good); }
+.gs-rta small { font: 700 11px var(--ui); text-transform: uppercase; letter-spacing: .05em; }
+.gs-rta b { display: grid; font: 700 22px var(--display); }
+.gs-rta b > * { grid-area: 1 / 1; }
+.gs-line { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; text-align: left; font-weight: 600; font-size: 14px; }
+.gs-line .gs-bar { height: 10px; border-radius: 5px; }
+.gs-shop { display: grid; justify-items: center; gap: 4px; }
+.gs-shop small { font-size: 12px; color: var(--muted); }
+.gs-ic { font-size: 30px; line-height: 1; }
+.gs-ghost { display: grid; justify-items: center; gap: 2px; width: 82px; padding: 8px 0 6px; border: 2px dashed var(--muted); border-radius: 8px; color: var(--muted); font: 700 18px var(--display); animation: gs-pulse 1.8s ease-in-out infinite; }
+.gs-ghost small { font: 600 11px var(--ui); }
+@keyframes gs-pulse { 50% { opacity: .35; } }
+.gs-months { display: flex; gap: 3px; }
+.gs-months i { width: 17px; height: 20px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font: 700 11px/20px var(--ui); font-style: normal; opacity: 0; animation: gs-in .3s ease var(--d) forwards; }
+.gs-cap { font: 700 11px var(--ui); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.g-replay { display: block; margin: 0 0 10px auto; border: 0; background: none; color: var(--muted); font: 600 13px var(--ui); cursor: pointer; padding: 2px 0; }
+.g-replay:hover { color: var(--accent); }
+.g-envs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 12px; }
+.g-env { border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 4px 6px; cursor: pointer; color: var(--ink); }
+.g-env:hover:not(:disabled) { border-color: var(--accent); }
+.g-env:disabled { cursor: default; }
+.g-env.on { border-color: var(--good); background: var(--good-soft); }
+.g-env .ge-a { font-size: 13px; white-space: nowrap; }
+.g-env:not(.on) .ge-a { color: var(--muted); font-weight: 600; font-family: var(--ui); }
+.g-env.just .ge { animation: gs-pop .45s ease; }
+@keyframes gs-pop { 40% { transform: scale(1.12); } }
+@media (max-width: 560px) { .g-envs { grid-template-columns: repeat(2, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .gs *, .g-env .ge { animation-duration: .01s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; } .g-replay { display: none; } }
 @media (max-width: 560px) {
   .g-card { padding: 20px 18px 18px; border-radius: 14px; }
   .g-card h2 { font-size: 22px; }
   .g-amt { grid-template-columns: 1fr 1fr; }
   .g-amt-n { grid-column: 1 / -1; }
   .g-brand { display: none; }
-  .g-chs { justify-content: flex-start; }
+  .g-top { flex-wrap: nowrap; }
+  .g-chs { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .g-chs::-webkit-scrollbar { display: none; }
+  .g-ch { white-space: nowrap; flex: none; }
 }
 .zl-spot { position: relative; z-index: 5; outline: 3px solid var(--accent) !important; outline-offset: 4px; border-radius: 10px; animation: zl-pulse 1.6s ease-in-out infinite; }
 @keyframes zl-pulse { 0%, 100% { outline-color: var(--accent); } 50% { outline-color: color-mix(in srgb, var(--accent) 30%, transparent); } }

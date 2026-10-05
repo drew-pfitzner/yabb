@@ -1067,7 +1067,7 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .page-name:not([hidden]) { display: block; margin-right: auto; font: 700 18px/1.1 var(--display); letter-spacing: -.01em; }
 /* phone: each group is its own rounded card. The rows draw the card's edges, and each heading always paints
    the card's rounded top itself, so a stuck heading never shows a square corner while you scroll */
-:root[data-layout="phone"] .bud { border: 0; background: none; border-radius: 0; overflow: visible; }
+:root[data-layout="phone"] .bud { border: 0; background: none; border-radius: 0; overflow: clip; }
 :root[data-layout="phone"] .bud > .brow { background-color: var(--surface); box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line); }
 :root[data-layout="phone"] .bud > .brow.parent.top { box-shadow: none; background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
     radial-gradient(circle at 0 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right top / 12px 12px no-repeat,

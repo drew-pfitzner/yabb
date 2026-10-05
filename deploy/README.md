@@ -40,3 +40,24 @@ Until auto-deploy exists (see `TODO.md`), an update is: `git pull`, then `docker
 ## Power cuts
 
 These containers use the same recovery chain as FarmOS (`restart: unless-stopped`, Docker Desktop starts on sign-in, Windows auto-login, BIOS restore on AC power). They come back by themselves.
+
+## Backups
+
+Built into the server (`server/backup.js`). Nothing to schedule in Windows.
+
+- **Every night at 2am** (or as soon as the A6 is back on, if it was off), YABB takes a consistent copy of the database. It encrypts the copy with `BACKUP_KEY` and saves it to `C:\YABB-backups`, then copies it to iCloud at `C:\Users\drewp\iCloudDrive\JARVIS\Family\YNABB`.
+- **Kept:** 14 daily, 8 weekly (Sundays) and 12 monthly (the 1st) copies, deleted by count only. Each receipt is copied once to `blobs/` and never deleted.
+- **Once a week**, the newest copy is opened and compared with the live database.
+- **Status:** `/account` → Backups shows **OK**, **Not in iCloud**, **Failed** or **Not running**. "Not running" means nothing has worked for 36 hours (7+ days for the restore check), and it's the one to act on.
+
+**`BACKUP_KEY` lives only in `C:\YABB\.env` and the password manager.** Without it, no backup can be opened.
+
+### Restore after losing the A6
+
+1. Set up a box with Docker, clone the repo to `C:\YABB`, and recreate `.env` (`BACKUP_KEY` from the password manager, and the two paths).
+2. Decrypt the newest backup from iCloud: `BACKUP_KEY=... node server/backup.js decrypt <file>.yabbbak yabb.sqlite`
+3. Put it in place before first start:
+   - `docker compose create yabb`
+   - `docker cp yabb.sqlite yabb-app:/data/yabb.sqlite`
+4. Receipts: decrypt each `blobs/<id>.yabbbak` the same way into `/data/blobs/<id>` (same name, no extension).
+5. `docker compose up -d`. You'll need a new Tailscale auth key, because the Tailscale identity isn't in the backup.

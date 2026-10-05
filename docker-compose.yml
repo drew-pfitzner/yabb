@@ -32,8 +32,14 @@ services:
     environment:
       COOKIE_SECURE: "1"
       TRUST_PROXY: "1"
+      BACKUP_KEY: ${BACKUP_KEY:-}
+      BACKUP_DIR: /backups
+      OFFSITE_DIR: /offsite
     volumes:
       - yabb-data:/data
+      # nightly encrypted backups: on the A6, and copied into iCloud Drive (paths set in .env)
+      - ${YABB_BACKUP_PATH:-./backups}:/backups
+      - ${YABB_OFFSITE_PATH:-./offsite}:/offsite
     restart: unless-stopped
 
 volumes:

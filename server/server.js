@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
+const Backups = require('./backup.js');
 
 const ENV = process.env;
 const PORT = +ENV.PORT || 8080;
@@ -60,6 +61,7 @@ db.exec(`
     ok INTEGER NOT NULL, note TEXT);
 `);
 const q = (sql) => db.prepare(sql);
+const backups = Backups.setup({ db, dataDir: DATA_DIR, blobDir: BLOB_DIR, log: (m) => console.log(new Date().toISOString(), m) });
 const tx = (fn) => {
   db.exec('BEGIN IMMEDIATE');
   try { const r = fn(); db.exec('COMMIT'); return r; } catch (e) { db.exec('ROLLBACK'); throw e; }
@@ -361,6 +363,7 @@ function adminOverview(res) {
     users: q(`SELECT u.id, u.username, u.name, u.admin, u.budget_id, u.disabled, u.locked_until, u.created_at,
       (SELECT MAX(ts) FROM signins s WHERE s.user_id = u.id AND s.ok = 1) last_signin FROM users u ORDER BY u.created_at`).all(),
     signins: q('SELECT ts, username, ip, agent, ok, note FROM signins ORDER BY seq DESC LIMIT 60').all(),
+    backups: backups.status(),
     version: VERSION,
   });
 }
@@ -381,6 +384,10 @@ async function adminAction(req, res, who, parts) {
     const name = String(body.name || '').trim().slice(0, 60) || fail(400, 'Give the budget a name.');
     q('UPDATE budgets SET name = ? WHERE id = ?').run(name, id);
     return send(res, 200, { ok: true });
+  }
+  if (what === 'backup-now' && req.method === 'POST') {
+    try { await backups.run(body.kind === 'drill' ? 'drill' : 'backup'); } catch (e) { fail(400, e.message); }
+    return send(res, 200, backups.status());
   }
   if (what === 'switch' && req.method === 'POST') {
     budgetOk(body.budget_id);
@@ -529,6 +536,9 @@ async function cli(args) {
 if (require.main === module) {
   const args = process.argv.slice(2);
   if (args.length) cli(args).then(() => process.exit(0));
-  else bootstrap().then(() => server.listen(PORT, HOST, () => console.log(`YABB ${VERSION} on http://${HOST}:${PORT} (data in ${DATA_DIR})`)));
+  else bootstrap().then(() => server.listen(PORT, HOST, () => {
+    console.log(`YABB ${VERSION} on http://${HOST}:${PORT} (data in ${DATA_DIR})`);
+    backups.start();
+  }));
 }
-module.exports = { server, bootstrap, db, ipFails };
+module.exports = { server, bootstrap, db, ipFails, backups };

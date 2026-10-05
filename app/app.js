@@ -278,6 +278,11 @@
     lb.title = isPhone ? 'Switch to the computer layout' : 'Switch to the phone layout';
     const ms = $('#monthsw');
     ms.hidden = UI.view !== 'budget';
+    const pn = $('#pagename');
+    const pname = { tx: 'Transactions', accounts: 'Accounts', settings: 'Settings' }[UI.view];
+    if (pn) { pn.hidden = !pname; pn.textContent = pname || ''; }
+    // sticky headings sit just under the header, whatever its height
+    document.documentElement.style.setProperty('--hdr', ($('.top') ? $('.top').offsetHeight : 50) + 'px');
     $('#monthlabel').textContent = monthLabel(UI.month);
     const review = D ? D.tx.filter((t) => t.approved === false).length : 0;
     const badge = $('#txbadge');

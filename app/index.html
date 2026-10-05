@@ -1047,6 +1047,13 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .txr.open .tx-pen { display: inline-grid; place-items: center; position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border: 0; border-radius: 8px; background: none; color: var(--muted); -webkit-tap-highlight-color: transparent; }
 :root[data-layout="phone"] .txr.open .tx-pen svg { width: 19px; height: 19px; }
 :root[data-layout="phone"] .txr.open .tx-pen:active { background: var(--surface); color: var(--ink); }
+/* phone: the header stays at the top (clear of the clock and battery); headings stick under it */
+.page-name { display: none; }
+:root[data-layout="phone"] .top { position: sticky; top: 0; z-index: 30; background: var(--bg); margin: 0 -12px 8px; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
+:root[data-layout="phone"] .page-name:not([hidden]) { display: block; margin-right: auto; font: 700 18px/1.1 var(--display); letter-spacing: -.01em; }
+:root[data-layout="phone"] .bud { overflow: clip; }
+:root[data-layout="phone"] .brow.parent.top { position: sticky; top: var(--hdr, 50px); z-index: 5; }
+:root[data-layout="phone"] .txl.by-day .tx-day { position: sticky; top: var(--hdr, 50px); z-index: 5; }
 :root[data-layout="phone"] .tx-sum { align-items: center; }
 :root[data-layout="phone"] .tl-ctl { margin-left: auto; }
 :root[data-layout="phone"] .tl-ctl button { padding: 4px 12px; font-size: 13px; }
@@ -1147,6 +1154,7 @@ select:not(.ah-sel):not([multiple]):not(.title-sel select) {
         <h1 id="monthlabel" data-action="this-month" title="Go to this month"></h1>
         <button class="icon-btn" data-action="next-month" aria-label="Next month"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 4l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
+      <div class="page-name" id="pagename" hidden></div>
       <div class="sync" id="sync" role="status"><span>Connecting</span></div>
       <button class="layout-btn guide-btn" data-action="guide" title="Step-by-step guide and lessons"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M7.8 7.8a2.3 2.3 0 114 1.5c-.8.6-1.8 1-1.8 2.2M10 14.2h.01" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>Guide</button>
       <button class="layout-btn" id="layoutbtn" data-action="layout-toggle"></button>

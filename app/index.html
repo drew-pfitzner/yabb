@@ -999,6 +999,10 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow.open .b-avl { align-self: start; }
 :root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num { min-height: 36px; display: flex; align-items: center; }
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-self: start; }
+/* three even columns, each centred: label over number */
+:root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-items: center; text-align: center; }
+:root[data-layout="phone"] .brow.open .asg { text-align: center; max-width: 104px; }
+:root[data-layout="phone"] .brow.open .b-act .spent-link { margin: 0; padding: 0 4px; }
 /* even margins on both sides: no indent steps or spacer on a phone (the group headers show what's inside what) */
 :root[data-layout="phone"] .brow { padding-left: 12px; padding-right: 12px; }
 :root[data-layout="phone"] .brow .twisty-sp { display: none; }

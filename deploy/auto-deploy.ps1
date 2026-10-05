@@ -15,7 +15,7 @@ function Log($m) { "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $m" | Add-Content 
 # the admin page reads this file (BACKUP_DIR is mounted into the app)
 $backupLine = Get-Content (Join-Path $Repo '.env') | Where-Object { $_ -match '^YABB_BACKUP_PATH=' } | Select-Object -First 1
 $statusFile = Join-Path ($(if ($backupLine) { $backupLine -replace '^YABB_BACKUP_PATH=', '' } else { Join-Path $Repo 'backups' })) 'deploy-status.json'
-function ReadStatus() { try { Get-Content $statusFile -Raw | ConvertFrom-Json } catch { $null } }
+function ReadStatus() { try { Get-Content $statusFile -Raw -ErrorAction Stop | ConvertFrom-Json } catch { $null } }
 function WriteStatus($ok, $version, $note, $failed) {
   [ordered]@{ ok = $ok; version = $version; note = $note; failedCommit = $failed; ts = [DateTimeOffset]::Now.ToUnixTimeMilliseconds() } |
     ConvertTo-Json | Set-Content -Encoding UTF8 $statusFile

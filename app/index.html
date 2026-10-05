@@ -764,6 +764,22 @@ button.pm-chip { cursor: pointer; padding-right: 10px; }
 .cs-nums b { color: var(--ink); font-weight: 600; margin-left: 4px; }
 .cs-move { margin-top: 0; }
 .tsum .st.over { display: none; } /* the summary card above already says it's in the red */
+.cover-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 0; padding: 10px 12px 10px 14px; border-radius: 12px; background: var(--bad); color: var(--on-bad); font-size: 14px; }
+.cover-bar .btn { background: var(--surface); color: var(--bad); border-color: transparent; font-weight: 700; }
+.tcard { margin: 14px 0 6px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); display: grid; gap: 8px; }
+.tcard.empty { border-style: dashed; box-shadow: none; text-align: center; justify-items: center; }
+.tcard p { margin: 0; }
+.tc-kind { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tc-big { font: 700 21px/1.2 var(--display); letter-spacing: -.01em; color: var(--ink); }
+.tc-sub { font-size: 14px; color: var(--muted); max-width: 30ch; }
+.tc-bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 4px; }
+.tc-bar i { display: block; height: 100%; border-radius: 99px; background: var(--good); }
+.tc-bar i.under { background: var(--warn); }
+.tc-line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.tc-st { font-weight: 700; font-size: 14px; }
+.tc-st.under { color: var(--warn); } .tc-st.ok { color: var(--good); } .tc-st.goal { color: var(--goal); }
+.tc-btn { width: 100%; justify-content: center; margin-top: 6px; }
+.tc-what { font-size: 15px; display: grid; gap: 4px; }
 .more-toggle { display: flex; align-items: center; gap: 6px; width: 100%; margin: 18px 0 0; padding: 12px 0; border: 0; border-top: 1px solid var(--line); background: none; font-weight: 600; font-size: 14px; color: var(--ink); text-align: left; }
 .more-toggle svg { width: 16px; height: 16px; color: var(--muted); }
 .more-box { display: grid; gap: 4px; padding-bottom: 6px; }

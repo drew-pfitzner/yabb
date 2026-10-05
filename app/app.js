@@ -768,30 +768,17 @@
       const moves = S.moves(UI.month).filter((mv) => mv.from === id || mv.to === id);
       const pathTxt = D.tree.path[id].slice(0, -1).join(' › ');
       const title = $('#sheet-title'); if (title) title.textContent = c.name;
-      // 1. where the money stands: Available in its pill, the other numbers small beside it
+      // the opened row already shows Assigned, Spent and Available: only say something if it's in the red
       const num = leaf ? r : g;
-      const av = num.available;
-      const st = leaf ? r.status : pot ? g.status : av < 0 ? 'over' : av > 0 ? 'pos' : 'zero';
-      let html = `${pathTxt ? `<p class="crumb">In ${esc(pathTxt)}</p>` : ''}
-        <div class="cat-sum">
-          <div class="cs-avl"><span class="cs-lbl">Available</span><span class="pill st-${st}">${money(av)}</span></div>
-          <div class="cs-nums">
-            <span>Assigned <b>${money(num.assigned)}</b></span>
-            <span>Spent <b>${money(-num.activity)}</b></span>
-            ${leaf && r.carry ? `<span>From last month <b>${money(r.carry)}</b></span>` : ''}
-          </div>
-        </div>`;
-      if (leaf || pot) html += `<div class="row-btns cs-move"><button class="btn primary" data-saction="move">${av < 0 ? 'Cover it now' : 'Move money'}</button>${av < 0 ? '<span class="hint bad">It stays red until it\'s covered.</span>' : ''}</div>`;
-      else {
-        html += `<p class="hint">A heading: these are the totals of the categories under it.</p>`;
+      let html = `${pathTxt ? `<p class="crumb">In ${esc(pathTxt)}</p>` : ''}`;
+      if ((leaf || pot) && num.available < 0) html += `<div class="cover-bar"><span>In the red by <b>${money(-num.available)}</b></span><button class="btn sm" data-saction="move">Cover it now</button></div>`;
+      if (leaf || pot) {
+        if (pot && g.targetShort > 0 && !editingTarget) html += `<div class="warn-box">The targets inside ${esc(c.name)} need ${money(g.kidsNeed)} this month, ${money(g.targetShort)} more than ${poss(esc(c.name))} own target.</div>`;
+        html += editingTarget ? `<h3>Target</h3>${targetEditor(c, num)}` : targetCard(c, num);
+      } else {
+        html += `<p class="hint">A heading: its numbers are the totals of the categories under it.</p>`;
         const own = D.month.rows[id];
         if (own && (own.available || own.assigned)) html += `<div class="warn-box">${money(own.available)} is held in ${esc(c.name)} itself, from before it had subcategories. <div class="row-btns"><button class="btn sm primary" data-saction="move">Move it into a subcategory</button></div></div>`;
-      }
-      // 2. its target
-      if (leaf || pot) {
-        html += `<h3>Target</h3>`;
-        if (pot && g.targetShort > 0 && !editingTarget) html += `<div class="warn-box">The targets inside ${esc(c.name)} need ${money(g.kidsNeed)} this month, ${money(g.targetShort)} more than ${poss(esc(c.name))} own target.</div>`;
-        html += editingTarget ? targetEditor(c, num) : targetSummary(c, num);
       }
       // 3. this month's spending
       html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
@@ -891,6 +878,34 @@
     return out;
   }
 
+  // the category sheet's target, as a card: what it is, how this month is going, and the button to change it
+  function targetCard(c, r) {
+    if (payAcct(c.id) || !c.target || !r.target) {
+      if (c.target && !payAcct(c.id)) return `<section class="tcard"><div class="tc-what">${targetLine(c.id, r) || ''}</div><button class="btn tc-btn" data-saction="edit-target">Edit target</button></section>`;
+      if (payAcct(c.id)) return `<section class="tcard"><div class="tc-what">${targetLine(c.id, r) || '<span class="tdesc">No monthly amount set</span>'}</div><button class="btn tc-btn" data-saction="edit-target">${c.target ? 'Edit target' : 'Add a target'}</button></section>`;
+      return `<section class="tcard empty"><p class="tc-big">No target yet</p><p class="tc-sub">Add one and YNABB works out how much ${esc(c.name)} needs each month.</p><button class="btn primary tc-btn" data-saction="edit-target">${ICON.plus} Add a target</button></section>`;
+    }
+    const t = c.target, ti = r.target, kind = (TTYPES.find((x) => x[0] === t.type) || [0, 'Target'])[1];
+    const desc = targetLine(c.id, Object.assign({}, r, { available: Math.max(0, r.available) })).replace(/^.*?<span class="tdesc">/, '').replace(/<\/span>$/, '').replace(/<[^>]+>/g, '');
+    let pct, line, status;
+    if (t.type === 'goal') {
+      pct = Math.max(0, Math.min(1, ti.pct || 0));
+      line = `${Math.round(pct * 100)}% saved`;
+    } else {
+      pct = ti.need > 0 ? Math.max(0, Math.min(1, r.assigned / ti.need)) : 1;
+      line = ti.need > 0 ? `${money(Math.min(r.assigned, ti.need))} of ${money(ti.need)} assigned this month` : 'Nothing needed this month';
+    }
+    if (ti.under > 0) status = `<span class="tc-st under">Needs ${money(ti.under)} more</span>`;
+    else if (t.type === 'goal' && ti.remaining > 0 && !ti.need) status = `<span class="tc-st goal">${money(ti.remaining)} to go</span>`;
+    else status = `<span class="tc-st ok">${t.type === 'goal' && ti.remaining <= 0 ? 'Goal reached' : t.type === 'cap' && !ti.need ? 'Full' : 'Funded'}</span>`;
+    return `<section class="tcard">
+      <p class="tc-kind">${esc(kind)}</p>
+      <p class="tc-big">${esc(desc)}</p>
+      <div class="tc-bar"><i style="width:${Math.round(pct * 100)}%" class="${ti.under > 0 ? 'under' : 'ok'}"></i></div>
+      <div class="tc-line"><span>${esc(line)}</span>${status}</div>
+      <button class="btn tc-btn" data-saction="edit-target">Edit target</button>
+    </section>`;
+  }
   function targetSummary(c, r) {
     if (!c.target) return `<p class="hint">No target. Add one and the app will tell you how much this category needs each month.</p><button class="btn" data-saction="edit-target">${ICON.plus} Add a target</button>`;
     return `<div class="tsum">${targetLine(c.id, r) || ''}</div><div class="row-btns"><button class="btn" data-saction="edit-target">Edit target</button></div>`;

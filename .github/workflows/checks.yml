@@ -1,0 +1,26 @@
+# Runs on every pull request and every change to main. main only accepts a pull request once this passes,
+# and whatever lands on main goes live on the A6 within a few minutes, so this is the gate.
+name: checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: No private data or secrets
+        run: sh scripts/check-private.sh
+      - name: Every script loads
+        run: for f in app/*.js server/*.js server/public/*.js; do node --check "$f" || exit 1; done
+      - name: Tests
+        run: npm test
+      - name: The A6's image builds
+        run: docker build -q -t ynabb:check .

@@ -1006,6 +1006,12 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="desktop"] .brow.parent { grid-template-areas: "name tgt asg act avl"; padding-bottom: 5px; }
 :root[data-layout="phone"] .brow.parent { grid-template-areas: "name name avl"; }
 :root[data-layout="phone"] .brow.parent.open { grid-template-areas: "name name name" "asg act avl"; }
+/* phone: categories inside a sub-group (like Subscriptions) step in under its name, with a light line from its arrow */
+:root[data-layout="phone"] .brow[style*="--d:2"], :root[data-layout="phone"] .brow[style*="--d:3"], :root[data-layout="phone"] .brow[style*="--d:4"] { padding-left: 35px; position: relative; }
+:root[data-layout="phone"] .brow[style*="--d:2"]::before, :root[data-layout="phone"] .brow[style*="--d:3"]::before, :root[data-layout="phone"] .brow[style*="--d:4"]::before { content: ""; position: absolute; left: 21px; top: 0; bottom: 0; width: 1.5px; border-radius: 1px; background: var(--line); }
+:root[data-layout="phone"] .brow.pot:not(.collapsed) { position: relative; }
+:root[data-layout="phone"] .brow.pot:not(.collapsed) > .b-bar { padding-left: 23px; }
+:root[data-layout="phone"] .brow.pot:not(.collapsed)::before { content: ""; position: absolute; left: 21px; top: 30px; bottom: 0; width: 1.5px; border-radius: 1px; background: var(--line); }
 .tx-day { display: none; }
 /* phone transactions: less is more */
 :root[data-layout="phone"] .tx-tools { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; }

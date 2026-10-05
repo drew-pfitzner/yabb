@@ -2816,6 +2816,7 @@
       <p>Signed in as <b>${esc(S.account.name)}</b>${S.account.budget ? `, using the <b>${esc(S.account.budget.name)}</b> budget` : ''}. Everyone who shares this budget has their own login, and changes sync live between you on phones and computers.</p>
       <p class="fine">${S.account.admin ? 'Add people, make new budgets and reset passwords on the account page.' : 'To add someone, ask the admin to make them a login.'}</p>
       <div class="row-btns"><a class="btn" href="/account">${S.account.admin ? 'Account and admin' : 'Account and password'}</a><button class="btn" data-action="sign-out">Sign out</button></div>
+      <p class="fine">YABB version ${esc(S.account.version)}</p>
 ` : `<h2>Sharing with your partner</h2>
       <p>Open the share menu on this page in claude.ai and invite your partner as an <b>Editor</b>. They need their own claude.ai account. Everything syncs live between both of you, on phones and computers. Editors can also attach receipts. Anyone given view-only access can't see the budget data.</p>
       <p class="fine">Status: ${S.mode === 'cloud' ? 'syncing through claude.ai' : 'saving in this browser only'}.</p>

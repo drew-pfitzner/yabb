@@ -52,7 +52,10 @@ async function load() {
     <td>${s.ok ? '<span class="chip good">signed in</span>' : `<span class="chip bad">${esc(s.note || 'failed')}</span>`}</td>
     <td class="fine">${esc(s.ip)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">None yet.</td></tr>';
   $('#backups').innerHTML = backupRows(data.backups);
-  $('#version').textContent = 'Running version ' + data.version + '.';
+  const d = data.deploy;
+  $('#deploy').innerHTML = `Running version <b>${esc(data.version)}</b>, started ${when(data.started)}.` +
+    (d ? (d.ok ? ` <span class="chip good">last update OK</span> <span class="fine">${when(d.ts)}</span>`
+      : ` <span class="chip bad">last update failed</span> <span class="fine">${when(d.ts)}: ${esc(d.note)}</span>`) : '');
 }
 
 // one row each for the nightly backup and the weekly restore check

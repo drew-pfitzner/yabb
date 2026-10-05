@@ -9,7 +9,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Next
 
-1. [ ] **Move the real budget:** backup from the live artifact, restore on the A6, copy the receipts across, retire the artifacts
+1. [ ] **Retire the four claude.ai copies** (YABB, Test, Fresh, Redo) once Dani is happy the A6 budget matches. Download a final backup of each first. Deleting them is permanent, so it's Drew or Dani's call.
 
 ## Ideas
 
@@ -23,6 +23,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Done
 
+- 2026-10-05: **Real budget moved to the A6** (Family budget: 701 transactions, no receipts to carry across). Backed up straight away, restore-checked, and confirmed in iCloud.
 - 2026-10-05: **Git autopilot.** `/ship`, `/sync` and `/undo` in Claude Code; sessions start by fetching from GitHub; GitHub checks every pull request (scripts load, tests, Docker build, no private data); `main` only takes pull requests that pass, and merges them automatically.
 - 2026-10-05: **Renamed YNABB** ("Yikes Not Another Bloody Budget"): app, pages, docs, repo, containers, folders and the web address (https://ynabb.tail8c1464.ts.net). Kept for compatibility: the backup format id `zero-line`, old backup files (still read and rotated), and `tag:yabb` in Tailscale.
 - 2026-10-05: Backup key saved in the password manager.

@@ -54,10 +54,11 @@
   applyLayout();
   function barPref() { try { return localStorage.getItem('zeroline-bar') || 'thick'; } catch (e) { return 'thick'; } }
   document.documentElement.dataset.bar = barPref();
-  function tgtOn() { try { return localStorage.getItem('zeroline-tgt') !== 'off'; } catch (e) { return true; } }
-  document.documentElement.dataset.tgt = tgtOn() ? 'on' : 'off';
-  function pctOn() { try { return localStorage.getItem('zeroline-pct') !== 'off'; } catch (e) { return true; } }
-  document.documentElement.dataset.pct = pctOn() ? 'on' : 'off';
+  // the Target column and the needs/wants/savings bar start off every time the page opens; the buttons show them for now
+  const SHOW = { tgt: false, pct: false };
+  const tgtOn = () => SHOW.tgt, pctOn = () => SHOW.pct;
+  document.documentElement.dataset.tgt = 'off';
+  document.documentElement.dataset.pct = 'off';
 
   // ---------- formatting ----------
   let fmtCache = null;
@@ -3205,9 +3206,8 @@
     },
     'toast-act': () => { const fn = toastFn; toastFn = null; $('#toast').hidden = true; if (fn) fn(); },
     'tgt-toggle': () => {
-      const v = tgtOn() ? 'off' : 'on';
-      try { localStorage.setItem('zeroline-tgt', v); } catch (e) { /* ignore */ }
-      document.documentElement.dataset.tgt = v;
+      SHOW.tgt = !SHOW.tgt;
+      document.documentElement.dataset.tgt = SHOW.tgt ? 'on' : 'off';
       render();
     },
     'split-basis': (el) => { try { localStorage.setItem('zeroline-split-basis', el.dataset.v); } catch (e) { /* ignore */ } render(); },
@@ -3220,9 +3220,8 @@
       await putCat(Object.assign({}, c, { kind: next }));
     },
     'pct-toggle': () => {
-      const v = pctOn() ? 'off' : 'on';
-      try { localStorage.setItem('zeroline-pct', v); } catch (e) { /* ignore */ }
-      document.documentElement.dataset.pct = v;
+      SHOW.pct = !SHOW.pct;
+      document.documentElement.dataset.pct = SHOW.pct ? 'on' : 'off';
       render();
     },
     'bar-cycle': () => {

@@ -124,7 +124,7 @@ function setup({ db, dataDir, blobDir, env = process.env, log = console.log }) {
       log(`backup ${name} (${sealed.length} bytes)${offsiteOk === false ? ' NOT offsite' : ''}`);
       return last('backup');
     } finally {
-      fs.rmSync(tmp, { force: true });
+      for (const f of [tmp, tmp + '-wal', tmp + '-shm']) fs.rmSync(f, { force: true }); // SQLite leaves its journal files beside it
     }
   }
 
@@ -169,7 +169,7 @@ function setup({ db, dataDir, blobDir, env = process.env, log = console.log }) {
       log('restore check: ' + note);
       return last('drill');
     } finally {
-      fs.rmSync(tmp, { force: true });
+      for (const f of [tmp, tmp + '-wal', tmp + '-shm']) fs.rmSync(f, { force: true }); // SQLite leaves its journal files beside it
     }
   }
 

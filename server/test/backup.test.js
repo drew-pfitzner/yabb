@@ -40,6 +40,7 @@ test('a backup lands on the A6 and in iCloud, encrypted', async () => {
   assert.ok(!file.includes('Woolworths'), 'no budget text visible');
   assert.ok(fs.readFileSync(path.join(dirs.offsite, 'daily', name)).equals(file));
   assert.equal(backups.status().backup.state, 'ok');
+  assert.deepEqual(fs.readdirSync(dirs.data).filter((f) => f.includes('.tmp')), [], 'no temporary files left behind');
 });
 
 test('the backup opens to the real database with the key', () => {

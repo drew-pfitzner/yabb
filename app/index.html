@@ -988,7 +988,13 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow.open .m-lbl { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 :root[data-layout="phone"] .brow.open .asg { width: 100%; max-width: 110px; font-size: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
 :root[data-layout="phone"] .brow.open .b-avl { align-self: start; }
-:root[data-layout="phone"] .brow.debt .kdot.debt-ic { left: calc(12px + var(--d) * 12px); top: 9px; transform: none; }
+/* even margins on both sides: no indent steps or spacer on a phone (the group headers show what's inside what) */
+:root[data-layout="phone"] .brow { padding-left: 12px; padding-right: 12px; }
+:root[data-layout="phone"] .brow .twisty-sp { display: none; }
+:root[data-layout="phone"] .brow .b-bar, :root[data-layout="phone"] .brow.debt .b-bar { padding-left: 0; }
+:root[data-layout="phone"] .brow.open .tline, :root[data-layout="phone"] .brow.open .b-asg { padding-left: 0; }
+:root[data-layout="phone"] .brow.debt .b-name { padding-left: 34px; }
+:root[data-layout="phone"] .brow.debt .kdot.debt-ic { left: 12px; top: 6px; transform: none; }
 @media (prefers-reduced-motion: no-preference) {
   .sheet { animation: rise .18s ease-out; }
   @keyframes rise { from { transform: translateY(14px); opacity: .6; } to { transform: none; opacity: 1; } }

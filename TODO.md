@@ -9,9 +9,8 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Next
 
-1. [ ] **Git autopilot:** `/ship`, `/sync` and `/undo` commands, a pull-on-start hook, GitHub checks, auto-merge
-2. [ ] **Set Dani up:** GitHub account, collaborator invite, clone, one-page guide
-3. [ ] **Move the real budget:** backup from the live artifact, restore on the A6, copy the receipts across, retire the artifacts
+1. [ ] **Set Dani up:** GitHub account, collaborator invite, clone, one-page guide
+2. [ ] **Move the real budget:** backup from the live artifact, restore on the A6, copy the receipts across, retire the artifacts
 
 ## Ideas
 
@@ -25,6 +24,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Done
 
+- 2026-10-05: **Git autopilot.** `/ship`, `/sync` and `/undo` in Claude Code; sessions start by fetching from GitHub; GitHub checks every pull request (scripts load, tests, Docker build, no private data); `main` only takes pull requests that pass, and merges them automatically.
 - 2026-10-05: **Renamed YNABB** ("Yikes Not Another Bloody Budget"): app, pages, docs, repo, containers, folders and the web address (https://ynabb.tail8c1464.ts.net). Kept for compatibility: the backup format id `zero-line`, old backup files (still read and rotated), and `tag:yabb` in Tailscale.
 - 2026-10-05: Backup key saved in the password manager.
 - 2026-10-05: **Auto-deploy.** The A6 checks GitHub `main` every 2 minutes, installs anything new, checks it's healthy, and rolls back if not. The admin page shows the live version and the last update. (A "Deploy now" button wasn't worth it at 2 minutes.)

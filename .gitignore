@@ -14,3 +14,4 @@ backups/
 node_modules/
 offsite/
 deploy.log
+.claude/settings.local.json

@@ -89,39 +89,40 @@
   const XS = [12.5, 37.5, 62.5, 87.5];
 
   // ---- the idea ----
-  step({ id: 'hello', ch: 0, title: 'Budgeting is just envelopes', nextLabel: 'Show me',
+  step({ id: 'hello', ch: 0, title: 'Budgeting is simpler than you think', nextLabel: 'Show me',
     body: () => pic(110, XS.map((x, i) => at(x, 30, env(['Rent', 'Food', 'Power', 'Fun'][i]))).join(''), true) +
-      big('That\'s really all it is. YNABB does the maths.') +
-      soft('About 15 minutes. Close it any time; it remembers where you were.') });
+      big('It all comes down to envelopes. Let me show you.') +
+      soft('Takes about 15 minutes. Stop any time and pick up where you left off.') });
 
-  step({ id: 'gran', ch: 0, title: 'How your great-grandma did it',
+  step({ id: 'gran', ch: 0, title: 'Picture your great-grandma on payday',
     body: () => {
       const names = ['Rent', 'Food', 'Power', 'Fun'], amts = ['$450', '$250', '$100', '$200'];
       return pic(186, at(50, 10, '<div class="gs-cash"><i></i><i></i><i></i><span>Payday</span></div>') +
         [0, 1, 2, 3, 4, 5, 6, 7].map((i) => fly(50, 40, XS[i % 4], 114, i * 0.32)).join('') +
         names.map((n, i) => at(XS[i], 112, env(n, show((i + 4) * 0.32 + 1.1, amts[i])))).join('')) +
-        p('Payday: cash out of the bank, then into envelopes. <b>One for each thing.</b>') +
-        p('Food envelope empty? No more takeaway this week. Simple.');
+        p('She\'d take her pay out as cash and split it into envelopes, <b>one for each thing she needed.</b>') +
+        p('When the Food envelope ran empty, that was it until next payday.');
     } });
 
-  step({ id: 'cat', ch: 0, title: 'In YNABB, a category is an envelope',
+  step({ id: 'cat', ch: 0, title: 'YNABB works the same way',
     body: () => pic(128,
       [0, 1, 2].map((i) => fly(24, -20, 24, 52, i * 0.45, 1)).join('') +
+      at(24, 8, '<small class="gs-cap">Her way</small>') + at(75, 8, '<small class="gs-cap">In YNABB</small>') +
       at(24, 36, env('Food', show(1.9, '$250'))) +
       at(50, 42, '<b class="gs-eq">=</b>') +
       at(75, 50, `<div class="gs-row"><span>Food</span>${show(1.9, '<b class="pill st-pos">$250</b>')}<div class="gs-bar"><i></i></div></div>`)) +
-      p('Same idea, no cash. The amount in the coloured bubble is <b>what\'s in the envelope</b>.') });
+      p('Each <b>category</b> is an envelope, and the green bubble shows what\'s inside.') });
 
   const FILL = [['Rent', 450], ['Food', 250], ['Power', 100], ['Fun', 200]];
   const filled = () => st.fill || (st.fill = {});
   const onTable = () => 1000 - FILL.reduce((a, [n]) => a + (filled()[n] || 0), 0);
-  step({ id: 'fill', ch: 0, title: 'Your turn: fill the envelopes',
+  step({ id: 'fill', ch: 0, title: 'Now you try',
     body: () => {
       const f = filled(), left = onTable();
-      return p('<b>$1,000</b> just landed. Tap each envelope to fill it.') +
+      return p('You\'ve just been paid <b>$1,000</b>. Tap each envelope to fill it.') +
         `<div class="g-left ${left === 0 ? 'done' : ''}">On the table: <b>$${left}</b></div>` +
         `<div class="g-envs">${FILL.map(([n, need]) => `<button class="g-env ${f[n] ? 'on' : ''} ${st.fillJust === n ? 'just' : ''}" data-fillenv="${n}" ${f[n] ? 'disabled' : ''}>${env(n, f[n] ? '$' + f[n] + ' ✓' : 'needs $' + need)}</button>`).join('')}</div>` +
-        (left === 0 ? ok('Every dollar has an envelope. <b>That\'s budgeting!</b>') + soft('In YNABB, money still on the table is called <b>Ready to Assign</b>.') : '') +
+        (left === 0 ? ok('Every dollar has a home. <b>That\'s budgeting!</b>') + soft('In YNABB, money still waiting on the table is called <b>Ready to Assign</b>.') : '') +
         (Object.keys(f).length ? `<button class="g-link" data-act="refill">Start again</button>` : '');
     },
     bind: (card) => {
@@ -131,10 +132,10 @@
     canNext: () => onTable() === 0, needMsg: 'Tap each envelope until the table is empty.' });
 
   const DREAMS = [['holiday', 'A holiday', 'Holiday'], ['calm', 'Less stress about bills', null], ['debt', 'Paying off what I owe', null], ['cushion', 'A safety cushion', 'Emergency fund'], ['treats', 'Treats without guilt', 'Treats'], ['house', 'A house deposit', 'House deposit'], ['car', 'A better car', 'New car'], ['kids', 'Things for the kids', 'Kids\' extras']];
-  step({ id: 'dream', ch: 0, title: 'What would you love an envelope for?',
+  step({ id: 'dream', ch: 0, title: 'What would you love to save for?',
     body: () => {
       const d = st.dreams || (st.dreams = []);
-      return p('Tap any. We\'ll give them their own envelope.') +
+      return p('Pick any you like, and they\'ll get envelopes too.') +
         `<div class="g-choices">${DREAMS.map(([k, l]) => `<button class="g-choice ${d.includes(k) ? 'on' : ''}" data-dream="${k}">${d.includes(k) ? '✓ ' : ''}${l}</button>`).join('')}</div>` +
         `<span class="g-own"><input id="g-dream-own" placeholder="Something else?" value="${esc(st.dreamOwn || '')}" aria-label="Something else you'd love"></span>`;
     },
@@ -144,67 +145,67 @@
     } });
 
   // ---- day to day ----
-  step({ id: 'spend', ch: 1, title: 'Spending comes out of the envelope',
+  step({ id: 'spend', ch: 1, title: 'When you spend, the envelope empties',
     body: () => pic(122,
       at(28, 30, env('Food', show(0, '$250', 1.2) + show(1.3, '$180'))) +
       fly(28, 40, 76, 48, 0.2, 1.1) +
       at(76, 34, '<div class="gs-shop"><span class="gs-ic">🛒</span><small>Groceries $70</small></div>')) +
-      p('Buy groceries, and the Food envelope has less in it. <b>YNABB does the take-away for you.</b>') });
+      p('Spend $70 on groceries and Food drops from $250 to $180. <b>YNABB does the sums for you.</b>') });
 
-  step({ id: 'move', ch: 1, title: 'Ran out? Borrow from another envelope',
+  step({ id: 'move', ch: 1, title: 'Run out? Borrow from another envelope',
     body: () => pic(122,
       at(26, 30, env('Food', show(0, '<span class="neg">−$30</span>', 1.4) + show(1.5, '$0 ✓'))) +
       fly(74, 40, 26, 40, 0.3, 1.2, 'arc') +
       at(74, 30, env('Fun', show(0, '$200', 1.4) + show(1.5, '$170')))) +
-      p('It happens to everyone. Move a little from another envelope. <b>No guilt, you just chose.</b>') });
+      p('Overspent on food? Move a bit across from Fun. <b>Plans change, and that\'s fine.</b>') });
 
-  step({ id: 'rego', ch: 1, title: 'Big bills get a little every month',
+  step({ id: 'rego', ch: 1, title: 'Big bills get a little each month',
     body: () => pic(150,
       Array.from({ length: 12 }, (_, i) => fly(50, -18, 50, 30, i * 0.28, 0.8)).join('') +
       at(50, 26, env('Car rego', show(4, '$900 ready ✓'))) +
       at(50, 114, '<div class="gs-months">' + 'JFMAMJJASOND'.split('').map((m, i) => `<i style="--d:${i * 0.28 + 0.6}s">${m}</i>`).join('') + '</div>')) +
-      p('Rego is <b>$900 a year</b>. So its envelope gets <b>$75 a month</b>, and it\'s ready when the bill comes.') });
+      p('Rego is <b>$900 a year</b>, so its envelope gets <b>$75 a month</b>. When the bill arrives, the money\'s waiting.') });
 
-  step({ id: 'notyet', ch: 1, title: 'Only fill envelopes with money you have',
+  step({ id: 'notyet', ch: 1, title: 'Only use money you\'ve already got',
     body: () => pic(112, at(30, 24, env('Fun', '$0')) + at(72, 30, '<div class="gs-ghost">$<small>Thursday\'s pay</small></div>'), true) +
-      p('Pay coming Thursday? It waits. <b>When it lands, then it goes in envelopes.</b>') });
+      p('Pay coming on Thursday? <b>Wait until it lands</b>, then fill your envelopes.') });
 
   // ---- tricky months ----
   const ORDER = [['Rent', 100], ['Food', 100], ['Power', 100], ['Fuel', 60], ['Fun', 0]];
-  step({ id: 'uneven', ch: 2, title: 'Pay comes in bits? Fill the top first',
+  step({ id: 'uneven', ch: 2, title: 'Paid in bits? Fill the essentials first',
     body: () => pic(188, ORDER.map(([n, pct], i) => at(50, 8 + i * 37, `<div class="gs-line"><span>${n}</span><div class="gs-bar"><i style="--w:${pct}%;--d:${i * 0.7}s"></i></div></div>`, 'width:86%')).join('')) +
-      p('Roof, food, power, getting to work. <b>Then everything else.</b>') });
+      p('Rent, food, power and getting to work come first. <b>Everything else gets what\'s left.</b>') });
 
-  step({ id: 'short', ch: 2, title: 'Not enough this month?',
-    body: () => `<ul class="g-wins"><li>Pause the Fun and savings envelopes for now</li><li>Talk to who you owe, early. Most will help.</li><li>Try not to fill the gap with a credit card</li></ul>` +
+  step({ id: 'short', ch: 2, title: 'When there isn\'t enough to go around',
+    body: () => `<ul class="g-wins"><li>Put fun and savings on hold for now</li><li>Call anyone you owe early. Most will help.</li><li>Try not to cover the gap with a credit card</li></ul>` +
       p('<b>Knowing</b> you\'re short is far less scary than not knowing.') });
 
-  step({ id: 'ahead', ch: 2, title: 'Spare money? Fill next month\'s envelopes',
+  step({ id: 'ahead', ch: 2, title: 'Got some spare? Start on next month',
     body: () => pic(194,
       at(50, 6, '<small class="gs-cap">This month</small>') +
       [25, 50, 75].map((x, i) => at(x, 22, env(['Rent', 'Food', 'Power'][i], '✓'))).join('') +
       at(50, 98, '<small class="gs-cap">Next month</small>') +
       [25, 50, 75].map((x, i) => fly(x, 60, x, 124, i * 0.5, 1)).join('') +
       [25, 50, 75].map((x, i) => at(x, 114, env(['Rent', 'Food', 'Power'][i], show(i * 0.5 + 1, '✓')))).join('')) +
-      p('Do this a little at a time and one day <b>payday stops being scary</b>.') });
+      p('Fill next month\'s envelopes a bit at a time, and one day <b>payday stops being stressful</b>.') });
 
-  step({ id: 'card', ch: 2, title: 'Paying by card, or owe money?',
+  step({ id: 'card', ch: 2, title: 'Paying by card works the same way',
     body: () => pic(122,
       at(26, 30, env('Food', show(0, '$250', 1.2) + show(1.3, '$180'))) +
       fly(26, 40, 74, 40, 0.2, 1.1) +
       at(50, 10, '<span class="gs-ic">💳</span>') +
       at(74, 30, env('Visa', show(0, '$0', 1.2) + show(1.3, '$70')))) +
-      p('Pay by card and the money moves into the <b>card\'s envelope</b>, ready for the bill.') +
-      p('Owe money? Pay the minimum on each one, and put any extra on <b>one</b> at a time.') });
+      p('Spend $70 on the Visa and $70 moves from Food into the <b>Visa envelope</b>, ready for the bill.') +
+      p('Paying off debts? Pay the minimum on each, and put any extra on <b>one at a time</b>.') });
 
-  step({ id: 'recap', ch: 2, title: 'That\'s the whole idea',
+  step({ id: 'recap', ch: 2, title: 'That\'s really all there is to it',
     body: () => `<div class="g-cards">
-        <div>${env('', null, 'mini')}<span>Payday: fill the envelopes</span></div>
+        <div>${env('', null, 'mini')}<span>On payday, fill your envelopes</span></div>
         <div>${env('', null, 'mini')}<span>Spending comes out of them</span></div>
-        <div>${env('', null, 'mini')}<span>Ran out? Borrow from another</span></div>
-        <div>${env('', null, 'mini')}<span>Big bills: a little each month</span></div>
-        <div>${env('', null, 'mini')}<span>Spare? Fill next month\'s</span></div>
-      </div>` + p('Now let\'s make <b>your</b> envelopes.') });
+        <div>${env('', null, 'mini')}<span>Run out? Borrow from another</span></div>
+        <div>${env('', null, 'mini')}<span>Big bills get a little each month</span></div>
+        <div>${env('', null, 'mini')}<span>Got spare? Start on next month</span></div>
+      </div>` + p('Now let\'s set up <b>your</b> envelopes.') });
 
   // ---- your money ----
   const hasStuff = () => { const d = Z().data(); return Object.keys(d.accounts).length > 0 || Object.keys(d.cats).length > 0; };
@@ -266,14 +267,14 @@
       const owe = accts.filter((a) => Z().DEBT_TYPES[a.type]).reduce((s, a) => s - ((d.bal[a.id] || {}).balance || 0), 0);
       return `<div class="g-stat"><span>Money you can plan with</span><b>${money(has)}</b></div>` +
         (owe > 0 ? `<div class="g-stat owe"><span>What you owe</span><b>${money(owe)}</b></div>` + p('That\'s okay. Knowing the number is the hard part, and it\'s done.') : '') +
-        p('Next: your envelopes.');
+        p('Next, let\'s set up your envelopes.');
     } });
 
   // ---- your plan ----
   step({ id: 'cats', ch: 4, title: 'Which envelopes do you need?',
     body: () => {
       const c = chosen();
-      return p('Tap the ones you need. <b>You can change this later.</b>') +
+      return p('Tap the ones that fit your life. <b>You can change them any time.</b>') +
         GROUPS.map((g) => `<div class="g-group"><h3>${g.name} <small>${g.say}</small></h3><div class="g-choices">${g.items.map(([n]) => `<button class="g-choice sm ${c[g.key].includes(n) ? 'on' : ''}" data-cat="${g.key}" data-n="${esc(n)}">${c[g.key].includes(n) ? '\u2713 ' : ''}${esc(n)}</button>`).join('')}${c[g.key].filter((n) => !g.items.some(([x]) => x === n)).map((n) => `<button class="g-choice sm on" data-cat="${g.key}" data-n="${esc(n)}">\u2713 ${esc(n)}</button>`).join('')}<span class="g-own"><input data-own="${g.key}" placeholder="+ add your own" aria-label="Add your own to ${g.name}"></span></div></div>`).join('');
     },
     bind: (card) => {
@@ -302,8 +303,8 @@
   const AMT_SAY = {
     bills: ['What do your bills cost?', 'A rough guess is fine.'],
     every: ['And the everyday things?', 'A normal week or month. Guess away.'],
-    year: ['The once-a-year ones', 'What each costs in a year. Its envelope gets a little each month.'],
-    fun: ['How much for fun?', 'This money is guilt-free.'],
+    year: ['The once-a-year ones', 'Roughly what each costs a year. We\'ll split it into monthly bits.'],
+    fun: ['How much for fun?', 'This money is yours to enjoy, guilt-free.'],
     save: ['Saving for future you', 'Even $20 a month counts.'],
   };
   for (const g of GROUPS) {
@@ -331,12 +332,12 @@
 
   const debts = () => Object.values(Z().data().accounts).filter((a) => Z().DEBT_TYPES[a.type] && !a.closed);
   step({ id: 'debts', ch: 4, title: 'Paying what you owe', when: () => debts().length > 0,
-    body: () => p('How much do you pay on each? For a card, use the <b>minimum</b>.') +
+    body: () => p('How much do you pay on each? For a card, use the <b>minimum</b> on your statement.') +
       `<div class="g-amts">${debts().map((a) => {
         const f = st.debtFreq[a.id] || (a.type === 'bnpl' ? 'fortnight' : 'month'), v = st.debt[a.id] || '';
         const m = parse(v) ? perMonth(parse(v), f) : 0;
         return `<div class="g-amt"><span class="g-amt-n">${esc(a.name)}</span><span class="g-money"><i>$</i><input data-debt="${a.id}" inputmode="decimal" placeholder="0" value="${esc(v)}" autocomplete="off" aria-label="${esc(a.name)} payment"></span>${freqSel('d:' + a.id, f)}<span class="g-pm-out" data-dout="${a.id}">${m && f !== 'month' ? `\u2248 ${money(m)} a month` : ''}</span></div>`;
-      }).join('')}</div>` + soft('These envelopes get filled first.'),
+      }).join('')}</div>` + soft('These envelopes always get filled first.'),
     bind: (card) => {
       const upd = (id) => { const f = st.debtFreq[id] || 'month', v = parse(st.debt[id]); const o = $(`[data-dout="${id}"]`, card); if (o) o.textContent = v && f !== 'month' ? `\u2248 ${money(perMonth(v, f))} a month` : ''; };
       $$('[data-debt]', card).forEach((i) => i.addEventListener('input', () => { st.debt[i.dataset.debt] = i.value; save(); upd(i.dataset.debt); }));
@@ -349,21 +350,21 @@
       }
     } });
 
-  step({ id: 'assign', ch: 4, title: 'Now, fill your envelopes',
+  step({ id: 'assign', ch: 4, title: 'Time to fill your envelopes',
     body: () => {
       const d = Z().data(), m = d.month, plan = Z().plan();
       if (st.assigned) {
         const left = m.rta, still = m.underTotal;
         const ef = catIdByName('Emergency fund');
         return ok('Done! Your envelopes are filled.') +
-          (still > 0 ? p(`You\'re <b>${money(still)}</b> short for now. That\'s common. The important envelopes got filled first; the rest fill on payday.`) : '') +
+          (still > 0 ? p(`You\'re <b>${money(still)}</b> short for now, which is really common. The important envelopes were filled first, and the rest can wait for payday.`) : '') +
           (left > 0 ? p(`<b>${money(left)}</b> is still on the table. Lovely!`) + `<div class="g-choices col">${ef ? `<button class="g-choice" data-act="toef">Put it in my Emergency fund</button>` : ''}<button class="g-choice" data-act="keep">Leave it for now. I\'ll decide later.</button></div>` : '') +
           (left === 0 && still === 0 ? p('Every envelope is full. Great place to be.') : '');
       }
       return `<div class="g-stat"><span>On the table</span><b>${money(m.rta)}</b></div>` +
-        p(`Your envelopes need <b>${money(m.underTotal)}</b> this month. Tap, and YNABB fills them, most important first.`) +
+        p(`Your envelopes need <b>${money(m.underTotal)}</b> this month. Tap below and YNABB fills them for you, most important first.`) +
         `<div class="g-row"><button class="g-btn big" data-act="fund" ${plan && Object.keys(plan.changes).length ? '' : 'disabled'}>Fill my envelopes</button></div>` +
-        (m.rta <= 0 ? soft('Nothing on the table right now. Come back here on payday.') : '');
+        (m.rta <= 0 ? soft('There\'s nothing on the table right now. Come back to this step on payday.') : '');
     },
     bind: (card) => {
       const f = $('[data-act="fund"]', card);
@@ -376,50 +377,49 @@
   step({ id: 'planned', ch: 4, title: 'Your envelopes are ready',
     body: () => big('That was the hardest part, and it\'s done.') +
       p('Your budget is set up. You can see it any time on the <b>Budget</b> page.') +
-      p('Last bit: what to do each week. It\'s quick.') +
+      p('Last up: what to do each week. It\'s quick, promise.') +
       `<div class="g-row"><button class="g-link" data-act="peek">Have a look at my budget first</button></div>`,
     bind: (card) => { const b = $('[data-act="peek"]', card); if (b) b.addEventListener('click', () => showMe('budget', '.bud', 'This is your budget. Each line is an envelope.')); } });
 
   // ---- using it ----
-  step({ id: 'u-spend', ch: 5, title: 'Tell YNABB when you spend',
-    body: () => p('Bring your spending in from the bank, or tap <b>Add</b>. The right envelope goes down.') +
+  step({ id: 'u-spend', ch: 5, title: 'Keep YNABB up to date',
+    body: () => p('Bring in your spending from the bank, or tap <b>Add</b>. YNABB takes it out of the right envelope.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="add">Show me Add</button></div>`,
     show: { add: ['tx', '[data-action="add-tx"]', 'Tap Add to put in something you\'ve bought.'] } });
 
-  step({ id: 'import', ch: 5, title: 'Bring it in from your bank',
+  step({ id: 'import', ch: 5, title: 'Bringing in from your bank',
     body: () => `<ol class="g-steps"><li>In your bank, find <b>Export</b> or <b>Download transactions</b>.</li><li>Choose <b>CSV</b> or <b>QIF</b>.</li><li>In YNABB, tap <b>Import from bank</b>.</li></ol>` +
       soft('YNABB skips anything it already has.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="imp">Show me where</button></div>`,
     show: { imp: ['tx', '[data-action="import"]', 'Import from bank is here.'] } });
 
-  step({ id: 'review', ch: 5, title: 'Put each one in its envelope',
-    body: () => p('New ones from the bank wait for you. Tap one, pick its envelope, done.') +
-      soft('YNABB learns. Next time Woolies comes in, it\'ll know it\'s Groceries.') });
+  step({ id: 'review', ch: 5, title: 'Pop each one in its envelope',
+    body: () => p('New spending waits for you. Tap it and choose its envelope.') +
+      soft('YNABB learns as you go, so Woolies soon lands in Groceries on its own.') });
 
-  step({ id: 'red', ch: 5, title: 'Red means an envelope ran out',
-    body: () => p('Tap the red amount and move money in from another envelope.') +
+  step({ id: 'red', ch: 5, title: 'Red means an envelope\'s empty',
+    body: () => p('Tap the red amount and move money across from another envelope, just like before.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="avail">Show me where</button></div>`,
     show: { avail: ['budget', '.bud-head span:last-child', 'This column is what\'s in each envelope. Tap an amount to move money.'] } });
 
-  step({ id: 'match', ch: 5, title: 'Check it matches the bank',
-    body: () => p('Every week or two, tap <b>Reconcile</b> and type what your bank says. YNABB shows anything missing.') +
+  step({ id: 'match', ch: 5, title: 'Check it matches your bank',
+    body: () => p('Every week or two, tap <b>Reconcile</b> and enter your bank balance. YNABB shows you anything that\'s missing.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rec">Show me where</button></div>`,
     show: { rec: ['tx', '[data-action="rec-pop"]', 'Reconcile is here. Type the balance your banking app shows.'] } });
 
-  step({ id: 'payday', ch: 5, title: 'Payday: fill your envelopes',
-    body: () => p('New money waits in <b>Ready to Assign</b>, at the top of the Budget page.') +
-      p('Tap <b>Fund targets</b> and YNABB fills your envelopes for you.') +
+  step({ id: 'payday', ch: 5, title: 'On payday, fill your envelopes',
+    body: () => p('Your pay waits in <b>Ready to Assign</b> at the top of the Budget page. Tap <b>Fund targets</b> and YNABB fills your envelopes for you.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rta">Show me where</button></div>`,
     show: { rta: ['budget', '.rta, .rta-banner, [class*="rta"]', 'Ready to Assign: money waiting for an envelope.'] } });
 
-  step({ id: 'forward', ch: 5, title: 'Spare? Fill next month',
-    body: () => p('Go to <b>next month</b> with the arrow at the top, and tap <b>Fund targets</b> there.') +
+  step({ id: 'forward', ch: 5, title: 'Got spare? Start on next month',
+    body: () => p('Use the arrow at the top to go to <b>next month</b>, then tap <b>Fund targets</b>.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="fwd">Show me where</button></div>`,
     show: { fwd: ['budget', '[data-action="next-month"]', 'This arrow goes to next month.'] } });
 
-  step({ id: 'routine', ch: 5, title: 'Twice a week, 10 minutes', nextLabel: 'Finish',
-    body: () => `<ol class="g-check"><li><b>Bring in</b> your spending</li><li><b>Put each one</b> in its envelope</li><li><b>Fix any red</b> by moving money</li><li><b>Payday:</b> fill your envelopes</li></ol>` +
-      dreamsLine() + big('You\'ve got this.') + soft('The guide is always under the Guide button.') });
+  step({ id: 'routine', ch: 5, title: 'Twice a week, about 10 minutes', nextLabel: 'Finish',
+    body: () => `<ol class="g-check"><li><b>Bring in</b> your spending</li><li><b>Pop each one</b> in its envelope</li><li><b>Fix any red</b> by moving money</li><li><b>Payday:</b> fill your envelopes</li></ol>` +
+      dreamsLine() + big('You\'ve got this.') + soft('You can come back to this guide any time from the Guide button.') });
 
   function dreamsLine() {
     const names = (st.dreams || []).map((k) => (DREAMS.find((x) => x[0] === k) || [])[1]).filter(Boolean);

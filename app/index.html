@@ -1001,6 +1001,11 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .field input, :root[data-layout="phone"] .field select, :root[data-layout="phone"] .field textarea, :root[data-layout="phone"] .split select, :root[data-layout="phone"] .split input, :root[data-layout="phone"] .search input, :root[data-layout="phone"] .asg { font-size: 16px; }
 }
 .b-edit { display: none; }
+/* group headings (Bills, Everyday…) have no bar of their own, on the computer and the phone */
+.brow.parent > .b-bar { display: none; }
+:root[data-layout="desktop"] .brow.parent { grid-template-areas: "name tgt asg act avl"; padding-bottom: 5px; }
+:root[data-layout="phone"] .brow.parent { grid-template-areas: "name name avl"; }
+:root[data-layout="phone"] .brow.parent.open { grid-template-areas: "name name name" "asg act avl"; }
 .tx-day { display: none; }
 /* phone transactions: less is more */
 :root[data-layout="phone"] .tx-tools { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; }

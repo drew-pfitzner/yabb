@@ -1,5 +1,6 @@
 // account page: your own password and sign-out, and for the admin, budgets, people and sign-ins
 const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
 const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const when = (ts) => (ts ? new Date(ts).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'never');
 let me = null, data = null;
@@ -50,8 +51,38 @@ async function load() {
   $('#signins').innerHTML = data.signins.map((s) => `<tr><td>${when(s.ts)}</td><td>${esc(s.username)}</td>
     <td>${s.ok ? '<span class="chip good">signed in</span>' : `<span class="chip bad">${esc(s.note || 'failed')}</span>`}</td>
     <td class="fine">${esc(s.ip)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">None yet.</td></tr>';
+  $('#backups').innerHTML = backupRows(data.backups);
   $('#version').textContent = 'Running version ' + data.version + '.';
 }
+
+// one row each for the nightly backup and the weekly restore check
+function backupRows(b) {
+  const chip = {
+    ok: '<span class="chip good">OK</span>',
+    'local-only': '<span class="chip bad">Not in iCloud</span>',
+    failed: '<span class="chip bad">Failed</span>',
+    stale: '<span class="chip bad">Not running</span>',
+    never: '<span class="chip">Not run yet</span>',
+    off: '<span class="chip bad">Off</span>',
+  };
+  const row = (label, r, every) => `<tr><td><b>${label}</b><div class="fine">${every}</div></td><td>${chip[r.state] || ''}</td>
+    <td>${r.ts ? when(r.ts) : ''}${r.lastGood && r.lastGood !== r.ts ? `<div class="fine">last good ${when(r.lastGood)}</div>` : ''}</td>
+    <td class="fine">${esc(r.note || (r.size ? Math.round(r.size / 1024) + ' KB' : ''))}</td></tr>`;
+  return row('Nightly backup', b.backup, 'every night, 2am') + row('Restore check', b.drill, 'every week');
+}
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-backup]');
+  if (!btn) return;
+  const m = $('#backup-msg');
+  $$('button[data-backup]').forEach((x) => (x.disabled = true));
+  m.className = 'msg'; m.textContent = btn.dataset.backup === 'drill' ? 'Testing a restore…' : 'Backing up…'; m.hidden = false;
+  try {
+    const s = await api('POST', '/api/admin/backup-now', { kind: btn.dataset.backup });
+    $('#backups').innerHTML = backupRows(s);
+    say(m, btn.dataset.backup === 'drill' ? 'The newest backup opened and checked out.' : 'Backed up.', true);
+  } catch (err) { say(m, err.message); await load(); }
+  $$('button[data-backup]').forEach((x) => (x.disabled = false));
+});
 
 $('#signout').addEventListener('click', async () => {
   await api('POST', '/api/logout').catch(() => {});

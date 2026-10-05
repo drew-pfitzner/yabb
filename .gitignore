@@ -12,3 +12,4 @@ backups/
 # Mac and editor clutter
 .DS_Store
 node_modules/
+offsite/

@@ -33,6 +33,14 @@
   </form>
 
   <div id="admin" hidden>
+    <h2>Backups</h2>
+    <div class="card">
+      <div class="tbl"><table><tbody id="backups"></tbody></table></div>
+      <div class="row"><button class="btn" type="button" data-backup="backup">Back up now</button><button class="btn" type="button" data-backup="drill">Test a restore now</button></div>
+      <div class="msg" id="backup-msg" role="status" hidden></div>
+      <p class="fine" style="margin-top:12px">Every night at 2am YABB saves an encrypted copy on the A6 and copies it to iCloud, keeping 14 daily, 8 weekly and 12 monthly copies. Once a week it opens the newest copy to prove it restores.</p>
+    </div>
+
     <h2>Budgets</h2>
     <div class="card">
       <div class="tbl"><table><thead><tr><th>Budget</th><th>Last change</th><th></th></tr></thead><tbody id="budgets"></tbody></table></div>

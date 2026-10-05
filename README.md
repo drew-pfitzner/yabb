@@ -1,6 +1,6 @@
-# YABB: handover package
+# YNABB: handover package
 
-YABB ("Yet Another Bloody Budget", first called "Zero Line") is a zero-based budgeting web app, built to replace YNAB for one Australian family (NAB bank accounts, two adults who share the budget). It was built with Claude Code on 2–4 October 2026 and currently runs as a claude.ai artifact. **The next goal is to self-host it.**
+YNABB ("Yikes Not Another Bloody Budget", first called "Zero Line", then "YABB") is a zero-based budgeting web app, built to replace YNAB for one Australian family (NAB bank accounts, two adults who share the budget). It was built with Claude Code on 2–4 October 2026 and currently runs as a claude.ai artifact. **The next goal is to self-host it.**
 
 Start here, then read in this order:
 
@@ -15,7 +15,7 @@ Start here, then read in this order:
 | Folder | What it holds |
 |---|---|
 | `app/` | All the app's code: plain HTML, CSS and JavaScript with no build step. `index.html` is the page; it loads `engine.js`, `store.js`, `ynab.js`, `app.js` and `guide.js`. |
-| `test-data/` | Mock budgets (YABB backup files), NAB-style test bank files with traps built in, answer keys, and the scripts that generated them (hidden files starting with `.generator`). |
+| `test-data/` | Mock budgets (YNABB backup files), NAB-style test bank files with traps built in, answer keys, and the scripts that generated them (hidden files starting with `.generator`). |
 | `context/full-conversation-transcript.jsonl` | The complete Claude Code conversation that built the app (about 40 MB, one JSON object per line). Search it for the reasoning behind any feature. Local only. |
 | `context/claude-memory/` | The notes Claude kept between sessions. Local only. |
 | `tools/` | Small helper scripts used while building. They run with macOS `osascript -l JavaScript`, and their file paths point at the old computer's temp folder, so edit the paths before using them. |

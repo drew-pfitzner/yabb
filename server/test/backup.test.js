@@ -10,7 +10,7 @@ const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const sqlite = require('node:sqlite');
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), 'yabb-backup-test-'));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ynabb-backup-test-'));
 const dirs = { data: path.join(root, 'data'), local: path.join(root, 'backups'), offsite: path.join(root, 'icloud') };
 fs.mkdirSync(dirs.offsite, { recursive: true });
 const KEY = crypto.randomBytes(32).toString('base64');
@@ -18,7 +18,7 @@ Object.assign(process.env, { DATA_DIR: dirs.data, BACKUP_DIR: dirs.local, OFFSIT
 const { bootstrap, db, backups } = require('../server.js');
 const { decrypt, keyFrom } = require('../backup.js');
 const key = keyFrom(KEY);
-const daily = (d) => fs.readdirSync(path.join(d, 'daily')).filter((f) => f.endsWith('.yabbbak')).sort();
+const daily = (d) => fs.readdirSync(path.join(d, 'daily')).filter((f) => /\.(ynabb|yabbbak)$/.test(f)).sort();
 
 before(async () => {
   await bootstrap();
@@ -33,7 +33,7 @@ after(() => fs.rmSync(root, { recursive: true, force: true }));
 test('a backup lands on the A6 and in iCloud, encrypted', async () => {
   await backups.run('backup');
   const [name] = daily(dirs.local);
-  assert.match(name, /^yabb-\d{8}-\d{6}\.yabbbak$/);
+  assert.match(name, /^ynabb-\d{8}-\d{6}\.ynabb$/);
   assert.deepEqual(daily(dirs.offsite), [name]);
   const file = fs.readFileSync(path.join(dirs.local, 'daily', name));
   assert.ok(!file.includes('SQLite format'), 'not readable as a database');
@@ -60,7 +60,7 @@ test('a wrong key cannot open a backup', () => {
 
 test('receipts are copied once, encrypted, to both places', () => {
   for (const d of [dirs.local, dirs.offsite]) {
-    const f = fs.readFileSync(path.join(d, 'blobs', 'r1.yabbbak'));
+    const f = fs.readFileSync(path.join(d, 'blobs', 'r1.ynabb'));
     assert.ok(!f.includes('fake jpeg'));
     assert.equal(decrypt(key, f).toString(), 'fake jpeg receipt bytes');
   }
@@ -75,15 +75,17 @@ test('the restore check passes on a good backup', async () => {
 
 test('old copies are rotated by count, and nothing else is touched', async () => {
   for (const d of [dirs.local, dirs.offsite]) {
-    for (let i = 1; i <= 20; i++) fs.writeFileSync(path.join(d, 'daily', `yabb-2020${String(Math.ceil(i / 28)).padStart(2, '0')}${String(i).padStart(2, '0')}-000000.yabbbak`), 'old');
+    for (let i = 1; i <= 20; i++) fs.writeFileSync(path.join(d, 'daily', `ynabb-2020${String(Math.ceil(i / 28)).padStart(2, '0')}${String(i).padStart(2, '0')}-000000.ynabb`), 'old');
     fs.writeFileSync(path.join(d, 'daily', 'my-notes.txt'), 'keep me');
+    fs.writeFileSync(path.join(d, 'daily', 'yabb-20190101-000000.yabbbak'), 'from before the rename');
   }
   await backups.run('backup');
   for (const d of [dirs.local, dirs.offsite]) {
     const left = daily(d);
     assert.equal(left.length, 14, d);
-    assert.ok(left[left.length - 1].startsWith('yabb-' + new Date().getFullYear()), 'newest kept');
+    assert.ok(left[left.length - 1].startsWith('ynabb-' + new Date().getFullYear()), 'newest kept');
     assert.ok(fs.existsSync(path.join(d, 'daily', 'my-notes.txt')));
+    assert.ok(!fs.existsSync(path.join(d, 'daily', 'yabb-20190101-000000.yabbbak')), 'old-name copies rotate out too');
   }
 });
 

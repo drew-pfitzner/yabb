@@ -2,7 +2,7 @@
 
 > **Step 2 is built:** `server/server.js` (see `server/README.md`), and `store.js` has a `server` backend that uses it. The notes below are kept as the reasoning behind it.
 
-## What ties YABB to claude.ai today
+## What ties YNABB to claude.ai today
 
 Only `store.js` talks to the platform, through `window.claude.use(name)`:
 

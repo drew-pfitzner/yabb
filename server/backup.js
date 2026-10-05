@@ -6,7 +6,7 @@
    backups can't be opened, so keep it in the password manager.
 
    Read a backup on any computer with Node:
-     BACKUP_KEY=... node server/backup.js decrypt <file.yabbbak> <out.sqlite | out.jpg> */
+     BACKUP_KEY=... node server/backup.js decrypt <file.ynabb> <out.sqlite | out.jpg> */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -14,11 +14,12 @@ const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const sqlite = require('node:sqlite');
 
-const MAGIC = Buffer.from('YABBENC1');
+const MAGIC = Buffer.from('YABBENC1'); // the file format's id: kept from the old name so every backup still opens
 const KEEP = { daily: 14, weekly: 8, monthly: 12 };
 const BACKUP_AT_HOUR = 2; // 2am, local time on the server
 const HOUR = 3600e3, DAY = 24 * HOUR;
-const DB_FILE = /^yabb-\d{8}-\d{6}\.yabbbak$/; // only files we made are ever rotated
+// only files we made are ever rotated; yabb-….yabbbak are from before the rename and sort before the new names
+const DB_FILE = /^(ynabb-\d{8}-\d{6}\.ynabb|yabb-\d{8}-\d{6}\.yabbbak)$/;
 
 function keyFrom(b64) {
   const key = Buffer.from(String(b64 || ''), 'base64');
@@ -32,7 +33,7 @@ function encrypt(key, plain) {
   return Buffer.concat([MAGIC, iv, c.getAuthTag(), body]);
 }
 function decrypt(key, file) {
-  if (!file.subarray(0, 8).equals(MAGIC)) throw new Error('Not a YABB backup file.');
+  if (!file.subarray(0, 8).equals(MAGIC)) throw new Error('Not a YNABB backup file.');
   const d = crypto.createDecipheriv('aes-256-gcm', key, file.subarray(8, 20));
   d.setAuthTag(file.subarray(20, 36));
   return Buffer.concat([d.update(file.subarray(36)), d.final()]); // throws if the key is wrong or the file is damaged
@@ -69,9 +70,9 @@ function setup({ db, dataDir, blobDir, env = process.env, log = console.log }) {
     fs.mkdirSync(toDir, { recursive: true });
     let n = 0;
     for (const { id } of db.prepare('SELECT id FROM blobs').all()) {
-      const out = path.join(toDir, id + '.yabbbak');
+      const out = path.join(toDir, id + '.ynabb');
       if (fs.existsSync(out)) continue;
-      const src = fromDir ? path.join(fromDir, id + '.yabbbak') : path.join(blobDir, id);
+      const src = fromDir ? path.join(fromDir, id + '.ynabb') : path.join(blobDir, id);
       writeAtomic(out, fromDir ? fs.readFileSync(src) : encrypt(key, fs.readFileSync(src)));
       n++;
     }
@@ -92,7 +93,7 @@ function setup({ db, dataDir, blobDir, env = process.env, log = console.log }) {
     if (!key) throw new Error(keyProblem);
     if (!localDir) throw new Error('BACKUP_DIR is not set.');
     const now = new Date();
-    const name = 'yabb-' + stamp(now) + '.yabbbak';
+    const name = 'ynabb-' + stamp(now) + '.ynabb';
     const tmp = path.join(dataDir, 'backup-snapshot.tmp');
     try {
       // a consistent copy of the live database, taken while it keeps running
@@ -150,11 +151,11 @@ function setup({ db, dataDir, blobDir, env = process.env, log = console.log }) {
       // every receipt the backup knows about must be in the receipt copies, and the newest must open
       const ids = copy.prepare('SELECT id FROM blobs ORDER BY ts DESC').all().map((r) => r.id);
       copy.close();
-      const missing = ids.filter((id) => !fs.existsSync(path.join(localDir, 'blobs', id + '.yabbbak')));
+      const missing = ids.filter((id) => !fs.existsSync(path.join(localDir, 'blobs', id + '.ynabb')));
       if (missing.length) problems.push(`${missing.length} receipts missing from the backup`);
       for (const id of ids.slice(0, 3)) {
         if (missing.includes(id)) continue;
-        try { decrypt(key, fs.readFileSync(path.join(localDir, 'blobs', id + '.yabbbak'))); } catch (e) { problems.push('a receipt copy would not open'); break; }
+        try { decrypt(key, fs.readFileSync(path.join(localDir, 'blobs', id + '.ynabb'))); } catch (e) { problems.push('a receipt copy would not open'); break; }
       }
       let offsiteOk = null;
       if (offsiteDir) {
@@ -228,7 +229,7 @@ module.exports = { setup, encrypt, decrypt, keyFrom };
 if (require.main === module) {
   const [cmd, input, output] = process.argv.slice(2);
   if (cmd !== 'decrypt' || !input || !output) {
-    console.error('Usage: BACKUP_KEY=... node server/backup.js decrypt <file.yabbbak> <output>');
+    console.error('Usage: BACKUP_KEY=... node server/backup.js decrypt <file.ynabb> <output>');
     process.exit(1);
   }
   const plain = decrypt(keyFrom(process.env.BACKUP_KEY), fs.readFileSync(input));

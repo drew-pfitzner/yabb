@@ -1,5 +1,5 @@
 /* Zero Line storage. One interface, three backends:
-   - server: YABB's own server (server/server.js): logins, live sync between devices and people
+   - server: YNABB's own server (server/server.js): logins, live sync between devices and people
    - cloud: the claude.ai artifact database (while the app still runs there)
    - local: this browser only (opened from plain files, e.g. python3 -m http.server)
 
@@ -95,14 +95,14 @@
     emit('mode');
   };
 
-  // ---------- YABB server ----------
-  const LOST = 'Lost the connection to YABB. Trying again…';
+  // ---------- YNABB server ----------
+  const LOST = 'Lost the connection to YNABB. Trying again…';
   async function api(method, url, body, headers) {
     let r;
     try {
       r = await fetch(url, {
         method, credentials: 'same-origin',
-        headers: Object.assign({ 'X-Requested-With': 'yabb' }, body !== undefined && !(body instanceof Blob) ? { 'Content-Type': 'application/json' } : {}, headers),
+        headers: Object.assign({ 'X-Requested-With': 'ynabb' }, body !== undefined && !(body instanceof Blob) ? { 'Content-Type': 'application/json' } : {}, headers),
         body: body === undefined || body instanceof Blob ? body : JSON.stringify(body),
       });
     } catch (e) { throw { code: 'unavailable' }; }
@@ -112,7 +112,7 @@
       : r.status === 429 ? 'resource_exhausted' : r.status >= 500 ? 'unavailable' : (j.code || 'failed');
     throw { code, message: j.error };
   }
-  // the signed-in person, 'signed-out', or null when there's no YABB server (plain files)
+  // the signed-in person, 'signed-out', or null when there's no YNABB server (plain files)
   async function serverMe() {
     try {
       const r = await fetch('/api/me', { credentials: 'same-origin' });

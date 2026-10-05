@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const http = require('node:http');
 
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yabb-test-'));
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ynabb-test-'));
 Object.assign(process.env, { DATA_DIR: dir, COOKIE_SECURE: '0', ADMIN_USERNAME: 'drew', ADMIN_PASSWORD: 'correct horse battery', ADMIN_NAME: 'Drew' });
 const { server, bootstrap, db, ipFails } = require('../server.js');
 let base;
@@ -24,7 +24,7 @@ beforeEach(() => ipFails.clear());
 function browser() {
   let cookie = '';
   const call = async (method, url, body, extra = {}) => {
-    const headers = Object.assign({ 'X-Requested-With': 'yabb' }, cookie ? { Cookie: cookie } : {}, extra);
+    const headers = Object.assign({ 'X-Requested-With': 'ynabb' }, cookie ? { Cookie: cookie } : {}, extra);
     if (body !== undefined && !Buffer.isBuffer(body)) headers['Content-Type'] = 'application/json';
     const r = await fetch(base + url, { method, headers, body: body === undefined ? undefined : Buffer.isBuffer(body) ? body : JSON.stringify(body), redirect: 'manual' });
     const set = r.headers.get('set-cookie');
@@ -111,7 +111,7 @@ test('signing in gives a cookie that only scripts on the page cannot read', asyn
   assert.equal(me.json.budget.name, 'Family');
   const page = await b.call('GET', '/');
   assert.equal(page.status, 200);
-  assert.match(page.text, /<title>YABB<\/title>/);
+  assert.match(page.text, /<title>YNABB<\/title>/);
 });
 
 test('changes without our header are blocked (no cross-site requests)', async () => {

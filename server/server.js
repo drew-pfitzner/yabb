@@ -446,7 +446,7 @@ async function adminAction(req, res, who, parts) {
 }
 
 // ---------- static files ----------
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 function serveFile(req, res, dir, rel) {
   const file = path.join(dir, path.normalize('/' + rel).slice(1));
   if (!file.startsWith(dir + path.sep)) fail(404, 'Not found.');
@@ -485,7 +485,8 @@ async function route(req, res) {
 
   if (p === '/login' || p === '/login.html') return whoIs(req) ? redirect(res, '/') : serveFile(req, res, PUBLIC_DIR, 'login.html');
   if (p === '/api/login' && m === 'POST') return login(req, res);
-  if (/^\/(login\.js|account\.js|server\.css)$/.test(p)) return serveFile(req, res, PUBLIC_DIR, p.slice(1));
+  // the home-screen app's manifest and icons: phones fetch them before anyone signs in
+  if (/^\/(login\.js|account\.js|server\.css|manifest\.webmanifest|apple-touch-icon\.png|icon-(192|512|maskable-512)\.png)$/.test(p)) return serveFile(req, res, PUBLIC_DIR, p.slice(1));
 
   const who = whoIs(req);
   if (p === '/api/logout' && m === 'POST') return logout(req, res, who);

@@ -54,10 +54,11 @@
   applyLayout();
   function barPref() { try { return localStorage.getItem('zeroline-bar') || 'thick'; } catch (e) { return 'thick'; } }
   document.documentElement.dataset.bar = barPref();
-  function tgtOn() { try { return localStorage.getItem('zeroline-tgt') !== 'off'; } catch (e) { return true; } }
-  document.documentElement.dataset.tgt = tgtOn() ? 'on' : 'off';
-  function pctOn() { try { return localStorage.getItem('zeroline-pct') !== 'off'; } catch (e) { return true; } }
-  document.documentElement.dataset.pct = pctOn() ? 'on' : 'off';
+  // the Target column and the needs/wants/savings bar start off every time the page opens; the buttons show them for now
+  const SHOW = { tgt: false, pct: false };
+  const tgtOn = () => SHOW.tgt, pctOn = () => SHOW.pct;
+  document.documentElement.dataset.tgt = 'off';
+  document.documentElement.dataset.pct = 'off';
 
   // ---------- formatting ----------
   let fmtCache = null;
@@ -374,7 +375,7 @@
 
     const underCount = D.tree.roots.reduce((n, id) => n + M.roll[id].underCount, 0);
     const attnTitle = [M.overspentCount ? `${M.overspentCount} in the red (${money(M.overspentTotal)})` : '', underCount ? `${underCount} short of their target` : ''].filter(Boolean).join(', ');
-    return rtaBanner(M) + (pctOn() ? splitBar() : '') + `
+    return rtaBanner(M) + (pctOn() && !isPhone() ? splitBar() : '') + `
       <div class="month-sum">
           <span>Income <b>${money(M.incomeThisMonth)}</b></span>
           <span>Assigned <b>${money(M.assignedThisMonth)}</b></span>
@@ -392,7 +393,7 @@
           <button class="btn sm icon-cycle pct-btn${pctOn() ? ' on' : ''}" data-action="pct-toggle" aria-pressed="${pctOn()}" title="${pctOn() ? 'Hide' : 'Show'} the needs, wants and savings bar">%</button>
           <button class="btn sm icon-cycle desk-only" data-action="bar-cycle" aria-label="${BAR_LABEL[barPref()]}. Click to change." title="${BAR_LABEL[barPref()]} (click to change)">${BAR_ICON[barPref()]}</button>
           <button class="btn sm phone-only" data-action="collapse-all">${Object.keys(UI.collapsed).length ? 'Expand all' : 'Collapse all'}</button>
-          <button class="btn sm ${UI.editCats ? 'on' : ''}" data-action="edit-cats" aria-pressed="${UI.editCats}">${UI.editCats ? 'Done editing' : 'Edit categories'}</button>
+          <button class="btn sm ${UI.editCats ? 'on' : ''}" data-action="edit-cats" aria-pressed="${UI.editCats}">${UI.editCats ? 'Done' : '<span class="desk-only">Edit categories</span><span class="phone-only">Edit</span>'}</button>
         </div>
       </div>
       <div class="bud" role="table" aria-label="Budget for ${esc(monthLabel(UI.month))}">
@@ -634,20 +635,28 @@
     return `<button class="link-btn${on ? ' on' : ''}" data-action="link-toggle" data-id="${id}" aria-pressed="${on}" aria-label="${tip}" title="${tip}">${on ? ICON_LINK : ICON_UNLINK}</button>`;
   }
 
+  // phone: one category at a time shows its Assigned, Spent and Target (no re-render, so typing isn't interrupted)
+  function toggleCatRow(id) {
+    UI.openCat = UI.openCat === id ? null : id;
+    document.querySelectorAll('.brow.open').forEach((r) => r.classList.remove('open'));
+    const r = UI.openCat && document.querySelector(`.brow[data-cat="${UI.openCat}"]`);
+    if (r) r.classList.add('open');
+  }
   function leafRow(id) {
     const r = D.month.rows[id], c = D.cats[id], depth = D.tree.depth[id];
-    return `<div class="brow leaf st-${r.status}${c.hidden ? ' hidden-cat' : ''}${payAcct(id) ? ' debt' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
+    return `<div class="brow leaf st-${r.status}${c.hidden ? ' hidden-cat' : ''}${payAcct(id) ? ' debt' : ''}${UI.openCat === id ? ' open' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
       <div class="b-name">
         <span class="twisty-sp"></span>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>
         ${editControls(id)}
         ${tlineHTML(targetLine(id, r))}
       </div>
+      <button class="b-edit" data-action="cat-edit" data-id="${id}" aria-label="Edit ${esc(c.name)}: target, name and more" title="Edit target, name and more"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <div class="b-bar">${bar(r.parts)}</div>
       ${tgtCell(r.target ? r.target.need : null, r.target ? tgtDesc(id, r) : '')}
       <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span>${c.debtFor && D.debt[c.debtFor] === id ? `<button class="num spent-link" data-action="spent" data-id="${id}" title="Spending on the card moved in, less payments made. Click to see the transactions">${r.activity ? signed(r.activity) : money(0)}</button>` : `<button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-r.activity)}</button>`}</div>
-      <div class="b-avl"><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(c.name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
+      <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(c.name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
   }
 
@@ -656,7 +665,7 @@
     const collapsed = !!UI.collapsed[id];
     const st = g.overCount ? 'over' : g.underCount ? 'under' : g.available > 0 ? 'pos' : 'zero';
     const flag = g.overCount ? `<span class="st over">${g.overCount} in the red</span>` : g.under ? `<span class="st under">Needs ${money(g.under)}</span>` : '';
-    return `<div class="brow parent${depth === 0 ? ' top' : ''}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}${D.tree.children[id].some((k) => payAcct(k)) ? ' debt-grp' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
+    return `<div class="brow parent${depth === 0 ? ' top' : ''}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}${D.tree.children[id].some((k) => payAcct(k)) ? ' debt-grp' : ''}${UI.openCat === id ? ' open' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
       <div class="b-name">
         <button class="twisty" data-action="toggle" data-id="${id}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${esc(c.name)}">${collapsed ? ICON.right : ICON.down}</button>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>${D.tree.children[id].some((k) => payAcct(k)) ? '<span class="debt-chip">Cards &amp; loans</span>' : ''}
@@ -667,7 +676,7 @@
       <div class="b-tgt" title="Total of the targets in ${esc(c.name)} this month"><span class="m-lbl">Target</span><span class="num">${g.needSub ? money(g.needSub) : '<span class="faint">—</span>'}</span></div>
       <div class="b-asg"><span class="m-lbl">Assigned</span><span class="num">${money(g.assigned)}</span></div>
       <div class="b-act"><span class="m-lbl">Spent</span><button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-g.activity)}</button></div>
-      <div class="b-avl"><span class="pill flat st-${st}">${money(g.available)}</span></div>
+      <div class="b-avl"><span class="m-lbl">Available</span><span class="pill flat st-${st}">${money(g.available)}</span></div>
     </div>`;
   }
 
@@ -678,7 +687,7 @@
     let line = c.target ? targetLine(id, g) : '';
     if (g.targetShort > 0) line = `<span class="st under">Targets inside need ${money(g.kidsNeed)} this month, ${money(g.targetShort)} more than ${poss(esc(c.name))} target</span>` + (line ? `<span class="tdesc">${line.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</span>` : '');
     if (!line) line = g.overCount ? `<span class="st over">${g.overCount} in the red</span>` : g.under ? `<span class="st under">Needs ${money(g.under)}</span>` : '';
-    return `<div class="brow pot st-${g.status}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
+    return `<div class="brow pot st-${g.status}${collapsed ? ' collapsed' : ''}${c.hidden ? ' hidden-cat' : ''}${UI.openCat === id ? ' open' : ''}" data-cat="${id}" role="row" style="--d:${depth}">
       <div class="b-name">
         <button class="twisty" data-action="toggle" data-id="${id}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} ${esc(c.name)}">${collapsed ? ICON.right : ICON.down}</button>
         ${kdot(id)}<button class="cname" data-action="cat" data-id="${id}" title="${esc(c.name)}">${esc(c.name)}</button>
@@ -689,7 +698,7 @@
       ${tgtCell(g.needSub || (g.target ? 0 : null), g.target ? tgtDesc(id, g) : g.needSub ? `Total of the targets inside ${c.name}` : '')}
       <div class="b-asg"><label class="m-lbl" for="asgt-${id}">Assigned</label><input id="asgt-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" data-mode="total" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(g.assigned)}" aria-label="Total assigned to ${esc(c.name)}" title="Total for ${esc(c.name)}. Changing it adds to or takes from Unallocated.">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span><button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-g.activity)}</button></div>
-      <div class="b-avl"><button class="pill st-${g.status}" data-action="move" data-id="${id}" aria-label="Available in all of ${esc(c.name)}: ${money(g.available)}. Move money in or out of its Unallocated.">${money(g.available)}</button></div>
+      <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${g.status}" data-action="move" data-id="${id}" aria-label="Available in all of ${esc(c.name)}: ${money(g.available)}. Move money in or out of its Unallocated.">${money(g.available)}</button></div>
     </div>`;
   }
   function unallocRow(id) {
@@ -745,7 +754,26 @@
 
   // ---------- category sheet ----------
   function openCat(id) {
-    let editingTarget = false;
+    let editingTarget = false, view = 'main';
+    // More options: name, what it counts as, group, note, and the rarely used buttons
+    const optionsPage = (c) => {
+      const ownK = c.kind || '', par = c.parent ? kindOf(c.parent) : null, eff = ownK || par;
+      const pa = payAcct(id), grp = c.parent && D.cats[c.parent] ? D.cats[c.parent].name : '';
+      return `<button class="back-link" data-saction="back">${ICON.left} Back</button>
+        <div class="field"><label for="cat-name">Name</label><input id="cat-name" value="${esc(c.name)}" autocomplete="off"></div>
+        <div class="field"><label>Counts as</label>
+          ${pa ? `<p class="hint">The minimum payment is a need; anything extra is saving. <button class="linkish" data-saction="edit-acct">Set the minimum</button></p>`
+            : `<div class="seg-ctl kind-ctl" role="group" aria-label="Counts as">${KINDS.map(([k]) => `<button data-saction="kind" data-v="${k}" aria-pressed="${eff === k}">${KIND_SHORT[k]}</button>`).join('')}</div>
+            ${!ownK && par ? `<p class="fine">Same as ${esc(grp)}</p>` : ''}`}
+        </div>
+        <div class="field"><label for="cat-parent">Group</label><select id="cat-parent">${parentOptions(id, c.parent)}</select></div>
+        <div class="field"><label for="cat-note">Note</label><textarea id="cat-note" rows="2" placeholder="Anything to remember">${esc(c.note || '')}</textarea></div>
+        ${pa ? `<p class="hint">This pays ${esc(pa.name)}, so it stays while that's a card or loan.</p>` : `<div class="opt-btns">
+          <button class="btn" data-saction="add-sub">${ICON.plus} Add subcategory</button>
+          <button class="btn" data-saction="hide">${c.hidden ? 'Unhide' : 'Hide'}</button>
+          <button class="btn danger" data-saction="delete">Delete</button>
+        </div>`}`;
+    };
     const paint = () => {
       D = snapshot();
       const c = D.cats[id];
@@ -758,49 +786,28 @@
         .sort((a, b) => (a.date < b.date ? 1 : -1));
       const moves = S.moves(UI.month).filter((mv) => mv.from === id || mv.to === id);
       const pathTxt = D.tree.path[id].slice(0, -1).join(' › ');
-      let html = `${pathTxt ? `<p class="crumb">${esc(pathTxt)}</p>` : ''}
-        <div class="field"><label for="cat-name">Name</label><input id="cat-name" value="${esc(c.name)}" autocomplete="off"></div>
-        <div class="stats">
-          ${leaf ? `<div><span>Carried in</span><b>${money(r.carry)}</b></div>` : ''}
-          <div><span>Assigned</span><b>${money(leaf ? r.assigned : g.assigned)}</b></div>
-          <div><span>Spent</span><b>${money(-(leaf ? r.activity : g.activity))}</b></div>
-          <div><span>Available</span><b class="${(leaf ? r.available : g.available) < 0 ? 'neg' : ''}">${money(leaf ? r.available : g.available)}</b></div>
-        </div>`;
-      if (leaf) {
-        html += `<div class="row-btns"><button class="btn primary" data-saction="move">${r.available < 0 ? 'Cover it now' : 'Move money'}</button>${r.available < 0 ? `<span class="hint bad">In the red by ${money(-r.available)}. It stays red until you cover it or top it up.</span>` : ''}</div>`;
-        html += `<h3>Target</h3>` + (editingTarget ? targetEditor(c, r) : targetSummary(c, r));
-      } else if (pot) {
-        const own = D.month.rows[id];
-        html += `<p class="hint">The numbers above are the total for everything in ${esc(c.name)}. Unallocated is the part not given to a subcategory: <b class="${own.available < 0 ? 'neg' : ''}">${money(own.available)}</b>.</p>`;
-        html += `<div class="row-btns"><button class="btn primary" data-saction="move">Move money in or out</button></div>`;
-        html += `<h3>Target for all of ${esc(c.name)}</h3>`;
-        if (g.targetShort > 0 && !editingTarget) html += `<div class="warn-box">The targets inside ${esc(c.name)} need ${money(g.kidsNeed)} this month, but ${poss(esc(c.name))} target only gives ${money(g.target.need)}. Raise ${poss(esc(c.name))} target, or lower a target inside it. Fund targets won't take the extra ${money(g.targetShort)} on its own.</div>`;
-        html += editingTarget ? targetEditor(c, g) : targetSummary(c, g);
+      const title = $('#sheet-title'); if (title) title.textContent = c.name;
+      if (view === 'more') { setSheetBody(optionsPage(c)); return; }
+      // the opened row already shows Assigned, Spent and Available: only say something if it's in the red
+      const num = leaf ? r : g;
+      let html = `${pathTxt ? `<p class="crumb">In ${esc(pathTxt)}</p>` : ''}`;
+      if ((leaf || pot) && num.available < 0) html += `<div class="cover-bar"><span>In the red by <b>${money(-num.available)}</b></span><button class="btn sm" data-saction="move">Cover it now</button></div>`;
+      if (leaf || pot) {
+        if (pot && g.targetShort > 0 && !editingTarget) html += `<div class="warn-box">The targets inside ${esc(c.name)} need ${money(g.kidsNeed)} this month, ${money(g.targetShort)} more than ${poss(esc(c.name))} own target.</div>`;
+        html += editingTarget ? `<h3>Target</h3>${targetEditor(c, num)}` : targetCard(c, num);
       } else {
-        html += `<p class="hint">This is a heading. Its numbers are the totals of the categories under it.</p>`;
+        html += `<p class="hint">A heading: its numbers are the totals of the categories under it.</p>`;
         const own = D.month.rows[id];
         if (own && (own.available || own.assigned)) html += `<div class="warn-box">${money(own.available)} is held in ${esc(c.name)} itself, from before it had subcategories. <div class="row-btns"><button class="btn sm primary" data-saction="move">Move it into a subcategory</button></div></div>`;
       }
-      const ownK = c.kind || '', par = c.parent ? kindOf(c.parent) : null;
-      const pa = payAcct(id);
-      if (pa) html += `<h3>Type</h3><p class="hint">The minimum payment${minPayOf(pa) ? ` (${money(minPayOf(pa))} a month)` : ''} counts as a <b>need</b>. Anything you put in on top counts as <b>savings, investing &amp; debt</b>. ${minPayOf(pa) ? '' : 'No minimum is set yet, so it all counts as savings, investing &amp; debt. '}<button class="linkish" data-saction="edit-acct">Set the minimum on ${esc(pa.name)}</button></p>`;
-      else html += `<h3>Type</h3><div class="seg-ctl kind-ctl" role="group" aria-label="Type">
-          <button data-saction="kind" data-v="" aria-pressed="${!ownK}">${c.parent ? `Same as group${par ? ` (${KIND_SHORT[par]})` : ''}` : 'Not tagged'}</button>
-          ${KINDS.map(([k, , l]) => `<button data-saction="kind" data-v="${k}" aria-pressed="${ownK === k}">${esc(l)}</button>`).join('')}
-        </div>`;
-      html += `<h3>Organise</h3>
-        <div class="field"><label for="cat-parent">Sits under</label><select id="cat-parent">${parentOptions(id, c.parent)}</select></div>
-        <div class="row-btns">
-          ${payAcct(id) ? `<span class="hint">This pays ${esc(payAcct(id).name)}. It stays while the account is a card or loan.</span>` : `<button class="btn" data-saction="add-sub">${ICON.plus} Add subcategory</button>
-          <button class="btn" data-saction="hide">${c.hidden ? 'Unhide' : 'Hide'}</button>
-          <button class="btn danger" data-saction="delete">Delete</button>`}
-        </div>
-        <div class="field"><label for="cat-note">Note</label><textarea id="cat-note" rows="2" placeholder="Anything to remember about this category">${esc(c.note || '')}</textarea></div>`;
-      html += `<h3>${esc(monthLabel(UI.month))} activity</h3>`;
-      html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">No transactions this month.</p>';
+      // 3. this month's spending
+      html += `<h3>${esc(monthLabel(UI.month))}</h3>`;
+      html += txs.length ? `<ul class="mini-tx">${txs.slice(0, 40).map((t) => `<li><button data-saction="open-tx" data-id="${t.id}"><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || t.bank || '—')}</span><b class="${t.amt > 0 ? 'pos' : ''}">${signed(partAmount(t, id, leaf))}</b></button></li>`).join('')}</ul>` : '<p class="hint">Nothing spent yet this month.</p>';
       if (moves.length) {
-        html += `<h3>Money moved this month</h3><ul class="mini-tx">${moves.map((mv) => `<li><span>${esc(new Date(mv.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span><span>${mv.from === id ? 'To ' + esc(catName(mv.to)) : 'From ' + esc(catName(mv.from))}</span><b>${mv.from === id ? '−' : '+'}${money(mv.amt)}</b></li>`).join('')}</ul>`;
+        html += `<h3>Money moved</h3><ul class="mini-tx">${moves.map((mv) => `<li><span>${esc(new Date(mv.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</span><span>${mv.from === id ? 'To ' + esc(catName(mv.to)) : 'From ' + esc(catName(mv.from))}</span><b>${mv.from === id ? '−' : '+'}${money(mv.amt)}</b></li>`).join('')}</ul>`;
       }
+      // 4. everything else, folded away until it's wanted
+      html += `<button class="more-toggle" data-saction="more">More options <span aria-hidden="true">${ICON.right}</span></button>`;
       setSheetBody(html);
     };
     const partAmount = (t, cid, leaf) => {
@@ -811,7 +818,14 @@
     paint();
     sheet.actions = {
       'move': () => openMove(id),
-      kind: async (el) => { await putCat(Object.assign({}, D.cats[id], { kind: el.dataset.v || null })); paint(); },
+      more: () => { view = 'more'; paint(); const b = $('#sheet .sheet-b'); if (b) b.scrollTop = 0; },
+      back: () => { view = 'main'; paint(); const b = $('#sheet .sheet-b'); if (b) b.scrollTop = 0; },
+      kind: async (el) => {
+        const c = D.cats[id], par = c.parent ? kindOf(c.parent) : null, v = el.dataset.v || null;
+        // the same as the group, or tapping the chosen one again: follow the group
+        const next = v === par || v === (c.kind || null) ? null : v;
+        await putCat(Object.assign({}, c, { kind: next })); paint();
+      },
       'add-sub': () => promptNewCat(id),
       'edit-acct': () => { const pa = payAcct(id); if (pa) openAcct(pa.id); },
       'open-tx': (el) => (isPhone() ? openTx(D.txById[el.dataset.id]) : startInline(el.dataset.id)),
@@ -871,6 +885,34 @@
     return out;
   }
 
+  // the category sheet's target, as a card: what it is, how this month is going, and the button to change it
+  function targetCard(c, r) {
+    if (payAcct(c.id) || !c.target || !r.target) {
+      if (c.target && !payAcct(c.id)) return `<section class="tcard"><div class="tc-what">${targetLine(c.id, r) || ''}</div><button class="btn tc-btn" data-saction="edit-target">Edit target</button></section>`;
+      if (payAcct(c.id)) return `<section class="tcard"><div class="tc-what">${targetLine(c.id, r) || '<span class="tdesc">No monthly amount set</span>'}</div><button class="btn tc-btn" data-saction="edit-target">${c.target ? 'Edit target' : 'Add a target'}</button></section>`;
+      return `<section class="tcard empty"><p class="tc-big">No target yet</p><p class="tc-sub">Add one and YNABB works out how much ${esc(c.name)} needs each month.</p><button class="btn primary tc-btn" data-saction="edit-target">${ICON.plus} Add a target</button></section>`;
+    }
+    const t = c.target, ti = r.target, kind = (TTYPES.find((x) => x[0] === t.type) || [0, 'Target'])[1];
+    const desc = targetLine(c.id, Object.assign({}, r, { available: Math.max(0, r.available) })).replace(/^.*?<span class="tdesc">/, '').replace(/<\/span>$/, '').replace(/<[^>]+>/g, '');
+    let pct, line, status;
+    if (t.type === 'goal') {
+      pct = Math.max(0, Math.min(1, ti.pct || 0));
+      line = `${Math.round(pct * 100)}% saved`;
+    } else {
+      pct = ti.need > 0 ? Math.max(0, Math.min(1, r.assigned / ti.need)) : 1;
+      line = ti.need > 0 ? `${money(Math.min(r.assigned, ti.need))} of ${money(ti.need)} assigned this month` : 'Nothing needed this month';
+    }
+    if (ti.under > 0) status = `<span class="tc-st under">Needs ${money(ti.under)} more</span>`;
+    else if (t.type === 'goal' && ti.remaining > 0 && !ti.need) status = `<span class="tc-st goal">${money(ti.remaining)} to go</span>`;
+    else status = `<span class="tc-st ok">${t.type === 'goal' && ti.remaining <= 0 ? 'Goal reached' : t.type === 'cap' && !ti.need ? 'Full' : 'Funded'}</span>`;
+    return `<section class="tcard">
+      <p class="tc-kind">${esc(kind)}</p>
+      <p class="tc-big">${esc(desc)}</p>
+      <div class="tc-bar"><i style="width:${Math.round(pct * 100)}%" class="${ti.under > 0 ? 'under' : 'ok'}"></i></div>
+      <div class="tc-line"><span>${esc(line)}</span>${status}</div>
+      <button class="btn tc-btn" data-saction="edit-target">Edit target</button>
+    </section>`;
+  }
   function targetSummary(c, r) {
     if (!c.target) return `<p class="hint">No target. Add one and the app will tell you how much this category needs each month.</p><button class="btn" data-saction="edit-target">${ICON.plus} Add a target</button>`;
     return `<div class="tsum">${targetLine(c.id, r) || ''}</div><div class="row-btns"><button class="btn" data-saction="edit-target">Edit target</button></div>`;
@@ -3056,7 +3098,8 @@
       saveUI(); render();
     },
     bfilter: (el) => { UI.budgetFilter = el.dataset.v; UI.view = 'budget'; render(); },
-    cat: (el) => openCat(el.dataset.id),
+    cat: (el) => (isPhone() && el.closest('.brow') && !UI.editCats ? toggleCatRow(el.dataset.id) : openCat(el.dataset.id)),
+    'cat-edit': (el) => openCat(el.dataset.id),
     move: (el) => openMove(el.dataset.id),
     'auto-assign': autoAssign,
     'goto-review': () => { UI.view = 'tx'; UI.f = { acct: '', cat: '', from: '', to: '', min: '', max: '', status: 'review' }; UI.showFilters = false; saveUI(); render(); },
@@ -3197,9 +3240,8 @@
     },
     'toast-act': () => { const fn = toastFn; toastFn = null; $('#toast').hidden = true; if (fn) fn(); },
     'tgt-toggle': () => {
-      const v = tgtOn() ? 'off' : 'on';
-      try { localStorage.setItem('zeroline-tgt', v); } catch (e) { /* ignore */ }
-      document.documentElement.dataset.tgt = v;
+      SHOW.tgt = !SHOW.tgt;
+      document.documentElement.dataset.tgt = SHOW.tgt ? 'on' : 'off';
       render();
     },
     'split-basis': (el) => { try { localStorage.setItem('zeroline-split-basis', el.dataset.v); } catch (e) { /* ignore */ } render(); },
@@ -3212,9 +3254,8 @@
       await putCat(Object.assign({}, c, { kind: next }));
     },
     'pct-toggle': () => {
-      const v = pctOn() ? 'off' : 'on';
-      try { localStorage.setItem('zeroline-pct', v); } catch (e) { /* ignore */ }
-      document.documentElement.dataset.pct = v;
+      SHOW.pct = !SHOW.pct;
+      document.documentElement.dataset.pct = SHOW.pct ? 'on' : 'off';
       render();
     },
     'bar-cycle': () => {
@@ -3265,6 +3306,9 @@
       else { ev.preventDefault(); const fn = sheet.actions[s.dataset.saction]; if (fn) fn(s, ev); return; }
     }
     const a = ev.target.closest('[data-action]');
+    // phone: a tap anywhere on a category opens or closes its details
+    const br = !a && isPhone() && UI.view === 'budget' && !UI.editCats && ev.target.closest('.brow[data-cat]');
+    if (br && !ev.target.closest('input, select, textarea, label')) { toggleCatRow(br.dataset.cat); return; }
     if (!a) {
       // a click anywhere else on a row (the icon or C columns, the gaps) selects it too
       const row = !isPhone() && ev.target.closest('.txl .txr[data-row]:not(.editing)');
@@ -3277,6 +3321,45 @@
     if (fn) { ev.preventDefault(); fn(a, ev); }
   });
   document.addEventListener('mousedown', (ev) => { if ((ev.shiftKey || ev.metaKey) && ev.target.closest('.txl .txr')) ev.preventDefault(); });
+  // pull down from the top to reload: the home-screen app has no refresh button
+  (function pullToRefresh() {
+    const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (!standalone) return;
+    const ind = document.createElement('div');
+    ind.id = 'ptr'; ind.setAttribute('aria-hidden', 'true');
+    ind.innerHTML = '<svg viewBox="0 0 20 20"><path d="M10 4v10M5.5 9.5L10 14l4.5-4.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Pull to refresh</span>';
+    document.body.appendChild(ind);
+    const GO = 80;
+    let y0 = null, pull = 0;
+    const show = (d) => {
+      ind.style.transform = `translate(-50%, ${Math.min(d, GO + 30) - 50}px)`;
+      ind.style.opacity = Math.min(1, d / 40);
+      ind.classList.toggle('ready', d >= GO);
+      ind.querySelector('span').textContent = d >= GO ? 'Let go to refresh' : 'Pull to refresh';
+    };
+    const reset = () => { y0 = null; pull = 0; ind.style.transition = 'transform .2s, opacity .2s'; show(0); setTimeout(() => { ind.style.transition = ''; }, 200); };
+    document.addEventListener('touchstart', (ev) => {
+      // only from the very top of the page, and not inside a sheet, menu or the guide
+      if (window.scrollY > 0 || ev.touches.length !== 1 || ev.target.closest('#sheet:not([hidden]), .ctx-menu, .cbx-pop, #zl-guide, #lightbox')) return;
+      y0 = ev.touches[0].clientY; pull = 0;
+    }, { passive: true });
+    document.addEventListener('touchmove', (ev) => {
+      if (y0 == null) return;
+      pull = (ev.touches[0].clientY - y0) * 0.6;
+      if (pull <= 0 || window.scrollY > 0) { if (pull < 0) reset(); return; }
+      show(pull);
+    }, { passive: true });
+    document.addEventListener('touchend', () => {
+      if (y0 == null) return;
+      const go = pull >= GO;
+      reset();
+      if (!go) return;
+      // never throw away changes that are still on their way to the server
+      if (Object.values(S._queue || {}).some((q) => q.busy)) { toast('Still saving. Try again in a moment.'); return; }
+      ind.classList.add('ready'); show(GO); ind.querySelector('span').textContent = 'Refreshing';
+      location.reload();
+    });
+  })();
   // still saving: ask before the page closes
   window.addEventListener('beforeunload', (ev) => { if (Object.values(S._queue || {}).some((q) => q.busy)) { ev.preventDefault(); ev.returnValue = ''; } });
   document.addEventListener('change', async (ev) => {

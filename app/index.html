@@ -1002,6 +1002,9 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow.open .b-avl { display: flex; flex-direction: column; align-items: center; gap: 3px; justify-self: stretch; align-self: start; }
 :root[data-layout="phone"] .brow.open .b-avl .m-lbl { display: inline; }
 :root[data-layout="phone"] .brow.open .b-avl .pill { min-height: 36px; display: inline-flex; align-items: center; }
+/* a darker outline so the soft green and orange pills stand out on the beige of an opened row */
+:root[data-layout="phone"] .brow.open .b-avl .pill:not(.flat) { border: 1.5px solid color-mix(in srgb, currentColor 60%, transparent); }
+:root[data-layout="phone"] .brow.open .b-avl .pill.st-over { border-color: color-mix(in srgb, var(--bad) 70%, #000); }
 :root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num, :root[data-layout="phone"] .brow.open .b-asg .num { min-height: 36px; display: flex; align-items: center; }
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-self: start; }
 /* three even columns, each centred: label over number */

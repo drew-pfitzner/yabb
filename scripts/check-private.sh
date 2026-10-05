@@ -16,7 +16,7 @@ if printf '%s\n' "$files" | xargs grep -l -E 'tskey-(auth|client|api)-[A-Za-z0-9
 fi
 
 # a real NAB export has this header row; the mock test files don't
-if printf '%s\n' "$files" | grep -v '^test-data/' | xargs grep -l 'Date,Amount,Account Number' 2>/dev/null; then
+if printf '%s\n' "$files" | grep -v '^test-data/' | xargs grep -l 'Date,Amount,Account'' Number' 2>/dev/null; then
   echo "^ these files look like a real NAB export."; bad=1
 fi
 

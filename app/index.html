@@ -1068,26 +1068,30 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 /* phone: each group is its own rounded card. The rows draw the card's edges, and each heading always paints
    the card's rounded top itself, so a stuck heading never shows a square corner while you scroll */
 :root[data-layout="phone"] .bud { border: 0; background: none; border-radius: 0; overflow: clip; }
-:root[data-layout="phone"] .bud > .brow { background-color: var(--surface); box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line); }
-:root[data-layout="phone"] .bud > .brow.parent.top { box-shadow: none; background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
+/* a group box: on the computer it changes nothing; on a phone it's the card, and its heading is pushed up when the group ends */
+.bgrp { display: contents; }
+:root[data-layout="phone"] .bgrp { display: block; margin-bottom: 12px; border-radius: 12px; overflow: clip; }
+:root[data-layout="phone"] .bgrp > .brow:last-child { margin-bottom: 0; }
+:root[data-layout="phone"] .bgrp > .brow { background-color: var(--surface); box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line); }
+:root[data-layout="phone"] .bgrp > .brow.parent.top { box-shadow: none; background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
     radial-gradient(circle at 0 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right top / 12px 12px no-repeat,
     linear-gradient(var(--line), var(--line)) center top / calc(100% - 24px) 1px no-repeat,
     linear-gradient(var(--line), var(--line)) left 0 top 12px / 1px 100% no-repeat,
     linear-gradient(var(--line), var(--line)) right 0 top 12px / 1px 100% no-repeat, var(--head-bg); }
 /* the last row of each group: the card's rounded bottom, then a gap */
-:root[data-layout="phone"] .bud > .brow:has(+ .brow.parent.top), :root[data-layout="phone"] .bud > .brow:last-child { border-bottom: 0; box-shadow: none; margin-bottom: 12px; background: radial-gradient(circle at 100% 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left bottom / 12px 12px no-repeat,
+:root[data-layout="phone"] .bgrp > .brow:last-child { border-bottom: 0; box-shadow: none; background: radial-gradient(circle at 100% 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left bottom / 12px 12px no-repeat,
     radial-gradient(circle at 0 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right bottom / 12px 12px no-repeat,
     linear-gradient(var(--line), var(--line)) center bottom / calc(100% - 24px) 1px no-repeat,
     linear-gradient(var(--line), var(--line)) left 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
     linear-gradient(var(--line), var(--line)) right 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
     var(--surface); }
-:root[data-layout="phone"] .bud > .brow.open:has(+ .brow.parent.top), :root[data-layout="phone"] .bud > .brow.open:last-child { background: radial-gradient(circle at 100% 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left bottom / 12px 12px no-repeat,
+:root[data-layout="phone"] .bgrp > .brow.open:last-child { background: radial-gradient(circle at 100% 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left bottom / 12px 12px no-repeat,
     radial-gradient(circle at 0 0, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right bottom / 12px 12px no-repeat,
     linear-gradient(var(--line), var(--line)) center bottom / calc(100% - 24px) 1px no-repeat,
     linear-gradient(var(--line), var(--line)) left 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
     linear-gradient(var(--line), var(--line)) right 0 bottom 12px / 1px calc(100% - 12px) no-repeat,
     var(--surface-2); }
-:root[data-layout="phone"] .bud > .brow.parent.top:has(+ .brow.parent.top), :root[data-layout="phone"] .bud > .brow.parent.top:last-child { background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
+:root[data-layout="phone"] .bgrp > .brow.parent.top:last-child { background: radial-gradient(circle at 100% 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) left top / 12px 12px no-repeat,
     radial-gradient(circle at 0 100%, transparent 11px, var(--line) 11.5px, var(--line) 12px, var(--bg) 12.5px) right top / 12px 12px no-repeat,
     linear-gradient(var(--line), var(--line)) center top / calc(100% - 24px) 1px no-repeat,
     linear-gradient(var(--line), var(--line)) left 0 top 12px / 1px 100% no-repeat,

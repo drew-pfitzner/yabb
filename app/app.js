@@ -656,7 +656,7 @@
       ${tgtCell(r.target ? r.target.need : null, r.target ? tgtDesc(id, r) : '')}
       <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span>${c.debtFor && D.debt[c.debtFor] === id ? `<button class="num spent-link" data-action="spent" data-id="${id}" title="Spending on the card moved in, less payments made. Click to see the transactions">${r.activity ? signed(r.activity) : money(0)}</button>` : `<button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-r.activity)}</button>`}</div>
-      <div class="b-avl"><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(c.name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
+      <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(c.name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
   }
 
@@ -676,7 +676,7 @@
       <div class="b-tgt" title="Total of the targets in ${esc(c.name)} this month"><span class="m-lbl">Target</span><span class="num">${g.needSub ? money(g.needSub) : '<span class="faint">—</span>'}</span></div>
       <div class="b-asg"><span class="m-lbl">Assigned</span><span class="num">${money(g.assigned)}</span></div>
       <div class="b-act"><span class="m-lbl">Spent</span><button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-g.activity)}</button></div>
-      <div class="b-avl"><span class="pill flat st-${st}">${money(g.available)}</span></div>
+      <div class="b-avl"><span class="m-lbl">Available</span><span class="pill flat st-${st}">${money(g.available)}</span></div>
     </div>`;
   }
 
@@ -698,7 +698,7 @@
       ${tgtCell(g.needSub || (g.target ? 0 : null), g.target ? tgtDesc(id, g) : g.needSub ? `Total of the targets inside ${c.name}` : '')}
       <div class="b-asg"><label class="m-lbl" for="asgt-${id}">Assigned</label><input id="asgt-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" data-mode="total" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(g.assigned)}" aria-label="Total assigned to ${esc(c.name)}" title="Total for ${esc(c.name)}. Changing it adds to or takes from Unallocated.">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span><button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-g.activity)}</button></div>
-      <div class="b-avl"><button class="pill st-${g.status}" data-action="move" data-id="${id}" aria-label="Available in all of ${esc(c.name)}: ${money(g.available)}. Move money in or out of its Unallocated.">${money(g.available)}</button></div>
+      <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${g.status}" data-action="move" data-id="${id}" aria-label="Available in all of ${esc(c.name)}: ${money(g.available)}. Move money in or out of its Unallocated.">${money(g.available)}</button></div>
     </div>`;
   }
   function unallocRow(id) {

@@ -985,7 +985,7 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow .cname { font-size: 15px; }
 :root[data-layout="phone"] .brow .b-avl { justify-self: end; }
 :root[data-layout="phone"] .brow .b-bar { max-width: none; }
-:root[data-layout="phone"] .brow.open { grid-template-areas: "name name avl" "bar bar bar" "tgt asg act" "edit edit edit"; background: var(--surface-2); }
+:root[data-layout="phone"] .brow.open { grid-template-areas: "name name name" "bar bar bar" "asg act avl" "edit edit edit"; background: var(--surface-2); }
 :root[data-layout="phone"] .brow.open .b-name { flex-wrap: wrap; row-gap: 3px; }
 :root[data-layout="phone"] .brow.open .tline { display: block; flex-basis: 100%; order: 9; margin: 0; padding-left: 23px; white-space: normal; font-size: 12.5px; }
 :root[data-layout="phone"] .brow.open .b-edit { display: block; grid-area: edit; justify-self: center; font-size: 14px; font-weight: 600; padding: 4px 10px; }
@@ -996,8 +996,13 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .brow.open .b-asg { padding-left: 23px; }
 :root[data-layout="phone"] .brow.open .m-lbl { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 :root[data-layout="phone"] .brow.open .asg { width: 100%; max-width: 110px; font-size: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
-:root[data-layout="phone"] .brow.open .b-avl { align-self: start; }
-:root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num { min-height: 36px; display: flex; align-items: center; }
+:root[data-layout="phone"] .brow .b-avl .m-lbl { display: none; }
+/* opened: Available drops into the row of numbers, still in its pill; Target stays out for now */
+:root[data-layout="phone"] .brow.open .b-tgt { display: none; }
+:root[data-layout="phone"] .brow.open .b-avl { display: flex; flex-direction: column; align-items: center; gap: 3px; justify-self: stretch; align-self: start; }
+:root[data-layout="phone"] .brow.open .b-avl .m-lbl { display: inline; }
+:root[data-layout="phone"] .brow.open .b-avl .pill { min-height: 36px; display: inline-flex; align-items: center; }
+:root[data-layout="phone"] .brow.open .b-act .num, :root[data-layout="phone"] .brow.open .b-tgt .num, :root[data-layout="phone"] .brow.open .b-asg .num { min-height: 36px; display: flex; align-items: center; }
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-self: start; }
 /* three even columns, each centred: label over number */
 :root[data-layout="phone"] .brow.open .b-tgt, :root[data-layout="phone"] .brow.open .b-asg, :root[data-layout="phone"] .brow.open .b-act { align-items: center; text-align: center; }

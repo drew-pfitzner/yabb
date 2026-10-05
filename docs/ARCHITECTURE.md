@@ -25,6 +25,10 @@ A single-page app in plain JavaScript (ES2020, no framework, no build step, no n
   - Other: `dateLabel()`, `toast()`, `openSheet()`.
 - **Platform calls:** `S.assets` (receipt upload and `/_blob/<id>` URLs), `S.downloads` (saving files), `S.user`/`S.me` (who added a transaction). All are optional, and the UI hides what's missing.
 
+## Server (`server/`)
+
+`server.js` stores each budget's documents in SQLite, applies patches with the same merge rules as `store.js`, sends live changes over Server-Sent Events, and handles logins, budgets and receipts. `public/` holds the login and account pages. See `server/README.md`.
+
 ## Data model
 
 Money is **integer cents**; dates are `YYYY-MM-DD`; months are `YYYY-MM`. Three collections of JSON documents. A patch deep-merges into a document, and writing `null` for a map entry deletes it.

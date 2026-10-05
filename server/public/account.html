@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Account · YABB</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 50 L50 4 A46 46 0 0 1 73 89.84 Z' fill='%232A7F98'/%3E%3Cpath d='M50 50 L73 89.84 A46 46 0 0 1 4.69 57.99 Z' fill='%2378AFC0'/%3E%3Cpath d='M50 50 L4.69 57.99 A46 46 0 0 1 50 4 Z' fill='%23EA9805'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Schibsted+Grotesk:wght@400;600&display=swap">
+<link rel="stylesheet" href="server.css">
+</head>
+<body>
+<main>
+  <div class="brand"><a href="/" title="Back to the budget"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L50 4 A46 46 0 0 1 73 89.84 Z" fill="var(--accent)"/><path d="M50 50 L73 89.84 A46 46 0 0 1 4.69 57.99 Z" fill="var(--accent)" fill-opacity=".62"/><path d="M50 50 L4.69 57.99 A46 46 0 0 1 50 4 Z" fill="var(--need)"/><path d="M50 50 L50 4 M50 50 L73 89.84 M50 50 L4.69 57.99" stroke="var(--bg)" stroke-width="5" stroke-linecap="round"/></svg>YABB</a></div>
+
+  <section class="card">
+    <h1>Your login</h1>
+    <p id="who" class="muted">Loading…</p>
+    <div class="row">
+      <a class="btn primary" href="/">Back to the budget</a>
+      <button class="btn" id="signout" type="button">Sign out</button>
+    </div>
+  </section>
+
+  <h2>Change your password</h2>
+  <form class="card" id="pw">
+    <div class="grid">
+      <div><label for="pw-cur">Current password</label><input type="password" id="pw-cur" autocomplete="current-password" required></div>
+      <div><label for="pw-new">New password</label><input type="password" id="pw-new" autocomplete="new-password" minlength="10" required></div>
+    </div>
+    <p class="fine" style="margin-top:8px">At least 10 characters. A few random words works well. Changing it signs you out on your other devices.</p>
+    <div class="row"><button class="btn primary" type="submit">Change password</button></div>
+    <div class="msg" id="pw-msg" role="status" hidden></div>
+  </form>
+
+  <div id="admin" hidden>
+    <h2>Budgets</h2>
+    <div class="card">
+      <div class="tbl"><table><thead><tr><th>Budget</th><th>Last change</th><th></th></tr></thead><tbody id="budgets"></tbody></table></div>
+      <form class="row" id="add-budget"><input type="text" id="nb-name" placeholder="New budget name" style="flex:1;min-width:180px" required><button class="btn" type="submit">Add budget</button></form>
+    </div>
+
+    <h2>People</h2>
+    <div class="card">
+      <div class="tbl"><table><thead><tr><th>Person</th><th>Budget</th><th>Last signed in</th><th></th></tr></thead><tbody id="users"></tbody></table></div>
+      <div class="msg" id="user-msg" role="status" hidden></div>
+    </div>
+
+    <h2>Add a person</h2>
+    <form class="card" id="add-user">
+      <div class="grid">
+        <div><label for="nu-name">Name</label><input type="text" id="nu-name" required></div>
+        <div><label for="nu-username">Username</label><input type="text" id="nu-username" autocapitalize="none" spellcheck="false" required></div>
+        <div><label for="nu-budget">Budget</label><select id="nu-budget"></select></div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="nu-admin"> Make them an admin too (they can add people and see every budget)</label>
+      <div class="row"><button class="btn primary" type="submit">Add person</button></div>
+      <p class="fine" style="margin-top:10px">YABB makes up a password and shows it once. Send it to them, and they can change it here after signing in.</p>
+    </form>
+
+    <h2>Recent sign-ins</h2>
+    <div class="card"><div class="tbl"><table><thead><tr><th>When</th><th>Username</th><th>Result</th><th>From</th></tr></thead><tbody id="signins"></tbody></table></div></div>
+    <p class="fine" id="version" style="margin-top:14px"></p>
+  </div>
+</main>
+<script src="account.js"></script>
+</body>
+</html>

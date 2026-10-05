@@ -1,0 +1,327 @@
+// Server tests: run with `node --test server/test/` from the repo root. Uses a throwaway data folder.
+'use strict';
+const { test, before, after, beforeEach } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const http = require('node:http');
+
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yabb-test-'));
+Object.assign(process.env, { DATA_DIR: dir, COOKIE_SECURE: '0', ADMIN_USERNAME: 'drew', ADMIN_PASSWORD: 'correct horse battery', ADMIN_NAME: 'Drew' });
+const { server, bootstrap, db, ipFails } = require('../server.js');
+let base;
+
+before(async () => {
+  await bootstrap();
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+  base = 'http://127.0.0.1:' + server.address().port;
+});
+after(() => { server.close(); server.closeAllConnections(); fs.rmSync(dir, { recursive: true, force: true }); });
+beforeEach(() => ipFails.clear());
+
+// a tiny browser: keeps its cookie and sends the header our pages send
+function browser() {
+  let cookie = '';
+  const call = async (method, url, body, extra = {}) => {
+    const headers = Object.assign({ 'X-Requested-With': 'yabb' }, cookie ? { Cookie: cookie } : {}, extra);
+    if (body !== undefined && !Buffer.isBuffer(body)) headers['Content-Type'] = 'application/json';
+    const r = await fetch(base + url, { method, headers, body: body === undefined ? undefined : Buffer.isBuffer(body) ? body : JSON.stringify(body), redirect: 'manual' });
+    const set = r.headers.get('set-cookie');
+    if (set) cookie = set.split(';')[0];
+    const text = await r.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (e) { /* not json */ }
+    return { status: r.status, json, text, headers: r.headers };
+  };
+  return { call, get cookie() { return cookie; }, login: (username, password) => call('POST', '/api/login', { username, password }) };
+}
+// read live-update events until `until` returns true
+function listen(cookie, until) {
+  return new Promise((ok, no) => {
+    const events = [];
+    const req = http.get(base + '/api/events', { headers: { Cookie: cookie } }, (res) => {
+      let buf = '';
+      res.on('data', (c) => {
+        buf += c;
+        let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const block = buf.slice(0, i); buf = buf.slice(i + 2);
+          const ev = /event: (\w+)/.exec(block), data = /data: (.*)/.exec(block);
+          if (ev && data) events.push({ type: ev[1], data: JSON.parse(data[1]) });
+          if (until(events)) { req.destroy(); ok(events); }
+        }
+      });
+    });
+    req.on('error', (e) => { if (e.code !== 'ECONNRESET') no(e); });
+    setTimeout(() => { req.destroy(); no(new Error('timed out waiting for events')); }, 3000);
+  });
+}
+
+test('health check works without signing in', async () => {
+  const r = await browser().call('GET', '/api/health');
+  assert.equal(r.status, 200);
+  assert.equal(r.json.ok, true);
+});
+
+test('signed-out visitors are sent to the login page and kept out of the API', async () => {
+  const b = browser();
+  const page = await b.call('GET', '/');
+  assert.equal(page.status, 303);
+  assert.equal(page.headers.get('location'), '/login');
+  assert.equal((await b.call('GET', '/api/data')).status, 401);
+  assert.equal((await b.call('GET', '/app.js')).status, 303);
+  assert.equal((await b.call('GET', '/login')).status, 200);
+});
+
+test('security headers are on every page', async () => {
+  const r = await browser().call('GET', '/login');
+  const csp = r.headers.get('content-security-policy');
+  assert.match(csp, /script-src 'self'(;|$)/);
+  assert.doesNotMatch(csp, /unsafe-eval/);
+  assert.equal(r.headers.get('x-frame-options'), 'DENY');
+  assert.equal(r.headers.get('x-content-type-options'), 'nosniff');
+});
+
+test('a wrong password is refused and written to the sign-in log', async () => {
+  const r = await browser().login('drew', 'nope nope nope');
+  assert.equal(r.status, 401);
+  assert.match(r.json.error, /don't match/);
+  const row = db.prepare('SELECT * FROM signins ORDER BY seq DESC LIMIT 1').get();
+  assert.equal(row.ok, 0);
+  assert.equal(row.username, 'drew');
+});
+
+test('unknown usernames get the same answer as wrong passwords', async () => {
+  const r = await browser().login('nobody', 'nope nope nope');
+  assert.equal(r.status, 401);
+  assert.match(r.json.error, /don't match/);
+});
+
+test('signing in gives a cookie that only scripts on the page cannot read', async () => {
+  const b = browser();
+  const r = await b.login('drew', 'correct horse battery');
+  assert.equal(r.status, 200);
+  const set = r.headers.get('set-cookie');
+  assert.match(set, /HttpOnly/);
+  assert.match(set, /SameSite=Lax/);
+  const me = await b.call('GET', '/api/me');
+  assert.equal(me.json.name, 'Drew');
+  assert.equal(me.json.admin, true);
+  assert.equal(me.json.budget.name, 'Family');
+  const page = await b.call('GET', '/');
+  assert.equal(page.status, 200);
+  assert.match(page.text, /<title>YABB<\/title>/);
+});
+
+test('changes without our header are blocked (no cross-site requests)', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  const r = await b.call('PATCH', '/api/doc/meta/settings', { currency: 'AUD' }, { 'X-Requested-With': '' });
+  assert.equal(r.status, 403);
+  const r2 = await b.call('PATCH', '/api/doc/meta/settings', { currency: 'AUD' }, { Origin: 'https://evil.example' });
+  assert.equal(r2.status, 403);
+});
+
+test('patches merge like store.js: objects merge, null removes, everything is logged', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  await b.call('PATCH', '/api/doc/tx/2026-09', { t: { a: { id: 'a', amt: -500 }, b: { id: 'b', amt: -700 } } });
+  await b.call('PATCH', '/api/doc/tx/2026-09', { t: { a: { memo: 'lunch' }, b: null } });
+  const data = (await b.call('GET', '/api/data')).json;
+  assert.deepEqual(data.tx['2026-09'], { t: { a: { id: 'a', amt: -500, memo: 'lunch' } } });
+  const n = db.prepare("SELECT COUNT(*) n FROM changes WHERE coll = 'tx' AND id = '2026-09'").get().n;
+  assert.equal(n, 2);
+});
+
+test('two people editing the same month at once both keep their change', async () => {
+  const a = browser(), b = browser();
+  await a.login('drew', 'correct horse battery');
+  await b.login('drew', 'correct horse battery');
+  await Promise.all([
+    a.call('PATCH', '/api/doc/tx/2026-08', { t: { x: { id: 'x', amt: 100 } } }),
+    b.call('PATCH', '/api/doc/tx/2026-08', { t: { y: { id: 'y', amt: 200 } } }),
+  ]);
+  const t = (await a.call('GET', '/api/data')).json.tx['2026-08'].t;
+  assert.deepEqual(Object.keys(t).sort(), ['x', 'y']);
+});
+
+test('a restore (PUT) replaces the document and keeps the old copy in the log', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  await b.call('PATCH', '/api/doc/months/2026-07', { assigned: { food: 1000 } });
+  await b.call('PUT', '/api/doc/months/2026-07', { assigned: { rent: 2000 }, moves: {} });
+  const doc = (await b.call('GET', '/api/data')).json.months['2026-07'];
+  assert.deepEqual(doc, { assigned: { rent: 2000 }, moves: {} });
+  const row = db.prepare("SELECT before FROM changes WHERE op = 'put' AND id = '2026-07'").get();
+  assert.deepEqual(JSON.parse(row.before), { assigned: { food: 1000 } });
+});
+
+test('bad document names are refused', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  assert.equal((await b.call('PATCH', '/api/doc/users/x', { a: 1 })).status, 400);
+  assert.equal((await b.call('PATCH', '/api/doc/meta/..%2f..', { a: 1 })).status, 404);
+  assert.equal((await b.call('PATCH', '/api/doc/meta/settings', [1, 2])).status, 400);
+});
+
+test('live updates: the whole budget first, then each change', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  const got = listen(b.cookie, (ev) => ev.some((e) => e.type === 'doc'));
+  await new Promise((r) => setTimeout(r, 100));
+  await b.call('PATCH', '/api/doc/meta/settings', { theme: 'dark' });
+  const events = await got;
+  assert.equal(events[0].type, 'snapshot');
+  assert.ok(events[0].data.tx);
+  const doc = events.find((e) => e.type === 'doc');
+  assert.equal(doc.data.coll, 'meta');
+  assert.equal(doc.data.doc.theme, 'dark');
+});
+
+test('files outside the app folder cannot be reached', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  for (const p of ['/../server/server.js', '/%2e%2e/server/server.js', '/..%2fserver%2fserver.js']) {
+    const r = await b.call('GET', p);
+    assert.notEqual(r.status, 200, p);
+  }
+});
+
+let sisterPw;
+test('the admin can make a second budget and a login for it', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  const nb = await b.call('POST', '/api/admin/budgets', { name: "Sister's budget" });
+  assert.equal(nb.status, 200);
+  const nu = await b.call('POST', '/api/admin/users', { name: 'Sis', username: 'Sis', budget_id: nb.json.id });
+  assert.equal(nu.status, 200);
+  assert.equal(nu.json.username, 'sis');
+  assert.match(nu.json.password, /^[a-z2-9]{4}(-[a-z2-9]{4}){3}$/);
+  sisterPw = nu.json.password;
+  const dup = await b.call('POST', '/api/admin/users', { name: 'Sis 2', username: 'sis', budget_id: nb.json.id });
+  assert.equal(dup.status, 400);
+});
+
+test('budgets are kept apart', async () => {
+  const s = browser();
+  assert.equal((await s.login('sis', sisterPw)).status, 200);
+  const me = (await s.call('GET', '/api/me')).json;
+  assert.equal(me.budget.name, "Sister's budget");
+  assert.equal(me.admin, false);
+  const data = (await s.call('GET', '/api/data')).json;
+  assert.deepEqual(data, { meta: {}, months: {}, tx: {} });
+  await s.call('PATCH', '/api/doc/meta/settings', { mine: true });
+  const d = browser();
+  await d.login('drew', 'correct horse battery');
+  const family = (await d.call('GET', '/api/data')).json;
+  assert.equal(family.meta.settings.mine, undefined);
+  // and she can't use the admin tools
+  assert.equal((await s.call('GET', '/api/admin/overview')).status, 403);
+  assert.equal((await s.call('POST', '/api/admin/budgets', { name: 'x' })).status, 403);
+  // people list shows her budget's people and the admin, nobody else
+  const ppl = (await s.call('GET', '/api/people')).json;
+  assert.deepEqual(Object.values(ppl).map((p) => p.name).sort(), ['Drew', 'Sis']);
+});
+
+test('receipts: right types only, and only the budget that owns one can see it', async () => {
+  const d = browser();
+  await d.login('drew', 'correct horse battery');
+  const png = Buffer.from('89504e470d0a1a0a', 'hex');
+  const bad = await d.call('POST', '/api/blob', png, { 'Content-Type': 'image/svg+xml' });
+  assert.equal(bad.status, 415);
+  assert.equal(bad.json.code, 'unsupported_type');
+  const up = await d.call('POST', '/api/blob', png, { 'Content-Type': 'image/png' });
+  assert.equal(up.status, 200);
+  const got = await d.call('GET', '/_blob/' + up.json.id);
+  assert.equal(got.status, 200);
+  assert.equal(got.headers.get('content-type'), 'image/png');
+  const s = browser();
+  await s.login('sis', sisterPw);
+  assert.equal((await s.call('GET', '/_blob/' + up.json.id)).status, 404);
+  // only the admin may choose an id (for moving receipts across)
+  assert.equal((await s.call('POST', '/api/blob?id=abc', png, { 'Content-Type': 'image/png' })).status, 400);
+  assert.equal((await d.call('POST', '/api/blob?id=old-receipt-1', png, { 'Content-Type': 'image/png' })).json.id, 'old-receipt-1');
+});
+
+test('the admin can open another budget and switch back', async () => {
+  const d = browser();
+  await d.login('drew', 'correct horse battery');
+  const o = (await d.call('GET', '/api/admin/overview')).json;
+  const sis = o.budgets.find((b) => b.name === "Sister's budget");
+  await d.call('POST', '/api/admin/switch', { budget_id: sis.id });
+  assert.equal((await d.call('GET', '/api/data')).json.meta.settings.mine, true);
+  const fam = o.budgets.find((b) => b.name === 'Family');
+  await d.call('POST', '/api/admin/switch', { budget_id: fam.id });
+  assert.equal((await d.call('GET', '/api/data')).json.meta.settings.mine, undefined);
+});
+
+test('five wrong passwords lock a login, even against the right one', async () => {
+  const s = browser();
+  for (let i = 0; i < 5; i++) assert.equal((await s.login('sis', 'wrong wrong wrong')).status, 401);
+  ipFails.clear();
+  const r = await s.login('sis', sisterPw);
+  assert.equal(r.status, 429);
+  assert.match(r.json.error, /locked/);
+  // the admin can unlock it
+  const d = browser();
+  await d.login('drew', 'correct horse battery');
+  const u = (await d.call('GET', '/api/admin/overview')).json.users.find((x) => x.username === 'sis');
+  await d.call('PATCH', '/api/admin/users/' + u.id, { unlock: true });
+  assert.equal((await s.login('sis', sisterPw)).status, 200);
+});
+
+test('too many wrong passwords from one address makes it wait', async () => {
+  const b = browser();
+  for (let i = 0; i < 10; i++) await b.login('nobody' + i, 'wrong wrong wrong');
+  const r = await b.login('drew', 'correct horse battery');
+  assert.equal(r.status, 429);
+});
+
+test('turning a login off signs that person out straight away', async () => {
+  const s = browser();
+  await s.login('sis', sisterPw);
+  const d = browser();
+  await d.login('drew', 'correct horse battery');
+  const u = (await d.call('GET', '/api/admin/overview')).json.users.find((x) => x.username === 'sis');
+  await d.call('PATCH', '/api/admin/users/' + u.id, { disabled: true });
+  assert.equal((await s.call('GET', '/api/data')).status, 401);
+  assert.equal((await s.login('sis', sisterPw)).status, 401);
+  // and the admin can't turn themselves off
+  const me = (await d.call('GET', '/api/me')).json;
+  assert.equal((await d.call('PATCH', '/api/admin/users/' + me.id, { disabled: true })).status, 400);
+  await d.call('PATCH', '/api/admin/users/' + u.id, { disabled: false });
+});
+
+test('a new password from the admin replaces the old one', async () => {
+  const d = browser();
+  await d.login('drew', 'correct horse battery');
+  const u = (await d.call('GET', '/api/admin/overview')).json.users.find((x) => x.username === 'sis');
+  const r = await d.call('POST', `/api/admin/users/${u.id}/reset`);
+  assert.equal((await browser().login('sis', sisterPw)).status, 401);
+  assert.equal((await browser().login('sis', r.json.password)).status, 200);
+  sisterPw = r.json.password;
+});
+
+test('changing your own password signs out your other devices', async () => {
+  const phone = browser(), laptop = browser();
+  await phone.login('sis', sisterPw);
+  await laptop.login('sis', sisterPw);
+  assert.equal((await laptop.call('POST', '/api/password', { current: 'wrong', next: 'a brand new password' })).status, 400);
+  assert.equal((await laptop.call('POST', '/api/password', { current: sisterPw, next: 'short' })).status, 400);
+  assert.equal((await laptop.call('POST', '/api/password', { current: sisterPw, next: 'a brand new password' })).status, 200);
+  assert.equal((await laptop.call('GET', '/api/me')).status, 200);
+  assert.equal((await phone.call('GET', '/api/me')).status, 401);
+});
+
+test('signing out ends the session', async () => {
+  const b = browser();
+  await b.login('drew', 'correct horse battery');
+  await b.call('POST', '/api/logout');
+  assert.equal((await b.call('GET', '/api/me')).status, 401);
+});
+
+test('passwords are stored as scrypt hashes, never as typed', () => {
+  for (const u of db.prepare('SELECT pass FROM users').all()) assert.match(u.pass, /^scrypt\$/);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM users WHERE pass LIKE '%correct horse%'").get().n, 0);
+});

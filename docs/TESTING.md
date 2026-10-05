@@ -2,6 +2,10 @@
 
 ## Run locally
 
+With the server (logins, live sync between browsers, receipts): see `server/README.md`. `npm run dev`, then open http://127.0.0.1:8080. Run `npm test` for the server tests.
+
+Without the server (this browser only):
+
 ```sh
 cd app
 python3 -m http.server 8765

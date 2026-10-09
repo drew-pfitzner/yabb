@@ -2184,7 +2184,7 @@
     let receipt = t.receipt || null, receiptType = t.receiptType || null;
     const reconciled = t.cleared === 'r';
     // the rarely-used bits stay tucked away until asked for
-    let noteOpen = !!t.memo, bankOpen = false, moreOpen = false;
+    let noteOpen = !!t.memo, bankOpen = false;
     const canSplitBank = () => !t.match && t.ik && t.bank && !isNew;
 
     const catSel = () => {
@@ -2218,7 +2218,8 @@
         <select id="tx-acct" aria-label="Account">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
       <div class="field tx-who"><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" aria-label="Payee" ${isPhone() ? 'readonly placeholder="Payee (tap to choose)"' : 'placeholder="Payee"'}>
         ${bankOpen ? `<input id="tx-bank" class="tx-bankin" autocomplete="off" value="${esc(t.bank || '')}" placeholder="Bank description" aria-label="Bank description">`
-          : t.bank ? `<button class="tx-bankcap" data-saction="edit-bank" title="Bank description. Tap to edit">${esc(t.bank)}</button>` : ''}</div>
+          : t.bank ? `<button class="tx-bankcap" data-saction="edit-bank" title="Bank description. Tap to edit">${esc(t.bank)}</button>`
+          : '<button class="linkish tx-bankadd" data-saction="edit-bank">Add a bank description</button>'}</div>
       ${splits ? `<div class="field"><span class="lbl">Split between categories</span><div id="splits">${splitRows()}</div>
           <div class="row-btns"><button class="btn sm" data-saction="add-split">${ICON.plus} Add line</button><button class="btn sm" data-saction="unsplit">Stop splitting</button><span id="split-left" class="hint"></span></div></div>`
         : `<div class="field tx-catrow"><select id="tx-cat" aria-label="Category">${catSel()}</select><button class="linkish" data-saction="split">Split</button></div>`}
@@ -2229,9 +2230,7 @@
         ${noteOpen ? '' : `<button class="chip" data-saction="note">${ICON.plus} Note</button>`}
         <div id="rcpt">${receiptBox()}</div>
         <label class="chip"><input type="checkbox" id="tx-clear" ${t.cleared === 'c' || t.cleared === 'r' ? 'checked' : ''} ${reconciled ? 'disabled' : ''}> Cleared</label></div>
-      ${moreOpen ? `<div class="tx-more">
-        ${canSplitBank() ? '<button class="linkish" data-saction="split-bank">Wrong match? Split the bank line off</button>' : ''}
-        ${!t.bank && !bankOpen ? '<button class="linkish" data-saction="edit-bank">Add a bank description</button>' : ''}</div>` : ''}
+      ${canSplitBank() ? '<button class="linkish tx-splitoff" data-saction="split-bank">Wrong match? Split the bank line off</button>' : ''}
       <p class="fine" id="tx-by"></p>`;
     const receiptBox = () => {
       if (receipt) {
@@ -2276,8 +2275,7 @@
       body: '',
       foot: `<button class="btn primary" data-saction="save">Save</button>
         ${t.approved === false ? '<button class="btn" data-saction="save-approve">Save & approve</button>' : ''}
-        <span class="tx-fr">${canSplitBank() || !t.bank ? '<button class="icon-btn" data-saction="more" aria-label="More options" title="More">⋯</button>' : ''}
-        ${isNew ? '' : `<button class="icon-btn danger" data-saction="delete" aria-label="Delete" title="Delete">${ICON.trash}</button>`}</span>`,
+        <span class="tx-fr">        ${isNew ? '' : `<button class="icon-btn danger" data-saction="delete" aria-label="Delete" title="Delete">${ICON.trash}</button>`}</span>`,
     });
     paint();
     if (isNew) setTimeout(() => $('#tx-amt') && $('#tx-amt').focus(), 60);
@@ -2331,8 +2329,7 @@
       'add-split': () => { readForm(); splits.push({ cat: null, amt: 0, memo: null }); paint(); },
       'rm-split': (el) => { readForm(); splits.splice(Number(el.dataset.i), 1); if (splits.length < 2) { t.cat = splits[0] ? splits[0].cat : null; splits = null; } paint(); },
       note: () => { readForm(); noteOpen = true; paint(); $('#tx-memo').focus(); },
-      'edit-bank': () => { readForm(); bankOpen = true; moreOpen = false; paint(); $('#tx-bank').focus(); },
-      more: () => { readForm(); moreOpen = !moreOpen; paint(); },
+      'edit-bank': () => { readForm(); bankOpen = true; paint(); $('#tx-bank').focus(); },
       'rm-receipt': () => { readForm(); receipt = null; receiptType = null; paint(); },
       'view-receipt': () => openLightbox('/_blob/' + receipt, receiptType),
       delete: () => {

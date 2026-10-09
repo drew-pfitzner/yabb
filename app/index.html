@@ -154,6 +154,11 @@ button.chip { cursor: pointer; }
 .field label.btn.primary { color: var(--accent-ink); }
 .field input, .field select, .field textarea, .split select, .split input, .search input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 11px; min-width: 0; }
 .field textarea { resize: vertical; }
+/* iPhone Safari gives date boxes a fixed native width that ignores width:100%, so they poke past the sheet and it scrolls sideways */
+@supports (-webkit-touch-callout: none) {
+  .field input[type=date] { -webkit-appearance: none; appearance: none; display: block; min-height: calc(1.2em + 20px); color: var(--ink); }
+  .field input[type=date]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+}
 .check { display: flex; gap: 9px; align-items: center; font-size: 14px; margin: 10px 0; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
@@ -509,6 +514,44 @@ span.rflag { cursor: help; }
 .cbx-o.cur { font-weight: 700; }
 .cbx-o.hi { background: var(--accent); color: var(--surface); }
 .cbx-none { padding: 8px; color: var(--muted); font-size: 13px; }
+.pyx-pop .cbx-o { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; font-size: 14px; }
+.pyx-pop .cbx-o span { overflow: hidden; text-overflow: ellipsis; }
+.pyx-pop .cbx-o small { color: var(--muted); font-size: 11.5px; flex: none; }
+.pyx-pop .cbx-o.hi small { color: inherit; opacity: .8; }
+.pyx-pop .pyx-add { color: var(--accent); font-weight: 600; border-top: 1px solid var(--line); border-radius: 0 0 6px 6px; margin-top: 2px; }
+.pyx-pop .pyx-add.hi { color: var(--surface); }
+/* phone: full-screen payee search */
+.pym { position: fixed; left: 0; right: 0; top: 0; height: 100%; z-index: 120; background: var(--surface); display: flex; flex-direction: column; }
+.pym-top { display: flex; gap: 12px; align-items: center; padding: max(12px, env(safe-area-inset-top)) 16px 12px; border-bottom: 1px solid var(--line); }
+.pym-q { flex: 1; min-width: 0; font-size: 17px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); outline: none; }
+.pym-q:focus { border-color: var(--accent); }
+.pym-top .linkish { font-size: 16px; }
+.pym-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 4px 0 12px; }
+.pym-g { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 14px 16px 4px; }
+.pym-o { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 16px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: 16px; text-align: left; }
+.pym-o span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pym-o small { color: var(--muted); font-size: 13px; flex: none; }
+.pym-o.cur { font-weight: 700; } .pym-o.cur b { color: var(--accent); }
+.pym-o:active { background: var(--line); }
+.pym-add { color: var(--accent); font-weight: 600; }
+.pym-none { color: var(--muted); padding: 14px 16px; margin: 0; }
+.pym-foot { padding: 10px 16px; border-top: 1px solid var(--line); }
+/* phone: every drop-down opens this list that slides up from the bottom */
+.pk { position: fixed; left: 0; right: 0; top: 0; height: 100%; z-index: 160; } /* above the Guide too */
+.pk-back { position: absolute; inset: 0; background: rgba(13, 27, 33, .5); opacity: 0; transition: opacity .18s; }
+.pk-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 80vh; max-height: 80dvh; display: flex; flex-direction: column; background: var(--surface); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.18); padding-bottom: env(safe-area-inset-bottom, 0px); transform: translateY(100%); transition: transform .18s ease-out; }
+/* keep within the space above the keyboard, and with a search box hold the height steady so results don't make it jump */
+.pk-sheet { max-height: min(80vh, calc(100% - 24px)); }
+.pk-sheet.has-s { height: min(80vh, calc(100% - 24px)); max-height: none; }
+.pk.on .pk-back { opacity: 1; } .pk.on .pk-sheet { transform: none; }
+.pk-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 16px 10px; font-size: 17px; }
+.pk-top .linkish { font-size: 16px; }
+.pk-s { padding: 0 16px 10px; display: flex; }
+.pk-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: 12px; border-top: 1px solid var(--line); }
+.pk-list .pym-o.in-g { padding-left: 28px; }
+.pk-list .pym-o i { display: flex; align-items: center; gap: 10px; flex: none; font-style: normal; }
+.pk-list .pym-o .pill { min-width: 0; }
+.pyx-pop .pyx-manage { align-self: flex-start; font-size: 12.5px; padding: 4px 10px 2px; }
 .ctx-menu { position: fixed; z-index: 95; min-width: 220px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 5px; }
 .ctx-menu button { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; border: 0; background: none; padding: 6px 10px; border-radius: 6px; font: 13px var(--ui); color: var(--ink); text-align: left; cursor: pointer; }
 .ctx-menu button:hover { background: var(--accent); color: var(--surface); }
@@ -1001,6 +1044,8 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
   :root[data-layout="phone"] .tools-r { margin-left: 0; }
   :root[data-layout="phone"] .welcome h1 { font-size: 34px; }
   :root[data-layout="phone"] #sheet { padding: 0; place-items: end stretch; }
+  /* a sheet on the phone should only ever scroll up and down */
+  :root[data-layout="phone"] .sheet-b { overflow-x: hidden; }
   :root[data-layout="phone"] .sheet, :root[data-layout="phone"] .sheet.wide { width: 100%; max-height: 92vh; border-radius: 18px 18px 0 0; }
   :root[data-layout="phone"] .grid2, :root[data-layout="phone"] .grid3 { grid-template-columns: 1fr; }
   :root[data-layout="phone"] .split { grid-template-columns: minmax(0, 1fr) 90px 32px; }
@@ -1189,6 +1234,20 @@ select:not(.ah-sel):not([multiple]):not(.title-sel select) {
   padding-right: 34px !important;
 }
 .tx-edit select:not([multiple]) { background-position: right 9px center !important; padding-right: 28px !important; }
+/* the number pad for money boxes on phones and tablets: sits where the keyboard would */
+#kp { position: fixed; left: 0; right: 0; bottom: 0; z-index: 155; background: var(--head-bg); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0,0,0,.14); padding: 6px 10px calc(10px + env(safe-area-inset-bottom, 0px)); user-select: none; -webkit-user-select: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.kp-top, .kp-keys { max-width: 520px; margin: 0 auto; }
+.kp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 0 2px 6px; }
+.kp-sum { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+.kp-done { border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font: 600 16px/1 var(--ui); padding: 10px 22px; }
+.kp-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.kp-keys button { height: 50px; border: 0; border-radius: 10px; background: var(--surface); color: var(--ink); font: 500 23px/1 var(--ui); box-shadow: 0 1px 0 rgba(0,0,0,.14); }
+.kp-keys button.kp-op { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.kp-keys button:active { filter: brightness(.9); }
+:root.kp-open body, :root.kp-open #zl-guide { padding-bottom: var(--kp-h, 320px); }
+:root.kp-open #sheet { padding-bottom: var(--kp-h, 320px); }
+:root.kp-open .sheet, :root.kp-open .sheet.wide { max-height: calc(100vh - var(--kp-h, 320px) - 12px); max-height: calc(100dvh - var(--kp-h, 320px) - 12px); }
+:root input.cents.kp-fresh { background: var(--accent-soft) !important; } /* the next digit replaces this amount */
 </style>
 
 <div class="app">

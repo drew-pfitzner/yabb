@@ -25,10 +25,10 @@
   }
 
   // ---------- money parsing ----------
-  // Accepts "12.50", "$1,200", "-4", and simple math like "50+25.5-3" or "600/3".
+  // Accepts "12.50", "$1,200", "-4", and simple math like "50+25.5-3", "600/3" or "25.00×3".
   function parseMoney(str) {
     if (typeof str === 'number') return Math.round(str * 100);
-    let s = String(str || '').replace(/[^0-9.+\-*/()]/g, '');
+    let s = String(str || '').replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/[^0-9.+\-*/()]/g, ''); // the number pad's − × ÷ too
     if (!s) return 0;
     if (!/^[0-9.+\-*/()]+$/.test(s)) return NaN;
     try {

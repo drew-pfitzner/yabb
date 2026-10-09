@@ -667,7 +667,7 @@
       <button class="b-edit" data-action="cat-edit" data-id="${id}" aria-label="Edit ${esc(c.name)}: target, name and more" title="Edit target, name and more"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <div class="b-bar">${bar(r.parts)}</div>
       ${tgtCell(r.target ? r.target.need : null, r.target ? tgtDesc(id, r) : '')}
-      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>
+      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span>${c.debtFor && D.debt[c.debtFor] === id ? `<button class="num spent-link" data-action="spent" data-id="${id}" title="Spending on the card moved in, less payments made. Click to see the transactions">${r.activity ? signed(r.activity) : money(0)}</button>` : `<button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-r.activity)}</button>`}</div>
       <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(c.name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
@@ -709,7 +709,7 @@
       </div>
       <div class="b-bar">${bar(g.parts)}</div>
       ${tgtCell(g.needSub || (g.target ? 0 : null), g.target ? tgtDesc(id, g) : g.needSub ? `Total of the targets inside ${c.name}` : '')}
-      <div class="b-asg"><label class="m-lbl" for="asgt-${id}">Assigned</label><input id="asgt-${id}" class="asg${D.tree.isLinkable(id) ? ' has-link' : ''}" data-mode="total" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(g.assigned)}" aria-label="Total assigned to ${esc(c.name)}" title="Total for ${esc(c.name)}. Changing it adds to or takes from Unallocated.">${linkBtn(id)}</div>
+      <div class="b-asg"><label class="m-lbl" for="asgt-${id}">Assigned</label><input id="asgt-${id}" class="asg cents${D.tree.isLinkable(id) ? ' has-link' : ''}" data-mode="total" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(g.assigned)}" aria-label="Total assigned to ${esc(c.name)}" title="Total for ${esc(c.name)}. Changing it adds to or takes from Unallocated.">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span><button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-g.activity)}</button></div>
       <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${g.status}" data-action="move" data-id="${id}" aria-label="Available in all of ${esc(c.name)}: ${money(g.available)}. Move money in or out of its Unallocated.">${money(g.available)}</button></div>
     </div>`;
@@ -721,7 +721,7 @@
       <div class="b-name"><span class="twisty-sp"></span><span class="cname muted" title="Money in ${esc(name)} not given to a subcategory">Unallocated</span>${tlineHTML(line)}</div>
       <div class="b-bar">${bar(r.parts)}</div>
       <div class="b-tgt"></div>
-      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Unallocated in ${esc(name)}"></div>
+      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Unallocated in ${esc(name)}"></div>
       <div class="b-act"><span class="m-lbl">Spent</span><span class="num">${money(-r.activity)}</span></div>
       <div class="b-avl"><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Unallocated in ${esc(name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
@@ -734,7 +734,7 @@
         ${tlineHTML(`<span class="tdesc">Money from before ${esc(name)} had subcategories. Set it to 0, or click the amount on the right to move it into a subcategory.</span>`)}</div>
       <div class="b-bar">${bar(r.parts)}</div>
       <div class="b-tgt"></div>
-      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg" inputmode="decimal" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(name)} itself"></div>
+      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(name)} itself"></div>
       <div class="b-act"><span class="m-lbl">Spent</span><span class="num">${money(-r.activity)}</span></div>
       <div class="b-avl"><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(name)} itself: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
@@ -756,7 +756,7 @@
     const total = input.dataset.mode === 'total';
     const cur = total ? D.month.roll[id].assigned : D.month.rows[id].assigned;
     const v = E.parseMoney(input.value);
-    if (Number.isNaN(v)) { toast('Enter an amount like 250 or 200+50.'); input.value = plain(cur); return; }
+    if (Number.isNaN(v)) { toast('Enter an amount, like 250.00.'); input.value = plain(cur); return; }
     if (v === cur) { input.value = plain(v); return; }
     const delta = v - cur;
     const map = { [id]: D.month.rows[id].assigned + delta };
@@ -960,7 +960,7 @@
     </div>`;
   }
   function targetFields(type, t) {
-    const amt = (id, label, v) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" inputmode="decimal" autocomplete="off" value="${v ? plain(v) : ''}" placeholder="0.00"></div>`;
+    const amt = (id, label, v) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" class="cents" inputmode="numeric" autocomplete="off" value="${v ? plain(v) : ''}" placeholder="0.00"></div>`;
     switch (type) {
       case 'refill': return amt('t-amount', 'Refill to', t.amount) + `<div class="field"><label for="t-day">Bill is due on day (optional)</label><input id="t-day" type="number" min="1" max="31" inputmode="numeric" value="${t.day || ''}" placeholder="e.g. 19"></div>`;
       case 'monthly': return amt('t-amount', 'Amount each month', t.amount);
@@ -1149,7 +1149,7 @@
     openSheet({
       title: av < 0 && id !== INCOME ? 'Cover overspending' : 'Move money',
       body: `<div class="move">
-        <div class="field"><label for="mv-amt">Amount</label><input id="mv-amt" inputmode="decimal" autocomplete="off" value="${amount ? plain(amount) : ''}" placeholder="0.00"></div>
+        <div class="field"><label for="mv-amt">Amount</label><input id="mv-amt" class="cents" inputmode="numeric" autocomplete="off" value="${amount ? plain(amount) : ''}" placeholder="0.00"></div>
         <div class="field"><label for="mv-from">Take from</label><select id="mv-from">${catOptions(from, { avail: true })}</select></div>
         <button class="icon-btn swap" data-saction="swap" aria-label="Swap from and to">${ICON.swap}</button>
         <div class="field"><label for="mv-to">Give to</label><select id="mv-to">${catOptions(to, { avail: true })}</select></div>
@@ -1310,7 +1310,7 @@
           ${popAcct != null ? `<div class="rec-pop" role="dialog" aria-label="Start reconciling">
             ${open.length > 1 || !popAcct ? `<div class="field"><label for="rec-acct">Account</label><select id="rec-acct"><option value="">Choose an account</option>${open.map((a) => `<option value="${a.id}" ${a.id === popAcct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>` : ''}
             ${(() => { const bb = popAcct ? S.items('bankbal')[popAcct] || {} : {}, last = Object.keys(bb).sort().pop(); const v = last != null ? (isDebt(popAcct) ? -bb[last] : bb[last]) : null;
-              return `<div class="field"><label for="rec-bank">Bank's current balance</label><input id="rec-bank" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${v != null ? plain(v) : ''}"></div>${v != null ? `<p class="hint">Filled in from your last bank file (end of ${esc(dateLabel(last))}). Check it matches your banking app.</p>` : ''}`; })()}
+              return `<div class="field"><label for="rec-bank">Bank's current balance</label><input id="rec-bank" class="cents" inputmode="numeric" autocomplete="off" placeholder="0.00" value="${v != null ? plain(v) : ''}"></div>${v != null ? `<p class="hint">Filled in from your last bank file (end of ${esc(dateLabel(last))}). Check it matches your banking app.</p>` : ''}`; })()}
             ${popAcct && isDebt(popAcct) ? '<p class="hint">For a card or loan, type the amount owing.</p>' : ''}
             <p class="hint">Use the balance in your banking app. If your bank file had pending "POS" lines, use the <b>available</b> balance.</p>
             <div class="row-btns"><button class="btn sm primary" data-action="rec-start">Start</button><button class="btn sm" data-action="rec-pop-close">Cancel</button></div>
@@ -1419,7 +1419,7 @@
     return `<div id="multi-bar" role="region" aria-label="Selected transactions">
       <div class="mb-line"><b>${ids.length} selected</b><span class="muted">Total ${signed(total)}</span>${act}${ok}${del}<button class="btn sm" data-action="multi-clear">Clear</button></div>
       <div class="mb-line mb-edit">
-        <span class="mb-f"><input id="mb-payee" list="payee-list-inline" placeholder="New payee for all" autocomplete="off" data-live="0" aria-label="Payee for all of them"><button class="btn sm" data-action="multi-payee">Set payee</button></span>
+        <span class="mb-f"><input id="mb-payee" data-payee="1" ${isPhone() ? 'readonly ' : ''}placeholder="New payee for all" autocomplete="off" data-live="0" aria-label="Payee for all of them"><button class="btn sm" data-action="multi-payee">Set payee</button></span>
         <span class="mb-f"><select id="mb-cat" aria-label="Category for all of them"><option value="">Set category for all&hellip;</option>${catOptions('', { blank: false, forTx: true })}</select></span>
         <span class="mb-f mb-n"><input id="mb-note" placeholder="Note" autocomplete="off" data-live="0" aria-label="Note for all of them"><button class="btn sm" data-action="multi-note" data-how="set">Replace notes</button><button class="btn sm" data-action="multi-note" data-how="add">Add to notes</button></span>
       </div></div>`;
@@ -1479,7 +1479,7 @@
     const r = UI.rec, { diff } = recState();
     return `<div class="rec-bar ${diff ? 'off' : 'ok'}" title="${diff ? (diff < 0 ? 'YNABB has more than the bank' : 'YNABB has less than the bank') + '. Rows tagged in red are worth checking first.' : 'Everything adds up to the bank balance'}">
         <span class="rb-title"><b>Reconciling</b></span>
-        <label class="rb-n">${isDebt(r.acct) ? 'Owing' : 'Bank'} <input id="rec-bank-live" inputmode="decimal" autocomplete="off" data-live="0" value="${plain(isDebt(r.acct) ? -r.bank : r.bank)}" aria-label="Bank balance"></label>
+        <label class="rb-n">${isDebt(r.acct) ? 'Owing' : 'Bank'} <input id="rec-bank-live" class="cents" inputmode="numeric" autocomplete="off" data-live="0" value="${plain(isDebt(r.acct) ? -r.bank : r.bank)}" aria-label="Bank balance"></label>
         <span class="rb-n rb-diff">${diff ? `${diff < 0 ? 'Over' : 'Under'} by <b>${money(Math.abs(diff))}</b>` : '<b>Matches &#10003;</b>'}</span>
         ${recChecks()}
         <span class="rb-act">${diff ? `<button class="linkish" data-action="bank-check" title="Compare day by day with your bank file to find where it went wrong">Find where</button> <button class="linkish" data-action="rec-adjust" title="Adds a ${esc(signed(diff))} adjustment so it matches, then finishes">Adjust</button>` : '<button class="btn xs primary" data-action="rec-finish">Finish</button>'}
@@ -1535,8 +1535,8 @@
             <div class="field"><label for="f-cat">Category</label><select id="f-cat" data-filter="cat" data-live="0"><option value="">All categories</option><option value="_none" ${f.cat === '_none' ? 'selected' : ''}>Uncategorized</option><option value="${INCOME}" ${f.cat === INCOME ? 'selected' : ''}>Ready to Assign (income)</option>${D.tree.order.map((id) => `<option value="${id}" ${f.cat === id ? 'selected' : ''}>${esc(D.tree.path[id].join(' › '))}</option>`).join('')}</select></div>
             <div class="field"><label for="f-from">From</label><input id="f-from" type="date" data-filter="from" data-live="0" value="${f.from}"></div>
             <div class="field"><label for="f-to">To</label><input id="f-to" type="date" data-filter="to" data-live="0" value="${f.to}"></div>
-            <div class="field"><label for="f-min">Amount from</label><input id="f-min" inputmode="decimal" data-filter="min" data-live="0" value="${esc(f.min)}" placeholder="0.00"></div>
-            <div class="field"><label for="f-max">Amount to</label><input id="f-max" inputmode="decimal" data-filter="max" data-live="0" value="${esc(f.max)}" placeholder="Any"></div>
+            <div class="field"><label for="f-min">Amount from</label><input id="f-min" class="cents" inputmode="numeric" autocomplete="off" data-filter="min" data-live="0" value="${esc(f.min)}" placeholder="0.00"></div>
+            <div class="field"><label for="f-max">Amount to</label><input id="f-max" class="cents" inputmode="numeric" autocomplete="off" data-filter="max" data-live="0" value="${esc(f.max)}" placeholder="Any"></div>
             <div class="field"><label for="f-status">Show</label><select id="f-status" data-filter="status" data-live="0">
               ${[['', 'Everything'], ['review', 'Needs review'], ['uncleared', 'Not yet cleared by the bank'], ['receipt', 'Has a receipt'], ['noreceipt', 'No receipt']].map(([v, l]) => `<option value="${v}" ${f.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
             <div class="field end"><button class="btn sm" data-action="clear-filters">Clear all</button><button class="btn sm primary" data-action="toggle-filters">Done</button></div>
@@ -1559,7 +1559,6 @@
           ${!review && toReview ? `<button class="btn sm" data-action="goto-review">Review imported <b class="count">${toReview}</b></button>` : ''}
         </div>
       </div>
-      <datalist id="payee-list-inline">${payeeNames().map((p) => `<option value="${esc(p)}">`).join('')}</datalist>
       <div class="txl${byDay ? ' by-day' : ''} ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
         ${shown.length ? txHeader() : ''}
         ${multiBar()}${shown.map((t, i) => (byDay && (i === 0 || shown[i - 1].date !== t.date) ? `<div class="tx-day" role="presentation">${esc(dateLabel(t.date))}</div>` : '') + txRow(t) + bcMark(t)).join('') || `<p class="empty-note">${D.tx.length ? 'No transactions match.' : 'No transactions yet. Add one, or import a file from your bank.'}</p>`}
@@ -1594,12 +1593,12 @@
       <div class="t-side t-lead">${t.match ? `<button class="ic ic-match" data-action="approve" data-id="${t.id}" title="Same purchase: approve" aria-label="Approve match">${t.match.kind === 'update' ? ICON.redo : ICON.link}</button><button class="ic ic-unlink" data-action="unmatch" data-id="${t.id}" title="${t.match.kind === 'update' ? 'Different purchases: keep both' : 'Different: split them'}" aria-label="Split them">${ICON.unlink}</button>` : t.approved === false ? `<button class="ic ic-approve" data-action="approve" data-id="${t.id}" title="Approve" aria-label="Approve">${ICON.tick}</button>` : ''}</div>
       <div class="tx-main tx-edit">
         <span class="t-date ie-datewrap"><input id="ie-date" type="text" inputmode="numeric" autocomplete="off" value="${esc(shortDate(v('date', t.date)))}" placeholder="dd/mm/yy" aria-label="Date (dd/mm/yy)"><button type="button" class="ie-cal" data-action="ie-cal" tabindex="-1" aria-label="Pick a date" title="Pick a date"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 8.5h14M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><input type="date" id="ie-date-pick" class="ie-pick" tabindex="-1" aria-hidden="true" value="${esc(isoOr(v('date', t.date), t.date))}"></span>
-        <input id="ie-payee" class="t-payee" list="payee-list-inline" autocomplete="off" value="${esc(v('payee', t.payee || ''))}" placeholder="Payee" aria-label="Payee">
+        <input id="ie-payee" class="t-payee" data-payee="1" autocomplete="off" value="${esc(v('payee', t.payee || ''))}" placeholder="Payee" aria-label="Payee">
         <select id="ie-cat" class="t-cat" aria-label="Category">${opts}</select>
         <span class="t-ac">${esc(acctName(acct))}</span>
         <textarea id="ie-bank" class="t-bank" rows="1" placeholder="Bank description" aria-label="Bank description">${esc(v('bank', t.bank || ''))}</textarea>
         <input id="ie-memo" class="t-memo" autocomplete="off" value="${esc(v('memo', t.memo || ''))}" placeholder="Note" aria-label="Note">
-        <input id="ie-amt" class="t-amt" inputmode="decimal" autocomplete="off" value="${esc(v('amt', plain(t.amt)))}" aria-label="Amount (minus for money out)">
+        <input id="ie-amt" class="t-amt cents" inputmode="numeric" autocomplete="off" value="${esc(v('amt', plain(t.amt)))}" aria-label="Amount (minus for money out)">
         <div class="ie-extra">
           ${openAccts.length > 1 ? `<label class="ie-x">Account <select id="ie-acct" aria-label="Account">${openAccts.map((a) => `<option value="${a.id}" ${a.id === acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>` : ''}
           ${receipt ? `<span class="ie-x">${ICON.receipt}<button class="linkish" data-action="ie-rcpt-view">Receipt</button><button class="linkish" data-action="ie-rcpt-rm" title="Remove the receipt">Remove</button></span>`
@@ -1616,7 +1615,7 @@
       ${d.splits ? `<div class="ie-splits">
         ${d.splits.map((p, i) => `<div class="ie-sp">
           <select id="ie-sp-cat-${i}" aria-label="Split ${i + 1} category">${catOptions(p.cat || '', { blankLabel: 'Uncategorized', forTx: true })}</select>
-          <input id="ie-sp-amt-${i}" inputmode="decimal" autocomplete="off" value="${esc(p.amt || '')}" placeholder="0.00" aria-label="Split ${i + 1} amount">
+          <input id="ie-sp-amt-${i}" class="cents" inputmode="numeric" autocomplete="off" value="${esc(p.amt || '')}" placeholder="0.00" aria-label="Split ${i + 1} amount">
           <input id="ie-sp-memo-${i}" autocomplete="off" value="${esc(p.memo || '')}" placeholder="Note" aria-label="Split ${i + 1} note">
           <button class="ic" data-action="ie-sp-rm" data-i="${i}" title="Remove this line" aria-label="Remove split ${i + 1}">&times;</button>
         </div>`).join('')}
@@ -1785,7 +1784,6 @@
     let splits = t.splits && t.splits.length ? t.splits.map((p) => Object.assign({}, p)) : null;
     let dir = t.amt > 0 ? 'in' : 'out';
     let receipt = t.receipt || null, receiptType = t.receiptType || null;
-    const payees = payeeNames();
     const reconciled = t.cleared === 'r';
 
     const catSel = () => {
@@ -1796,7 +1794,7 @@
     };
     const splitRows = () => splits.map((p, i) => `<div class="split" data-i="${i}">
         <select id="sp-cat-${i}" aria-label="Split ${i + 1} category">${catOptions(p.cat || '', { blankLabel: 'Uncategorized', forTx: true })}</select>
-        <input id="sp-amt-${i}" inputmode="decimal" value="${p.amt ? plain(Math.abs(p.amt)) : ''}" placeholder="0.00" aria-label="Split ${i + 1} amount">
+        <input id="sp-amt-${i}" class="cents" inputmode="numeric" autocomplete="off" value="${p.amt ? plain(Math.abs(p.amt)) : ''}" placeholder="0.00" aria-label="Split ${i + 1} amount">
         <input id="sp-memo-${i}" value="${esc(p.memo || '')}" placeholder="Note" aria-label="Split ${i + 1} note">
         <button class="icon-btn" data-saction="rm-split" data-i="${i}" aria-label="Remove split ${i + 1}">×</button>
       </div>`).join('');
@@ -1813,10 +1811,10 @@
         <button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">Money in</button>
       </div>
       <div class="grid2">
-        <div class="field"><label for="tx-amt">Amount</label><input id="tx-amt" inputmode="decimal" autocomplete="off" value="${t.amt ? plain(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
+        <div class="field"><label for="tx-amt">Amount</label><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? plain(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
         <div class="field"><label for="tx-date">Date</label><input id="tx-date" type="date" value="${t.date}"></div>
       </div>
-      <div class="field"><label for="tx-payee">Payee or business</label><input id="tx-payee" list="payee-list" autocomplete="off" value="${esc(t.payee || '')}" placeholder="Who was paid, or who paid you"><datalist id="payee-list">${payees.map((p) => `<option value="${esc(p)}">`).join('')}</datalist></div>
+      <div class="field"><label for="tx-payee">Payee or business</label><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" ${isPhone() ? 'readonly placeholder="Tap to choose a payee"' : 'placeholder="Type to search your payees"'}></div>
       <div class="field"><label for="tx-acct">Account</label><select id="tx-acct">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
       ${splits ? `<div class="field"><span class="lbl">Split between categories</span><div id="splits">${splitRows()}</div>
           <div class="row-btns"><button class="btn sm" data-saction="add-split">${ICON.plus} Add line</button><button class="btn sm" data-saction="unsplit">Stop splitting</button><span id="split-left" class="hint"></span></div></div>`
@@ -2705,16 +2703,16 @@
       title: isNew ? 'Add account' : 'Account',
       body: `<div class="field"><label for="ac-name">Name</label><input id="ac-name" value="${esc(a.name)}" placeholder="e.g. Joint everyday, Visa, Car loan" autocomplete="off"></div>
         <div class="field"><label for="ac-type">Type</label><select id="ac-type">${Object.keys(ATYPES).map((k) => `<option value="${k}" ${a.type === k ? 'selected' : ''}>${ATYPES[k]}</option>`).join('')}</select></div>
-        ${isNew ? `<div class="grid2"><div class="field"><label for="ac-bal" id="ac-bal-l">Balance today</label><input id="ac-bal" inputmode="decimal" placeholder="0.00"></div><div class="field"><label for="ac-date">As of</label><input id="ac-date" type="date" value="${E.todayISO()}"></div></div>
+        ${isNew ? `<div class="grid2"><div class="field"><label for="ac-bal" id="ac-bal-l">Balance today</label><input id="ac-bal" class="cents" inputmode="numeric" autocomplete="off" placeholder="0.00"></div><div class="field"><label for="ac-date">As of</label><input id="ac-date" type="date" value="${E.todayISO()}"></div></div>
           <p class="hint" id="ac-hint"></p>` : ''}
         <div id="ac-debt">
           <div class="grid2">
             <div class="field"><label for="ac-rate">Interest rate (% a year)</label><input id="ac-rate" inputmode="decimal" placeholder="e.g. 19.99" value="${a.rate || ''}"></div>
-            <div class="field"><label for="ac-pay">Repayment each month</label><input id="ac-pay" inputmode="decimal" placeholder="optional" value="${a.payment ? plain(a.payment) : ''}"></div>
+            <div class="field"><label for="ac-pay">Repayment each month</label><input id="ac-pay" class="cents" inputmode="numeric" autocomplete="off" placeholder="optional" value="${a.payment ? plain(a.payment) : ''}"></div>
           </div>
           <div class="grid2">
-            <div class="field"><label for="ac-min">Minimum payment each month</label><input id="ac-min" inputmode="decimal" placeholder="${a.type === 'credit' ? 'from your statement' : 'same as the repayment'}" value="${a.minPay != null ? plain(a.minPay) : ''}"></div>
-            <div class="field" id="ac-limit-f"><label for="ac-limit">Credit limit</label><input id="ac-limit" inputmode="decimal" placeholder="optional" value="${a.limit ? plain(a.limit) : ''}"></div>
+            <div class="field"><label for="ac-min">Minimum payment each month</label><input id="ac-min" class="cents" inputmode="numeric" autocomplete="off" placeholder="${a.type === 'credit' ? 'from your statement' : 'same as the repayment'}" value="${a.minPay != null ? plain(a.minPay) : ''}"></div>
+            <div class="field" id="ac-limit-f"><label for="ac-limit">Credit limit</label><input id="ac-limit" class="cents" inputmode="numeric" autocomplete="off" placeholder="optional" value="${a.limit ? plain(a.limit) : ''}"></div>
           </div>
           <p class="hint">The minimum payment counts as a need in "Where this month's budget is going". Anything extra counts as freedom. For a loan, leave it blank to use the repayment. ${isNew ? 'A repayment amount becomes the monthly target for its payment category.' : ''}</p>
         </div>
@@ -2795,9 +2793,9 @@
       body: `<p>You owe <b>${money(owing)}</b>${payCat ? `, and <b>${money(payAvail(id))}</b> is ready to pay it in the ${esc(D.cats[payCat].name)} payment category` : ''}.</p>
         <div class="grid2">
           <div class="field"><label for="po-rate">Interest rate (% a year)</label><input id="po-rate" inputmode="decimal" value="${a.rate || ''}" placeholder="e.g. 19.99"></div>
-          <div class="field"><label for="po-pay">Repayment each month</label><input id="po-pay" inputmode="decimal" value="${plain(a.payment || tgt || Math.max(2500, Math.round(owing * 0.03)))}"></div>
+          <div class="field"><label for="po-pay">Repayment each month</label><input id="po-pay" class="cents" inputmode="numeric" autocomplete="off" value="${plain(a.payment || tgt || Math.max(2500, Math.round(owing * 0.03)))}"></div>
         </div>
-        <div class="field"><label for="po-extra">Extra each month, to see what it saves</label><input id="po-extra" inputmode="decimal" value="0"></div>
+        <div class="field"><label for="po-extra">Extra each month, to see what it saves</label><input id="po-extra" class="cents" inputmode="numeric" autocomplete="off" value="0"></div>
         <div id="po-out"></div>
         ${a.type === 'credit' ? '<p class="fine">Using the card for everyday spending is fine: that spending moves into the payment category by itself, so pay the card from there. This plan is for the balance you already carry.</p>' : ''}`,
       foot: `${payCat ? '<button class="btn primary" data-saction="target">Make it the monthly target</button>' : ''}<button class="btn" data-saction="save">Save rate and repayment</button>`,
@@ -3009,7 +3007,7 @@
       <h3>Targets: add this much every month</h3>
       <p class="fine">YNAB's export doesn't include targets, so these come from what you usually assigned over your last ${Object.values(res.targets)[0] ? Object.values(res.targets)[0].of : 6} months. Change any amount or untick ones you don't want.</p>
       <label class="check"><input type="checkbox" id="yt-all" checked> All</label>
-      <div class="ynab-tbl">${tgtIds.map((id) => `<div class="ynab-row tgt"><label class="check"><input type="checkbox" data-ytgt="${id}" checked><span>${esc(res.cats[id].name)}</span></label><span class="fine">${res.targets[id].times > 1 ? `${res.targets[id].times} of ${res.targets[id].of} months` : 'last month'}</span><input class="num" inputmode="decimal" data-yamt="${id}" value="${plain(res.targets[id].amount)}" aria-label="Monthly target for ${esc(res.cats[id].name)}"></div>`).join('')}</div>
+      <div class="ynab-tbl">${tgtIds.map((id) => `<div class="ynab-row tgt"><label class="check"><input type="checkbox" data-ytgt="${id}" checked><span>${esc(res.cats[id].name)}</span></label><span class="fine">${res.targets[id].times > 1 ? `${res.targets[id].times} of ${res.targets[id].of} months` : 'last month'}</span><input class="num cents" inputmode="numeric" autocomplete="off" data-yamt="${id}" value="${plain(res.targets[id].amount)}" aria-label="Monthly target for ${esc(res.cats[id].name)}"></div>`).join('')}</div>
 
       <h3>Replace this budget</h3>
       <p>${have ? '<b>This replaces everything in YNABB</b> (categories, accounts, transactions and assigning) for you and your partner.' : 'This fills your empty budget.'} Your currency and layout settings stay. Learned payees and bank-import history are cleared.</p>
@@ -3487,7 +3485,12 @@
       qTimer = setTimeout(render, 180);
     }
   });
-  document.addEventListener('focusin', (ev) => { if (ev.target.classList && ev.target.classList.contains('asg')) setTimeout(() => ev.target.select(), 0); });
+  document.addEventListener('focusin', (ev) => {
+    const el = ev.target;
+    if (!el.classList) return;
+    if (el.classList.contains('cents') && kpOn()) { kpOpen(el); return; }
+    if (el.classList.contains('asg') || el.classList.contains('cents')) setTimeout(() => el.select(), 0);
+  });
   // each click, edit or key press starts a new undo step
   ['click', 'change', 'keydown'].forEach((t) => document.addEventListener(t, () => S.newStep(), true));
   const MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -3603,6 +3606,146 @@
     el.value = el.value.replace(/[^0-9.,+\-*/()$\s]/g, ''); // pasted text with letters in it
   }, true);
 
+  // ---------- money boxes: fill in from the right, and do sums ----------
+  // Like a card terminal: the cents are always there, so typing 1 0 0 gives 1.00 and a typed dot is skipped. Each amount
+  // in a sum fills the same way (2500 + 1000 shows 25.00+10.00), but after × or ÷ it's a plain count (25.00×3).
+  // Leaving the box works the sum out. On a phone or tablet our own number pad replaces the system keyboard.
+  const centsFmt = (c, neg) => (neg ? '-' : '') + (c / 100).toFixed(2);
+  const CALC_OP = /([+−×÷])/;
+  const isSum = (s) => /[+\-−×÷*/]/.test(String(s).trim().slice(1));
+  const calcValue = (s) => E.parseMoney(String(s).replace(/[+\-−×÷*/\s]+$/, ''));
+  const calcTerms = (s) => {
+    s = String(s || '').replace(/[\s,$]/g, '').replace(/\*/g, '×').replace(/\//g, '÷');
+    const neg = s[0] === '-' || s[0] === '−';
+    const p = (neg ? s.slice(1) : s).replace(/-/g, '−').split(CALC_OP), terms = [{ op: '', v: p[0] }];
+    for (let i = 1; i < p.length; i += 2) terms.push({ op: p[i], v: p[i + 1] });
+    return { neg, terms };
+  };
+  // one key press: a digit, '.', + − × ÷, '±', '⌫', or 'neg' (a typed minus, which starts a negative amount)
+  const calcKey = (s, k, fresh) => {
+    let x = calcTerms(s);
+    if (fresh) {
+      if (k === '⌫') return '';
+      if (k === 'neg') return '-';
+      if (/^[\d.]$/.test(k)) x = { neg: x.neg, terms: [{ op: '', v: '' }] }; // typing over the amount keeps its sign
+    }
+    const last = x.terms[x.terms.length - 1], count = last.op === '×' || last.op === '÷', only = x.terms.length === 1;
+    const c = Math.round(Number(last.v || 0) * 100);
+    if (k === 'neg') k = only && !last.v ? '±' : '−';
+    if (/^\d$/.test(k)) {
+      if (count) { if (last.v.length >= 9) return null; last.v = (last.v === '0' ? '' : last.v) + k; }
+      else { const n = c * 10 + Number(k); if (n >= 1e11) return null; last.v = (n / 100).toFixed(2); }
+    } else if (k === '.') {
+      if (!count || last.v.includes('.')) return null;
+      last.v = (last.v || '0') + '.';
+    } else if (k === '⌫') {
+      if (!last.v) { if (!only) x.terms.pop(); else if (x.neg) x.neg = false; else return null; }
+      else if (count) last.v = last.v.slice(0, -1);
+      else { const n = Math.floor(c / 10); last.v = n ? (n / 100).toFixed(2) : ''; }
+    } else if (CALC_OP.test(k)) {
+      if (last.v) x.terms.push({ op: k, v: '' });
+      else if (!only) last.op = k; // change your mind about the sign
+      else if (k === '−') x.neg = !x.neg;
+      else if (k === '+') x.neg = false;
+      else return null;
+    } else if (k === '±') {
+      const v = calcValue(s);
+      if (only) x.neg = !x.neg;
+      else if (!Number.isNaN(v)) x = { neg: v > 0, terms: [{ op: '', v: (Math.abs(v) / 100).toFixed(2) }] };
+    } else return null;
+    return (x.neg ? '-' : '') + x.terms.map((t) => t.op + t.v).join('');
+  };
+  const calcSet = (el, out) => {
+    el.value = out;
+    try { el.setSelectionRange(out.length, out.length); } catch (e) { /* not focused */ }
+    el.scrollLeft = el.scrollWidth; // a long sum shows its newest end
+    el.centsDirty = true;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    kpPaint();
+  };
+  const calcPress = (el, k) => {
+    const all = el.selectionStart === 0 && el.selectionEnd === el.value.length;
+    const out = calcKey(el.value, k, el.value !== '' && (all || el.kpFresh));
+    if (out == null) return;
+    el.kpFresh = false; el.classList.remove('kp-fresh');
+    calcSet(el, out);
+  };
+  const KEY_AS = { '-': 'neg', '−': 'neg', '*': '×', x: '×', X: '×', '/': '÷' };
+  document.addEventListener('beforeinput', (ev) => {
+    const el = ev.target;
+    if (el.tagName !== 'INPUT' || !el.classList.contains('cents')) return;
+    const t = ev.inputType;
+    if (t === 'historyUndo' || t === 'historyRedo') return;
+    ev.preventDefault();
+    if (t === 'insertFromPaste' || t === 'insertFromDrop') {
+      const txt = (ev.dataTransfer && ev.dataTransfer.getData('text/plain')) || ev.data || '', v = E.parseMoney(txt);
+      if (txt.trim() && !Number.isNaN(v)) calcSet(el, centsFmt(Math.abs(v), v < 0));
+    } else if (t.indexOf('delete') === 0) calcPress(el, '⌫');
+    else if (t.indexOf('insert') === 0) for (const ch of ev.data || '') calcPress(el, KEY_AS[ch] || ch);
+  }, true);
+  // the browser skips its own 'change' when the script typed the text, so send it on leaving the box;
+  // either way, a sum is worked out before anything else reads the box
+  document.addEventListener('change', (ev) => {
+    const el = ev.target;
+    el.centsDirty = false;
+    if (!el.classList || !el.classList.contains('cents')) return;
+    if (el.value.trim() === '-') el.value = '';
+    else if (isSum(el.value)) { const v = calcValue(el.value); if (!Number.isNaN(v)) el.value = centsFmt(Math.abs(v), v < 0); }
+  }, true);
+  document.addEventListener('focusout', (ev) => {
+    const el = ev.target;
+    if (el.centsDirty) { el.centsDirty = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+  }, true);
+
+  // ---------- the number pad (phones and tablets) ----------
+  // Taps on the pad never take the focus, so the box keeps its cursor and the system keyboard stays away.
+  const kpOn = () => matchMedia('(pointer: coarse)').matches;
+  let kp = null, kpEl = null;
+  const KP_KEYS = [['7'], ['8'], ['9'], ['÷', 'Divide'], ['4'], ['5'], ['6'], ['×', 'Times'], ['1'], ['2'], ['3'], ['−', 'Minus'], ['±', 'Money in or out'], ['0'], ['⌫', 'Delete'], ['+', 'Plus']];
+  function kpPaint() {
+    if (!kp || kp.hidden || !kpEl) return;
+    const v = isSum(kpEl.value) ? calcValue(kpEl.value) : NaN;
+    $('.kp-sum', kp).textContent = Number.isNaN(v) ? '' : '= ' + money(v);
+  }
+  function kpOpen(el) {
+    if (!kp) {
+      kp = document.createElement('div');
+      kp.id = 'kp'; kp.hidden = true;
+      kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', 'Number pad');
+      kp.innerHTML = `<div class="kp-top"><span class="kp-sum" aria-live="polite"></span><button type="button" class="kp-done" data-k="done">Done</button></div>
+        <div class="kp-keys">${KP_KEYS.map(([k, l]) => `<button type="button" data-k="${k}"${/[÷×−+±⌫]/.test(k) ? ' class="kp-op"' : ''}${l ? ` aria-label="${l}"` : ''}>${k}</button>`).join('')}</div>`;
+      ['pointerdown', 'mousedown'].forEach((t) => kp.addEventListener(t, (e) => e.preventDefault()));
+      kp.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-k]');
+        if (!b || !kpEl) return;
+        if (b.dataset.k === 'done') kpEl.blur(); else calcPress(kpEl, b.dataset.k);
+      });
+      document.body.appendChild(kp);
+    }
+    kpEl = el;
+    el.inputMode = 'none';
+    el.kpFresh = el.value !== '';
+    el.classList.toggle('kp-fresh', el.kpFresh);
+    kp.hidden = false;
+    document.documentElement.classList.add('kp-open');
+    document.documentElement.style.setProperty('--kp-h', kp.offsetHeight + 'px');
+    kpPaint();
+    requestAnimationFrame(() => { const r = el.getBoundingClientRect(); if (r.bottom > innerHeight - kp.offsetHeight - 8 || r.top < 0) el.scrollIntoView({ block: 'center' }); });
+  }
+  // set before the tap focuses the box, so the phone never starts to open its own keyboard
+  document.addEventListener('touchstart', (ev) => { const el = ev.target; if (el.classList && el.classList.contains('cents')) el.inputMode = 'none'; }, { capture: true, passive: true });
+  document.addEventListener('focusout', (ev) => {
+    const el = ev.target;
+    if (!el.classList || !el.classList.contains('cents')) return;
+    el.kpFresh = false; el.classList.remove('kp-fresh');
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (!kp || (a && a.classList && a.classList.contains('cents'))) return;
+      kp.hidden = true; kpEl = null;
+      document.documentElement.classList.remove('kp-open');
+    }, 0);
+  });
+
   // ---------- searchable drop-downs (computer layout) ----------
   // The page's own <select> stays as the box you see; only its pop-up list is replaced.
   let cbx = null;
@@ -3684,6 +3827,295 @@
   }, true);
   addEventListener('resize', closeCombo);
   addEventListener('scroll', (ev) => { if (cbx && !(ev.target.closest && ev.target.closest('.cbx-pop'))) closeCombo(); }, true);
+
+  // ---------- payee search (any box marked data-payee) ----------
+  // Typing searches the payees you already have, so you pick the same name each time instead of a near-copy.
+  // A name that's not on the list is kept as a new payee only when you choose that line (or just carry on typing).
+  let pyx = null, pyxQuiet = false;
+  const fold = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  function typoGap(a, b) { // letters you'd change to turn one into the other (gives up past 3)
+    if (Math.abs(a.length - b.length) > 2) return 9;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (Math.min(...cur) > 3) return 9;
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  // each payee once, busiest first, with how many transactions use it
+  function payeeChoices() {
+    const count = {};
+    for (const t of D.tx) if (t.payee) count[t.payee] = (count[t.payee] || 0) + 1;
+    // payees made in Manage payees count too, even before they have a transaction
+    const prefs = payeePrefs(), made = myRules().filter((r) => r.byPayee && r.payee).map((r) => r.payee).concat(Object.keys(prefs));
+    return Array.from(new Set(payeeNames().concat(made.filter((n) => !(prefs[n] && prefs[n].hidden))))).filter((n) => !/^(starting balance|reconciliation adjustment)$/i.test(n))
+      .map((name) => ({ name, f: fold(name), n: count[name] || 0 })).sort((a, b) => b.n - a.n || (a.name < b.name ? -1 : 1));
+  }
+  // what you typed against your payees: ones containing it, likely typos, and whether it's already there
+  function payeeMatches(all, typed) {
+    const q = fold(typed), words = q.split(' ').filter(Boolean);
+    if (!q) return { q, found: all.slice(0, 200), near: [], exact: null };
+    const score = (n) => (n.f === q ? 0 : n.f.indexOf(q) === 0 ? 1 : (' ' + n.f).indexOf(' ' + words[0]) >= 0 ? 2 : 3);
+    const found = all.filter((n) => words.every((w) => n.f.includes(w))).sort((a, b) => score(a) - score(b) || b.n - a.n).slice(0, 60);
+    const near = q.length < 4 ? [] : all.filter((n) => !found.includes(n) && Math.min(typoGap(q, n.f), typoGap(q, n.f.slice(0, q.length)), typoGap(q, n.f.slice(0, q.length + 1))) <= (q.length < 7 ? 1 : 2)).sort((a, b) => b.n - a.n).slice(0, 3);
+    return { q, found, near, exact: all.find((n) => n.f === q) || null };
+  }
+  const usedTag = (n) => (n ? `<small title="Used ${n} time${n === 1 ? '' : 's'}">${n}</small>` : '');
+
+  // computer: a list drops down under the box as you type
+  function closePayee() { if (pyx) { pyx.pop.remove(); pyx = null; } }
+  function placePayee() {
+    if (!pyx) return;
+    if (!document.body.contains(pyx.el)) { closePayee(); return; }
+    const z = zoomOf(), r = pyx.el.getBoundingClientRect(), below = (innerHeight - r.bottom) / z;
+    const w = Math.max(r.width / z, 240);
+    pyx.pop.style.width = w + 'px';
+    pyx.pop.style.left = Math.max(8, Math.min(r.left / z, (innerWidth / z) - w - 8)) + 'px';
+    pyx.pop.style.top = pyx.pop.style.bottom = '';
+    const up = below < 220 && r.top / z > below;
+    if (up) pyx.pop.style.bottom = (innerHeight / z - r.top / z + 4) + 'px'; else pyx.pop.style.top = (r.bottom / z + 4) + 'px';
+    pyx.pop.style.maxHeight = Math.max(140, Math.min(320, (up ? r.top / z : below) - 12)) + 'px';
+  }
+  function paintPayee() {
+    const { el, list } = pyx, typed = el.value.trim(), { q, found, near, exact } = payeeMatches(pyx.names, typed);
+    pyx.opts = found.map((n) => ({ v: n.name, n: n.n })).concat(near.map((n) => ({ v: n.name, n: n.n, near: true })));
+    if (typed && !exact) pyx.opts.push({ v: typed, add: true });
+    if (pyx.hi == null || pyx.hi >= pyx.opts.length) pyx.hi = !q ? -1 : exact ? pyx.opts.findIndex((o) => o.v === exact.name) : found.length ? 0 : pyx.opts.length - 1;
+    let html = !q && found.length ? '<div class="cbx-g">Your payees</div>' : '';
+    pyx.opts.forEach((o, i) => {
+      if (o.near && (i === 0 || !pyx.opts[i - 1].near)) html += '<div class="cbx-g">Did you mean</div>';
+      const cls = `cbx-o${i === pyx.hi ? ' hi' : ''}${o.add ? ' pyx-add' : ''}`;
+      html += o.add ? `<div class="${cls}" data-i="${i}" role="option">+ New payee “${esc(o.v)}”</div>` : `<div class="${cls}" data-i="${i}" role="option"><span>${esc(o.v)}</span>${usedTag(o.n)}</div>`;
+    });
+    list.innerHTML = html || '<div class="cbx-none">No payees yet. Type a name to add one.</div>';
+    const h = list.querySelector('.hi'); if (h) h.scrollIntoView({ block: 'nearest' });
+  }
+  function openPayee(el) {
+    if (isPhone() || (pyx && pyx.el === el)) return;
+    closePayee(); closeCombo();
+    const pop = document.createElement('div');
+    pop.className = 'cbx-pop pyx-pop';
+    // the side sheet would close to show the manager, so only offer it where nothing typed gets lost
+    pop.innerHTML = '<div class="cbx-list" role="listbox"></div>' + (el.closest('#sheet') ? '' : '<button class="linkish pyx-manage" data-pyx="manage">Manage payees</button>');
+    document.body.appendChild(pop);
+    pyx = { el, pop, list: pop.querySelector('.cbx-list'), names: payeeChoices(), opts: [], hi: null };
+    paintPayee(); placePayee();
+    pop.addEventListener('pointerdown', (ev) => ev.preventDefault()); // keep the cursor in the box
+    pop.addEventListener('mousemove', (ev) => { const o = ev.target.closest('.cbx-o'); if (o && +o.dataset.i !== pyx.hi) { pyx.hi = +o.dataset.i; pyx.list.querySelectorAll('.cbx-o').forEach((e) => e.classList.toggle('hi', +e.dataset.i === pyx.hi)); } });
+    pop.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-pyx=manage]')) { closePayee(); openPayees(); return; }
+      const o = ev.target.closest('.cbx-o'); if (o) choosePayee(pyx.opts[+o.dataset.i]);
+    });
+  }
+  function setPayee(el, v) {
+    if (el.value === v) return;
+    el.value = v;
+    pyxQuiet = true; // the list has done its job, so don't pop it open again
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    pyxQuiet = false;
+  }
+  function choosePayee(o) {
+    const el = pyx.el;
+    closePayee();
+    if (!o) return;
+    el.focus();
+    setPayee(el, o.v);
+  }
+
+  // phone: tapping the box opens a full-screen search; you tap a payee or tap Add new, nothing is filled in for you
+  let pym = null;
+  function closePayeeScreen() { if (pym) { pym.wrap.remove(); pym = null; } }
+  function fitPayeeScreen() { // keep it in the part of the screen the keyboard leaves
+    if (!pym || !window.visualViewport) return;
+    const z = zoomOf();
+    pym.wrap.style.top = (visualViewport.offsetTop / z) + 'px';
+    pym.wrap.style.height = (visualViewport.height / z) + 'px';
+  }
+  function paintPayeeScreen() {
+    const typed = pym.q.value.trim(), { q, found, near, exact } = payeeMatches(pym.names, typed), cur = pym.el.value;
+    const row = (n, cls) => `<button class="pym-o${n.name === cur ? ' cur' : ''}${cls || ''}" data-v="${esc(n.name)}"><span>${esc(n.name)}</span>${n.name === cur ? '<b>&#10003;</b>' : usedTag(n.n)}</button>`;
+    let html = '';
+    if (typed && !exact) html += `<button class="pym-o pym-add" data-add="1"><span>+ Add “${esc(typed)}” as a new payee</span></button>`;
+    if (near.length) html += `<div class="pym-g">${found.length ? 'Or did you mean' : 'Did you mean'}</div>` + near.map((n) => row(n)).join('');
+    if (found.length) html += `<div class="pym-g">${q ? 'Your payees that match' : 'Your payees'}</div>` + found.map((n) => row(n)).join('');
+    if (!html) html = '<p class="pym-none">No payees yet. Type a name to add one.</p>';
+    if (q && !found.length && !near.length) html += '<p class="pym-none">None of your payees match.</p>';
+    pym.list.innerHTML = html;
+    pym.list.scrollTop = 0;
+  }
+  function openPayeeScreen(el) {
+    closePayeeScreen(); closePayee();
+    const wrap = document.createElement('div');
+    wrap.className = 'pym';
+    wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-label', 'Choose a payee');
+    wrap.innerHTML = `<div class="pym-top"><input class="pym-q" type="search" placeholder="Search or type a new payee" autocomplete="off" autocapitalize="words" enterkeyhint="done" aria-label="Search payees"><button class="linkish" data-pym="cancel">Cancel</button></div>
+      <div class="pym-list"></div>
+      ${el.value ? '<div class="pym-foot"><button class="linkish" data-pym="clear">Clear the payee</button></div>' : ''}`;
+    document.body.appendChild(wrap);
+    pym = { el, wrap, q: wrap.querySelector('.pym-q'), list: wrap.querySelector('.pym-list'), names: payeeChoices() };
+    fitPayeeScreen(); paintPayeeScreen();
+    pym.q.focus(); // in the same tap, so the phone's keyboard comes up
+    const pick = (v) => { closePayeeScreen(); setPayee(el, v); };
+    pym.q.addEventListener('input', paintPayeeScreen);
+    pym.q.addEventListener('keydown', (ev) => {
+      ev.stopPropagation();
+      if (ev.key === 'Escape') { ev.preventDefault(); closePayeeScreen(); }
+      if (ev.key === 'Enter') { // only an exact name is taken without a tap
+        ev.preventDefault();
+        const ex = payeeMatches(pym.names, pym.q.value).exact;
+        if (ex) pick(ex.name); else pym.q.blur();
+      }
+    });
+    wrap.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button'); if (!b) return;
+      if (b.dataset.pym === 'cancel') closePayeeScreen();
+      else if (b.dataset.pym === 'clear') pick('');
+      else if (b.dataset.add) pick(pym.q.value.trim());
+      else if (b.dataset.v != null) pick(b.dataset.v);
+    });
+  }
+  if (window.visualViewport) for (const e of ['resize', 'scroll']) { visualViewport.addEventListener(e, fitPayeeScreen); visualViewport.addEventListener(e, () => fitPick()); }
+
+  const isPayeeBox = (el) => el && el.tagName === 'INPUT' && el.dataset && el.dataset.payee;
+  document.addEventListener('click', (ev) => { if (isPayeeBox(ev.target) && isPhone()) { ev.preventDefault(); ev.target.blur(); openPayeeScreen(ev.target); } }, true);
+  document.addEventListener('focusin', (ev) => { if (isPayeeBox(ev.target)) openPayee(ev.target); else if (pyx && !pyx.pop.contains(ev.target)) closePayee(); });
+  document.addEventListener('input', (ev) => { if (isPayeeBox(ev.target) && !pyxQuiet && !isPhone()) { if (!pyx || pyx.el !== ev.target) openPayee(ev.target); pyx.hi = null; paintPayee(); placePayee(); } }, true);
+  document.addEventListener('focusout', (ev) => {
+    const el = ev.target;
+    if (!isPayeeBox(el)) return;
+    if (pyx && pyx.el === el) closePayee();
+    // "woolworths" typed by hand becomes the "Woolworths" you already have
+    const same = el.value.trim() && payeeNames().find((n) => n !== el.value && n.toLowerCase() === el.value.trim().toLowerCase());
+    if (same) { el.value = same; el.dispatchEvent(new Event('change', { bubbles: true })); }
+  }, true);
+  document.addEventListener('pointerdown', (ev) => {
+    if (pyx && ev.target !== pyx.el && !pyx.pop.contains(ev.target)) closePayee();
+    if (!pyx && isPayeeBox(ev.target) && document.activeElement === ev.target) openPayee(ev.target); // clicking the box again brings the list back
+  }, true);
+  document.addEventListener('keydown', (ev) => {
+    if (!isPayeeBox(ev.target)) return;
+    if (!pyx) { if (ev.key === 'ArrowDown') { ev.preventDefault(); openPayee(ev.target); } return; }
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault(); ev.stopPropagation();
+      pyx.hi = Math.max(0, Math.min(pyx.opts.length - 1, (pyx.hi || 0) + (ev.key === 'ArrowDown' ? 1 : -1))); paintPayee();
+    } else if (ev.key === 'Enter' && pyx.opts.length && ev.target.value.trim()) {
+      // Enter takes the highlighted line; press it again to carry on (save, next box)
+      ev.preventDefault(); ev.stopPropagation(); choosePayee(pyx.opts[pyx.hi]);
+    } else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); closePayee(); }
+    else if (ev.key === 'Tab') closePayee();
+  }, true);
+  addEventListener('resize', placePayee);
+  addEventListener('scroll', (ev) => { if (pyx && !pyx.pop.contains(ev.target)) placePayee(); }, true);
+
+  // ---------- phone drop-downs (every <select> in the phone layout) ----------
+  // The phone's own wheel is small and cuts long category names, so these open a list that slides up from the bottom:
+  // big rows, categories under their group, what's available beside each, and a search box once the list is long.
+  let pk = null;
+  function fitPick() { // sit above the keyboard: iPhone leaves the page full height and slides the keyboard over it
+    if (!pk || !window.visualViewport) return;
+    const z = zoomOf();
+    pk.wrap.style.top = (visualViewport.offsetTop / z) + 'px';
+    pk.wrap.style.height = (visualViewport.height / z) + 'px';
+  }
+  function closePick() {
+    if (!pk) return;
+    const w = pk.wrap; pk = null;
+    w.classList.remove('on');
+    setTimeout(() => w.remove(), 180);
+  }
+  function openPick(sel) {
+    closePick(); closePayee(); closeCombo();
+    const items = [];
+    for (const node of sel.children) {
+      if (node.tagName === 'OPTGROUP') for (const o of node.children) items.push({ v: o.value, t: o.textContent, g: node.label, dis: o.disabled });
+      else if (node.tagName === 'OPTION') items.push({ v: node.value, t: node.textContent, g: '', dis: node.disabled });
+    }
+    // "Bills › Power" shows as Power under a Bills heading; an amount on the end ("· $20.00") moves to the right
+    for (const it of items) {
+      const m = it.t.match(/^(.*) · (\S*\d.*)$/);
+      if (m) { it.tail = m[2]; it.t = m[1]; }
+      const p = it.t.split(' › ');
+      if (!it.g && p.length > 1) { it.name = p.pop(); it.g = p.join(' › '); } else it.name = it.t;
+    }
+    // categories show what's available and accounts their balance, whichever list they're in
+    const note = (it) => {
+      const v = it.v;
+      if (v && D.cats[v] && D.month.rows[v]) { const r = D.month.rows[v]; return `<span class="pill st-${r.status}">${money(r.available)}</span>`; }
+      if (v && D.accounts[v] && D.bal[v]) return `<small>${money(D.bal[v].balance || 0)}</small>`;
+      if (it.tail) return `<small>${esc(it.tail)}</small>`;
+      return '';
+    };
+    const field = sel.closest('.field'), lbl = (sel.id && document.querySelector(`label[for="${sel.id}"]`)) || sel.closest('label') || (field && field.querySelector('label, .lbl'));
+    const title = sel.getAttribute('aria-label') || (lbl && Array.from(lbl.childNodes).filter((n) => n !== sel && !(n.contains && n.contains(sel))).map((n) => n.textContent).join('').trim()) || 'Choose';
+    const wrap = document.createElement('div');
+    wrap.className = 'pk';
+    wrap.innerHTML = `<div class="pk-back" data-pk="cancel"></div>
+      <div class="pk-sheet${items.length > 12 ? ' has-s' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+        <div class="pk-top"><b>${esc(title)}</b><button class="linkish" data-pk="cancel">Cancel</button></div>
+        ${items.length > 12 ? '<div class="pk-s"><input class="pym-q" type="search" placeholder="Search" autocomplete="off" enterkeyhint="search" aria-label="Search the list"></div>' : ''}
+        <div class="pk-list" role="listbox"></div>
+      </div>`;
+    document.body.appendChild(wrap);
+    pk = { sel, wrap, list: wrap.querySelector('.pk-list'), q: wrap.querySelector('.pk-s input') };
+    const paint = () => {
+      const words = pk.q ? fold(pk.q.value).split(' ').filter(Boolean) : [];
+      let html = '', lastG = null;
+      for (const it of items) {
+        if (it.dis || !words.every((w) => fold(it.t + ' ' + it.g).includes(w))) continue;
+        if (it.g !== lastG) { if (it.g) html += `<div class="pym-g">${esc(it.g)}</div>`; lastG = it.g; }
+        const cur = it.v === sel.value;
+        html += `<button class="pym-o${cur ? ' cur' : ''}${it.g ? ' in-g' : ''}" data-v="${esc(it.v)}" role="option" aria-selected="${cur}"><span>${esc(it.name)}</span><i>${note(it)}${cur ? '<b>&#10003;</b>' : ''}</i></button>`;
+      }
+      pk.list.innerHTML = html || '<p class="pym-none">Nothing matches.</p>';
+    };
+    fitPick(); paint();
+    const cur = pk.list.querySelector('.cur');
+    if (cur) cur.scrollIntoView({ block: 'center' });
+    requestAnimationFrame(() => wrap.classList.add('on'));
+    if (pk.q) {
+      pk.q.addEventListener('input', () => { paint(); pk.list.scrollTop = 0; });
+      pk.q.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Escape') { ev.preventDefault(); closePick(); }
+        if (ev.key === 'Enter') { ev.preventDefault(); pk.q.blur(); } // just drops the keyboard to see the list
+      });
+    }
+    wrap.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-pk], [data-v]'); if (!b) return;
+      if (b.dataset.pk === 'cancel') { closePick(); return; }
+      const v = b.dataset.v;
+      closePick();
+      if (sel.value !== v) {
+        sel.value = v;
+        sel.dispatchEvent(new Event('input', { bubbles: true }));
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  }
+  const pickOK = (sel) => sel && isPhone() && !sel.multiple && !sel.disabled;
+  // a tap (not a scroll) on the box opens ours instead of the phone's wheel
+  let pkTouch = null;
+  document.addEventListener('touchstart', (ev) => { const t = ev.touches[0]; pkTouch = ev.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null; }, { capture: true, passive: true });
+  document.addEventListener('touchend', (ev) => {
+    const sel = ev.target.closest && ev.target.closest('select');
+    if (!pickOK(sel) || !pkTouch || !ev.cancelable) return;
+    const t = ev.changedTouches[0];
+    if (Math.abs(t.clientX - pkTouch.x) > 10 || Math.abs(t.clientY - pkTouch.y) > 10) return;
+    ev.preventDefault();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // put the keyboard away
+    openPick(sel);
+  }, true);
+  // a computer window narrow enough for the phone layout gets the same list
+  document.addEventListener('mousedown', (ev) => {
+    const sel = ev.target.closest && ev.target.closest('select');
+    if (!pickOK(sel) || ev.button !== 0) return;
+    ev.preventDefault();
+    openPick(sel);
+  }, true);
+  document.addEventListener('keydown', (ev) => { if (pk && ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); closePick(); } }, true);
 
   // ---------- right-click menus ----------
   let ctx = null;
@@ -4085,7 +4517,7 @@
               <div class="rf-conds">
                 <label><span>Type</span><select id="rf-dir" data-native="1"><option value="">spending or income</option><option value="out" ${f.dir === 'out' ? 'selected' : ''}>spending</option><option value="in" ${f.dir === 'in' ? 'selected' : ''}>income</option></select></label>
                 <label><span>Amount</span><span class="rf-amtbox"><select id="rf-amode" data-native="1"><option value="">any amount</option><option value="is" ${f.amode === 'is' ? 'selected' : ''}>is exactly</option><option value="range" ${f.amode === 'range' ? 'selected' : ''}>is between</option></select>
-                  ${f.amode === 'is' ? `<input id="rf-a1" inputmode="decimal" value="${esc(f.a1 || '')}" placeholder="39.00" data-live="0">` : f.amode === 'range' ? `<input id="rf-a1" inputmode="decimal" value="${esc(f.a1 || '')}" placeholder="from" data-live="0"><input id="rf-a2" inputmode="decimal" value="${esc(f.a2 || '')}" placeholder="to" data-live="0">` : ''}</span></label>
+                  ${f.amode === 'is' ? `<input id="rf-a1" class="cents" inputmode="numeric" autocomplete="off" value="${esc(f.a1 || '')}" placeholder="39.00" data-live="0">` : f.amode === 'range' ? `<input id="rf-a1" class="cents" inputmode="numeric" autocomplete="off" value="${esc(f.a1 || '')}" placeholder="from" data-live="0"><input id="rf-a2" class="cents" inputmode="numeric" autocomplete="off" value="${esc(f.a2 || '')}" placeholder="to" data-live="0">` : ''}</span></label>
                 <label><span>Account</span><select id="rf-acct" data-native="1"><option value="">any account</option>${Object.values(D.accounts).filter((a) => !a.closed && a.type !== 'tracking').map((a) => `<option value="${a.id}" ${f.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>
                 <label title="The date written in the bank description, like the 23 in &ldquo;V1234 23/09 &hellip;&rdquo;. If it hasn't got one, the transaction's own date."><span>Day of the month</span><span class="rf-amtbox"><select id="rf-dmode" data-native="1"><option value="">any day</option><option value="on" ${f.dmode === 'on' ? 'selected' : ''}>is the</option></select>
                   ${f.dmode === 'on' ? `<input id="rf-days" inputmode="numeric" value="${esc(f.days || '')}" placeholder="23" data-live="0" aria-label="Day of the month, or several with commas">` : ''}</span></label>

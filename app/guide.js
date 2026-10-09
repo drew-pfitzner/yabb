@@ -279,7 +279,7 @@
           <div class="g-choices">${ACCT_TYPES.map(([k, l]) => `<button class="g-choice sm ${st.atype === k ? 'on' : ''}" data-atype="${k}">${l}</button>`).join('')}</div>
           ${t ? `<div class="g-form">
             <label>What do you call it?<input id="g-aname" value="${esc(st.aname || t[2])}" autocomplete="off"></label>
-            <label>${t[3] === 'owe' ? 'How much do you owe on it?' : t[3] === 'track' ? 'Roughly how much is in it?' : 'How much is in it right now?'}<span class="g-money"><i>$</i><input id="g-aamt" inputmode="decimal" placeholder="0" autocomplete="off"></span></label>
+            <label>${t[3] === 'owe' ? 'How much do you owe on it?' : t[3] === 'track' ? 'Roughly how much is in it?' : 'How much is in it right now?'}<span class="g-money"><i>$</i><input id="g-aamt" class="cents" inputmode="numeric" placeholder="0.00" autocomplete="off"></span></label>
             <button class="g-btn" data-act="addacct">Add it</button>
             ${t[3] === 'track' ? soft('Kept separate. Not for spending.') : t[3] === 'owe' ? soft('We\'ll make a plan to pay it down.') : ''}
           </div>` : ''}
@@ -358,7 +358,7 @@
         const rows = chosen()[g.key].map((n) => {
           const k = g.key + ':' + n, f = st.freq[k] || g.freq, v = st.amts[k] || '';
           const m = parse(v) ? perMonth(parse(v), f) : 0;
-          return `<div class="g-amt"><span class="g-amt-n">${esc(n)}</span><span class="g-money"><i>$</i><input data-amt="${esc(k)}" inputmode="decimal" placeholder="0" value="${esc(v)}" autocomplete="off" aria-label="${esc(n)} amount"></span>${freqSel(k, f)}<span class="g-pm-out" data-out="${esc(k)}">${m && f !== 'month' ? `\u2248 ${money(m)} a month` : ''}</span></div>`;
+          return `<div class="g-amt"><span class="g-amt-n">${esc(n)}</span><span class="g-money"><i>$</i><input data-amt="${esc(k)}" class="cents" inputmode="numeric" placeholder="0.00" value="${esc(v)}" autocomplete="off" aria-label="${esc(n)} amount"></span>${freqSel(k, f)}<span class="g-pm-out" data-out="${esc(k)}">${m && f !== 'month' ? `\u2248 ${money(m)} a month` : ''}</span></div>`;
         }).join('');
         return soft(AMT_SAY[g.key][1]) + `<div class="g-amts">${rows}</div>` + soft('Leave any blank if you don\'t know yet.');
       },
@@ -381,7 +381,7 @@
       `<div class="g-amts">${debts().map((a) => {
         const f = st.debtFreq[a.id] || (a.type === 'bnpl' ? 'fortnight' : 'month'), v = st.debt[a.id] || '';
         const m = parse(v) ? perMonth(parse(v), f) : 0;
-        return `<div class="g-amt"><span class="g-amt-n">${esc(a.name)}</span><span class="g-money"><i>$</i><input data-debt="${a.id}" inputmode="decimal" placeholder="0" value="${esc(v)}" autocomplete="off" aria-label="${esc(a.name)} payment"></span>${freqSel('d:' + a.id, f)}<span class="g-pm-out" data-dout="${a.id}">${m && f !== 'month' ? `\u2248 ${money(m)} a month` : ''}</span></div>`;
+        return `<div class="g-amt"><span class="g-amt-n">${esc(a.name)}</span><span class="g-money"><i>$</i><input data-debt="${a.id}" class="cents" inputmode="numeric" placeholder="0.00" value="${esc(v)}" autocomplete="off" aria-label="${esc(a.name)} payment"></span>${freqSel('d:' + a.id, f)}<span class="g-pm-out" data-dout="${a.id}">${m && f !== 'month' ? `\u2248 ${money(m)} a month` : ''}</span></div>`;
       }).join('')}</div>` + soft('These envelopes always get filled first.'),
     bind: (card) => {
       const upd = (id) => { const f = st.debtFreq[id] || 'month', v = parse(st.debt[id]); const o = $(`[data-dout="${id}"]`, card); if (o) o.textContent = v && f !== 'month' ? `\u2248 ${money(perMonth(v, f))} a month` : ''; };

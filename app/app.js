@@ -4261,10 +4261,10 @@
     el.value = el.value.replace(/[^0-9.,+\-*/()$\s]/g, ''); // pasted text with letters in it
   }, true);
 
-  // ---------- money boxes: fill in from the right, and do sums ----------
-  // Like a card terminal: the cents are always there, so typing 1 0 0 gives 1.00 and a typed dot is skipped. Each amount
-  // in a sum fills the same way (2500 + 1000 shows 25.00+10.00), but after × or ÷ it's a plain count (25.00×3).
-  // Leaving the box works the sum out. On a phone or tablet our own number pad replaces the system keyboard.
+  // ---------- money boxes: type the amount, and do sums ----------
+  // Typed as written, dot and all (12.5 is $12.50); an amount stops at two places after the dot. After × or ÷ it's a
+  // plain count (25×3). Leaving the box works out any sum and tidies it to 12.50. On a phone or tablet our own
+  // number pad replaces the system keyboard.
   const centsFmt = (c, neg) => (neg ? '-' : '') + commas((c / 100).toFixed(2));
   const CALC_OP = /([+−×÷])/;
   const isSum = (s) => /[+\-−×÷*/]/.test(String(s).trim().slice(1));
@@ -4285,18 +4285,16 @@
       if (/^[\d.]$/.test(k)) x = { neg: x.neg, terms: [{ op: '', v: '' }] }; // typing over the amount keeps its sign
     }
     const last = x.terms[x.terms.length - 1], count = last.op === '×' || last.op === '÷', only = x.terms.length === 1;
-    const c = Math.round(Number(last.v || 0) * 100);
     if (k === 'neg') k = only && !last.v ? '±' : '−';
     if (/^\d$/.test(k)) {
-      if (count) { if (last.v.length >= 9) return null; last.v = (last.v === '0' ? '' : last.v) + k; }
-      else { const n = c * 10 + Number(k); if (n >= 1e11) return null; last.v = (n / 100).toFixed(2); }
+      if (last.v.replace('.', '').length >= 11 || (!count && /\.\d\d$/.test(last.v))) return null; // cents stop at two places
+      last.v = (last.v === '0' ? '' : last.v) + k;
     } else if (k === '.') {
-      if (!count || last.v.includes('.')) return null;
+      if (last.v.includes('.')) return null;
       last.v = (last.v || '0') + '.';
     } else if (k === '⌫') {
       if (!last.v) { if (!only) x.terms.pop(); else if (x.neg) x.neg = false; else return null; }
-      else if (count) last.v = last.v.slice(0, -1);
-      else { const n = Math.floor(c / 10); last.v = n ? (n / 100).toFixed(2) : ''; }
+      else last.v = last.v.slice(0, -1);
     } else if (CALC_OP.test(k)) {
       if (last.v) x.terms.push({ op: k, v: '' });
       else if (!only) last.op = k; // change your mind about the sign
@@ -4345,7 +4343,7 @@
     el.centsDirty = false;
     if (!el.classList || !el.classList.contains('cents')) return;
     if (el.value.trim() === '-') el.value = '';
-    else if (isSum(el.value)) { const v = calcValue(el.value); if (!Number.isNaN(v)) el.value = centsFmt(Math.abs(v), v < 0); }
+    else if (el.value.trim()) { const v = calcValue(el.value); if (!Number.isNaN(v)) el.value = centsFmt(Math.abs(v), v < 0); } // 12.5 → 12.50
   }, true);
   document.addEventListener('focusout', (ev) => {
     const el = ev.target;
@@ -4356,7 +4354,7 @@
   // Taps on the pad never take the focus, so the box keeps its cursor and the system keyboard stays away.
   const kpOn = () => matchMedia('(pointer: coarse)').matches;
   let kp = null, kpEl = null;
-  const KP_KEYS = [['7'], ['8'], ['9'], ['÷', 'Divide'], ['4'], ['5'], ['6'], ['×', 'Times'], ['1'], ['2'], ['3'], ['−', 'Minus'], ['±', 'Money in or out'], ['0'], ['⌫', 'Delete'], ['+', 'Plus']];
+  const KP_KEYS = [['7'], ['8'], ['9'], ['÷', 'Divide'], ['4'], ['5'], ['6'], ['×', 'Times'], ['1'], ['2'], ['3'], ['−', 'Minus'], ['.', 'Dot'], ['0'], ['⌫', 'Delete'], ['+', 'Plus']];
   function kpPaint() {
     if (!kp || kp.hidden || !kpEl) return;
     const v = isSum(kpEl.value) ? calcValue(kpEl.value) : NaN;
@@ -4367,7 +4365,7 @@
       kp = document.createElement('div');
       kp.id = 'kp'; kp.hidden = true;
       kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', 'Number pad');
-      kp.innerHTML = `<div class="kp-top"><span class="kp-sum" aria-live="polite"></span><button type="button" class="kp-done" data-k="done">Done</button></div>
+      kp.innerHTML = `<div class="kp-top"><span class="kp-sum" aria-live="polite"></span><span class="kp-acts"><button type="button" class="kp-pm" data-k="±" aria-label="Money in or out" title="Money in or out">±</button><button type="button" class="kp-done" data-k="done">Done</button></span></div>
         <div class="kp-keys">${KP_KEYS.map(([k, l]) => `<button type="button" data-k="${k}"${/[÷×−+±⌫]/.test(k) ? ' class="kp-op"' : ''}${l ? ` aria-label="${l}"` : ''}>${k}</button>`).join('')}</div>`;
       ['pointerdown', 'mousedown'].forEach((t) => kp.addEventListener(t, (e) => e.preventDefault()));
       kp.addEventListener('click', (e) => {

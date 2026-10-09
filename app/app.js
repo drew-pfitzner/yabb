@@ -23,16 +23,17 @@
     showFilters: false, limit: 150,
     sort: { k: 'date', dir: -1 },
     only: null, // ids of a possible double-up being looked at
-    rec: null, recPop: null, recAll: false, // reconciling: {acct, bank}; recPop: account the pop-up is open for ('' = choose)
+    rec: null, recAll: false, lastImport: null, // reconciling: {acct, bank, from}; lastImport: account last imported into
   };
   try {
     const saved = JSON.parse(localStorage.getItem('zeroline-ui') || '{}');
     if (saved.collapsed) UI.collapsed = saved.collapsed;
     if (saved.view) UI.view = saved.view;
     if (saved.rec && saved.rec.acct) UI.rec = saved.rec;
+    if (saved.lastImport) UI.lastImport = saved.lastImport;
   } catch (e) { /* ignore */ }
   function saveUI() {
-    try { localStorage.setItem('zeroline-ui', JSON.stringify({ collapsed: UI.collapsed, view: UI.view, rec: UI.rec })); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('zeroline-ui', JSON.stringify({ collapsed: UI.collapsed, view: UI.view, rec: UI.rec, lastImport: UI.lastImport })); } catch (e) { /* ignore */ }
   }
 
   // ---------- layout: phone or computer (remembered per device) ----------
@@ -168,6 +169,11 @@
       const m = E.monthOf(t.date);
       (byMonth[m] = byMonth[m] || {})[t.id] = full(TX_KEYS, Object.assign({}, t, { ts: Date.now() }));
     }
+    // a date moved into another month: take it out of the old month too, or it shows up twice after a reload
+    for (const t of list) {
+      const o = D.txById[t.id], om = o && E.monthOf(o.date);
+      if (om && om !== E.monthOf(t.date)) { const row = byMonth[om] = byMonth[om] || {}; if (!(t.id in row)) row[t.id] = null; }
+    }
     for (const t of removed || []) {
       const m = E.monthOf(t.date);
       const row = byMonth[m] = byMonth[m] || {};
@@ -184,6 +190,7 @@
     if (!el) { el = document.createElement('div'); el.id = 'save-bar'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
     el.hidden = false; el.className = '';
     const set = (n, total) => {
+      if (!total) { el.hidden = true; return; } // nothing to save
       const pct = total ? Math.round((n / total) * 100) : 0;
       el.innerHTML = `<span>${n >= total && total ? `${esc(label)}: saved &#10003;` : `${esc(label)}: saving&hellip; ${pct}%`}</span><i style="width:${pct}%"></i>`;
       if (n >= total && total) { el.className = 'done'; setTimeout(() => { el.hidden = true; }, 2500); }
@@ -1290,7 +1297,6 @@
     const bal = sum('balance');
     const name = ids.length === 1 ? D.accounts[ids[0]].name : 'All accounts';
     const open = Object.values(D.accounts).filter((a) => !a.closed);
-    const popAcct = UI.recPop != null ? (UI.recPop || (ids.length === 1 ? ids[0] : '')) : null;
     // more than one account: the name is a drop-down to switch accounts
     const grp = (label, list) => (list.length ? `<optgroup label="${label}">${list.map((a) => `<option value="${a.id}" ${ids.length === 1 && ids[0] === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</optgroup>` : '');
     const pick = !rec && open.length > 1
@@ -1305,18 +1311,10 @@
     return `<div class="acct-head ah-${kind}">
         <div class="ah-main">${one ? `<span class="ah-ic">${acctIcon(one)}</span>` : ''}<div>${balHTML}</div></div>
         ${rec ? '' : `<div class="ah-rec">
-          <button class="btn sm ${popAcct != null ? 'on' : ''}" data-action="rec-pop" aria-expanded="${popAcct != null}">Reconcile ${ICON.down}</button>
+          <button class="btn sm primary" data-action="rec-flow">${one && one.type === 'tracking' ? 'Update balance' : 'Import &amp; reconcile'}</button>
           ${ids.length === 1 ? `<span>${D.accounts[ids[0]].reconciledAt ? 'Last done ' + esc(dateLabel(D.accounts[ids[0]].reconciledAt)) : 'Never reconciled'}</span>` : ''}
-          ${popAcct != null ? `<div class="rec-pop" role="dialog" aria-label="Start reconciling">
-            ${open.length > 1 || !popAcct ? `<div class="field"><label for="rec-acct">Account</label><select id="rec-acct"><option value="">Choose an account</option>${open.map((a) => `<option value="${a.id}" ${a.id === popAcct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>` : ''}
-            ${(() => { const bb = popAcct ? S.items('bankbal')[popAcct] || {} : {}, last = Object.keys(bb).sort().pop(); const v = last != null ? (isDebt(popAcct) ? -bb[last] : bb[last]) : null;
-              return `<div class="field"><label for="rec-bank">Bank's current balance</label><input id="rec-bank" class="cents" inputmode="numeric" autocomplete="off" placeholder="0.00" value="${v != null ? plain(v) : ''}"></div>${v != null ? `<p class="hint">Filled in from your last bank file (end of ${esc(dateLabel(last))}). Check it matches your banking app.</p>` : ''}`; })()}
-            ${popAcct && isDebt(popAcct) ? '<p class="hint">For a card or loan, type the amount owing.</p>' : ''}
-            <p class="hint">Use the balance in your banking app. If your bank file had pending "POS" lines, use the <b>available</b> balance.</p>
-            <div class="row-btns"><button class="btn sm primary" data-action="rec-start">Start</button><button class="btn sm" data-action="rec-pop-close">Cancel</button></div>
-          </div>` : ''}
         </div>`}
-      </div>${rec ? recBar() : ''}${UI.dbl ? dblPanel() : UI.bc && !rec ? bcPanel() : ''}`;
+      </div>${UI.dbl ? dblPanel() : UI.bc ? bcPanel() : ''}`;
   }
   // what to look at first when it doesn't add up
   // approved, with its own bank line: two of these are separate purchases, not a double-up
@@ -1466,44 +1464,341 @@
         <div class="dp-two">${side(p.a)}${side(p.b)}</div>
         <div class="dp-act">${p.a.pair || p.b.pair ? '<span class="hint">One is a transfer, so delete the extra one by hand if they are the same.</span>' : `<button class="btn sm primary" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}">Merge into one</button>`}<button class="btn sm" data-action="dbl-not" data-a="${p.a.id}" data-b="${p.b.id}">Not a double</button></div></li>`).join('')}</ol></div>`;
   }
+  // the last day the bank's balance covers: the bank file's last day, or today when the balance was typed in.
+  // Anything dated later (a bill booked ahead) isn't at the bank yet, so it isn't counted.
+  const recCutoff = () => (UI.rec && UI.rec.from) || E.todayISO();
+  // transactions in the account being reconciled that still wait for approval
+  const recWaiting = () => (UI.rec ? D.tx.filter((t) => t.acct === UI.rec.acct && t.date <= recCutoff() && checkOf(t)) : []);
+  // reconciled once it matches the bank and everything is approved: no Finish button to remember
+  // checked each time the reconcile card is drawn, so any change that settles it (approving, fixing, the balance) finishes it
+  async function recAutoFinish() {
+    if (UI.recFinishing || !UI.rec || !D.accounts[UI.rec.acct] || recState().diff || recWaiting().length) return;
+    UI.recFinishing = true;
+    try { await recFinish(0); } finally { UI.recFinishing = false; }
+  }
   function recState() {
-    const r = UI.rec, total = D.tx.filter((t) => t.acct === r.acct).reduce((s, t) => s + t.amt, 0);
+    const r = UI.rec, cut = recCutoff(), total = D.tx.filter((t) => t.acct === r.acct && t.date <= cut).reduce((s, t) => s + t.amt, 0);
     return { total, diff: r.bank - total };
   }
-  // clickable counts in the reconcile bar: show just the transactions worth checking
-  function recChecks() {
-    const n = recPairs(UI.rec.acct).length;
-    return `<span class="rb-checks">${n ? `<button class="rb-chk" data-action="dbl-open" title="See them in pairs">${n} possible ${n === 1 ? 'double' : 'doubles'}</button>` : ''}</span>`;
-  }
-  function recBar() {
-    const r = UI.rec, { diff } = recState();
-    return `<div class="rec-bar ${diff ? 'off' : 'ok'}" title="${diff ? (diff < 0 ? 'YNABB has more than the bank' : 'YNABB has less than the bank') + '. Rows tagged in red are worth checking first.' : 'Everything adds up to the bank balance'}">
-        <span class="rb-title"><b>Reconciling</b></span>
-        <label class="rb-n">${isDebt(r.acct) ? 'Owing' : 'Bank'} <input id="rec-bank-live" class="cents" inputmode="numeric" autocomplete="off" data-live="0" value="${plain(isDebt(r.acct) ? -r.bank : r.bank)}" aria-label="Bank balance"></label>
-        <span class="rb-n rb-diff">${diff ? `${diff < 0 ? 'Over' : 'Under'} by <b>${money(Math.abs(diff))}</b>` : '<b>Matches &#10003;</b>'}</span>
-        ${recChecks()}
-        <span class="rb-act">${diff ? `<button class="linkish" data-action="bank-check" title="Compare day by day with your bank file to find where it went wrong">Find where</button> <button class="linkish" data-action="rec-adjust" title="Adds a ${esc(signed(diff))} adjustment so it matches, then finishes">Adjust</button>` : '<button class="btn xs primary" data-action="rec-finish">Finish</button>'}
-        <button class="rb-x" data-action="rec-stop" aria-label="Stop reconciling" title="Stop reconciling">&times;</button></span>
+  // while reconciling, the top of the page is just the two numbers that matter, side by side
+  // While reconciling, the page is just this: a coloured card with one message, then a checklist of what's waiting.
+  function recCard() {
+    const r = UI.rec, { total, diff } = recState(), debt = isDebt(r.acct), waiting = recWaiting();
+    if (!diff && !waiting.length) setTimeout(recAutoFinish, 0);
+    const show = (v) => money(debt ? -v : v), gap = money(Math.abs(diff));
+    const res = diff && !waiting.length ? recDiff() : null;
+    const big = diff ? `Out by ${gap}` : waiting.length ? `${waiting.length} to check` : 'Matches &#10003;';
+    let sub = diff ? `YNABB has ${gap} ${diff < 0 ? 'more' : 'less'} than the bank.${waiting.length ? ' Check the list below first.' : ''}`
+      : waiting.length ? "The totals match the bank. Approve these and it's reconciled." : '';
+    let act = '';
+    if (res && !res.start) act = '<button class="btn sm" data-action="rec-flow-import">Import your bank file</button>';
+    else if (res && !res.items.length) act = `<button class="linkish rc-adj" data-action="rec-adjust">Can't find it? Add a ${gap} adjustment</button>`;
+    return `<div class="rc ${diff ? 'off' : waiting.length ? 'wait' : 'ok'}">
+        <div class="rc-top"><span>Reconciling <b>${esc(acctName(r.acct))}</b></span><button class="rb-x" data-action="rec-stop" aria-label="Stop reconciling" title="Stop reconciling">&times;</button></div>
+        <div class="rc-big">${big}</div>
+        ${sub ? `<p class="rc-sub">${sub}</p>` : ''}
+        <div class="rc-nums">
+          <label class="rc-fig"><span>${debt ? 'Bank says you owe' : 'Bank'}${r.from ? ` · ${esc(dateLabel(r.from))}` : ''}</span><span class="rc-edit">$<input id="rec-bank-live" class="cents" inputmode="decimal" autocomplete="off" data-live="0" value="${esc(money(debt ? -r.bank : r.bank).replace('$', ''))}" aria-label="Bank balance" title="Tap to change it if it doesn't match your banking app"></span></label>
+          <div class="rc-fig"><span>YNABB</span><b>${show(total)}</b></div>
+        </div>
+        ${act ? `<div class="rc-act">${act}</div>` : ''}
       </div>`;
   }
+  // the checklist: what's waiting, under headings, most worth a look first
+  const CHECK_ORDER = ['fix', 'amount', 'date', 'joined', 'parts', 'swap', 'nocat', 'update', 'match', 'new'];
+  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
+  // what they are, then what ticking does, said once under each heading
+  const CHECK_HINT = {
+    fix: ["These matched the bank, then someone changed the amount in YNABB.", "Tick to put back the bank's amount."],
+    amount: ["The bank's amount is different from the manual one.", "Tick to match using the bank's amount."],
+    date: ["The bank's date is different from the manual one.", "Tick to match using the bank's date."],
+    joined: ['Manually entered as separate transactions, paid by the bank as one.', 'Tick to match them as one.'],
+    parts: ['Manually entered as one transaction, paid by the bank in parts.', 'Tick to match.'],
+    swap: ["Same amount, close dates: YNABB couldn't tell which is which.", ''],
+    nocat: ["YNABB couldn't guess these from your past choices.", 'Tap one to choose its category.'],
+    update: ['These were pending and have now gone through.', "Tick if it's the same purchase."],
+    match: ['Same amount and date as the manual entry.', 'Tick if they look right.'],
+    new: ['From the bank, not entered manually. Category picked from your past choices.', 'Tick if they look right.'],
+  };
+  const PEN = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg>';
+  function recView() {
+    const groups = {};
+    recWaiting().forEach((t) => (groups[checkOf(t)[0]] = groups[checkOf(t)[0]] || []).push(t));
+    const sec = (k) => {
+      const l = (groups[k] || []).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      if (!l.length) return '';
+      const bulk = (k === 'match' || k === 'new') && l.length > 1;
+      const body = k === 'swap' ? swapCards(l) : `<div class="ck-list">${l.map(chkRow).join('')}</div>`;
+      // what the group means stays tucked away behind the little ? until asked for
+      const info = !!(UI.ckInfo && UI.ckInfo[k]);
+      return `<section class="ck-sec"><header class="ck-h"><b>${CHECK_HEAD[k]}</b><span class="ck-n">${l.length}</span>${bulk ? `<button class="btn sm primary ck-all" data-action="chk-all" data-k="${k}">${ICON.tick} All ${l.length}</button>` : ''}<button class="ck-i${info ? ' on' : ''}" data-action="ck-info" data-k="${k}" aria-expanded="${info}" aria-label="What these are" title="What these are">?</button></header>
+        ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${body}</section>`;
+    };
+    return recCard() + recPanel() + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
+  }
+  // two matches with the same amount and close dates: shown as a pair, right way round or swapped
+  const swapPartner = (t, l) => l.find((o) => o !== t && o.amt === t.amt && gapDays(o.date, t.date) <= 10);
+  function swapCards(l) {
+    const done = new Set();
+    return l.map((t) => {
+      if (done.has(t.id)) return '';
+      const o = swapPartner(t, l.filter((x) => !done.has(x.id)));
+      done.add(t.id); if (o) done.add(o.id);
+      // each half opens like any other row: manual vs bank, then Keep Separate or edit
+      const pr = (x) => {
+        const open = UI.ckOpen === x.id;
+        return `<button class="ck-pr" data-action="chk-peek" data-id="${x.id}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show the details'}"><span class="ck-p">${esc(x.payee || 'No payee')}</span><span class="ck-bk"><small>Bank</small>${esc(tidyPayee(x.match.bank))}</span><b>${esc(money(Math.abs(x.amt)))}</b></button>
+          ${open ? `<div class="ck-more ck-pmore">${chkCompare(x, 'swap')}<div class="ck-btns"><button class="btn sm" data-action="unmatch" data-id="${x.id}">Keep Separate</button><button class="btn sm ck-pen" data-action="chk-open" data-id="${x.id}" aria-label="Edit" title="Edit">${PEN}</button></div></div>` : ''}`;
+      };
+      return `<div class="ck-list ck-pair">${pr(t)}${o ? pr(o) : ''}
+        <div class="ck-btns">${o ? `<button class="btn sm primary" data-action="chk-pair-ok" data-a="${t.id}" data-b="${o.id}">${ICON.tick} Right Way Round</button><button class="btn sm" data-action="chk-swap" data-a="${t.id}" data-b="${o.id}">&#8644; ${t.match.swapped ? 'Swap Back' : 'Swap Them'}</button>` : `<button class="btn sm primary" data-action="approve" data-id="${t.id}">${ICON.tick} Match</button>`}</div></div>`;
+    }).join('');
+  }
+  // the opened row: what was entered and what the bank says, one line each
+  function chkCompare(t, k) {
+    const m = t.match, p = (m && m.prev) || {};
+    const row = (lbl, name, sub, amt) => `<div class="ck-cr"><span class="ck-cl">${lbl}</span><span class="ck-cn">${name}<small>${esc(sub)}</small></span><b>${esc(money(Math.abs(amt)))}</b></div>`;
+    const typedRow = (x, i) => row(i ? '' : 'Manual', `${esc(x.payee || t.payee || 'No payee')}${x.memo ? ` · <i>${esc(x.memo)}</i>` : ''}`, dateLabel(x.date), x.amt);
+    let html = '';
+    if (m && m.fix) html += `<p class="ck-why">This matched the bank at ${esc(money(Math.abs(t.amt)))} when you last reconciled. Since then it was edited to ${esc(money(Math.abs(p.amt)))} in YNABB.</p>` + row('Edited to', esc(t.payee || ''), dateLabel(t.date), p.amt);
+    else if (m && m.kind === 'update') html += row('Pending', `<span class="mono">${esc(p.bank || '')}</span>`, dateLabel(t.date), p.amt != null ? p.amt : t.amt);
+    else if (m) html += ('amt' in p ? [{ payee: t.payee, memo: p.memo, date: p.date, amt: p.amt }].concat(p.absorbed || []) : [t]).map(typedRow).join('');
+    else if (t.memo) html += `<p class="ck-why"><i>${esc(t.memo)}</i></p>`;
+    html += row('Bank', `<span class="mono">${esc((m ? m.bank : t.bank) || 'No bank description')}</span>`, dateLabel(m ? m.date : t.date), t.amt);
+    if (m && m.how === 'parts') html += `<p class="ck-why">The rest of it came in as its own line.</p>`;
+    return html;
+  }
+  // the opened row's buttons, in words; editing is the pencil
+  function chkButtons(t, k) {
+    const edit = `<button class="btn sm ck-pen" data-action="chk-open" data-id="${t.id}" aria-label="Edit" title="Edit">${PEN}</button>`;
+    const keep = `<button class="btn sm" data-action="unmatch" data-id="${t.id}">Keep Separate</button>`;
+    const yes = (label) => `<button class="btn sm primary" data-action="approve" data-id="${t.id}">${ICON.tick} ${esc(label)}</button>`;
+    if (k === 'fix') return yes(`Put Back ${money(Math.abs(t.amt))}`) + edit;
+    if (!t.match) return yes('Looks Right') + edit;
+    const label = { amount: `Match · Use Bank's ${money(Math.abs(t.amt))}`, date: `Match · Use Bank's Date (${dateLabel(t.date)})`, joined: `Match as One ${money(Math.abs(t.amt))}`, update: 'Same Purchase' }[k] || 'Match';
+    return yes(label) + keep + edit;
+  }
+  function chkRow(t) {
+    const [k, line] = checkOf(t);
+    const cat = t.transfer ? `Transfer ${t.amt < 0 ? 'to' : 'from'} ${acctName(t.transfer)}` : t.splits && t.splits.length ? `Split: ${t.splits.map((p) => (p.cat ? catName(p.cat) : 'Uncategorized')).join(', ')}` : t.cat === INCOME ? 'Ready to Assign' : t.cat ? catName(t.cat) : '';
+    const name = esc(t.payee || tidyPayee(t.bank) || 'No payee');
+    // a row that needs a category: tap anywhere on it to choose one (the list slides up on a phone)
+    if (k === 'nocat') return `<div class="ck-row nocat" data-row="${t.id}">
+        <div class="ck-main"><span class="ck-l1"><span class="ck-p">${name}</span><span class="ck-a ${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</span></span>
+          <span class="ck-c none">Choose a Category · ${esc(dateLabel(t.date))}</span>${t.bank ? `<span class="ck-b mono">${esc(t.bank)}</span>` : ''}</div>
+        <select class="ck-catsel" data-ck-cat="${t.id}" aria-label="Choose a Category">${catOptions('', { blankLabel: 'Choose a Category', forTx: true, acct: t.acct })}</select>
+      </div>`;
+    const open = UI.ckOpen === t.id;
+    // the amount is said in the line underneath when that's what differs
+    const amtUp = !['amount', 'fix', 'joined'].includes(k);
+    return `<div class="ck-row${open ? ' open' : ''}" data-row="${t.id}">
+        <button class="ck-main" data-action="chk-peek" data-id="${t.id}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show the details'}">
+          <span class="ck-l1"><span class="ck-p">${name}</span>${amtUp ? `<span class="ck-a ${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</span>` : ''}</span>
+          <span class="ck-c">${esc(cat || 'Uncategorized')}${k === 'date' ? '' : ` · ${esc(dateLabel(t.date))}`}</span>
+          ${k === 'match' || k === 'new' ? '' : `<span class="ck-d">${esc(line)}</span>`}
+        </button>
+        <div class="ck-side"><button class="ck-tick" data-action="approve" data-id="${t.id}" aria-label="${esc(CHECK_HINT[k][1] || 'Approve')}" title="${esc(CHECK_HINT[k][1] || 'Approve')}">${ICON.tick}</button></div>
+        ${open ? `<div class="ck-more">${chkCompare(t, k)}<div class="ck-btns">${chkButtons(t, k)}</div></div>` : ''}
+      </div>`;
+  }
+  // ---------- why reconcile doesn't match ----------
+  // Compares what was typed by hand with the bank's own lines, and explains the gap one plain item at a time.
+  // Nothing changes until a button is pressed; each fix is one ⌘Z step.
+  const gapDays = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
+  const shiftDay = (d, n) => new Date(Date.parse(d) + n * 864e5).toISOString().slice(0, 10);
+  const flatText = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  // a typed payee whose first real word shows up in the bank line ("Brownes Bakery" in "V1234 03/10 BROWNES BAKERY")
+  function sameShop(t, b) {
+    const w = String(t.payee || '').toLowerCase().split(/[^a-z0-9]+/).find((x) => x.length >= 3 && !/^(the|and|for|from|with|pay|nab|transfer)$/.test(x));
+    return !!w && flatText((b.bank || '') + ' ' + (b.payee || '')).includes(w.slice(0, 6));
+  }
+  // the amount the bank gave a line when it was imported (it's part of the import key)
+  const ikAmt = (t) => { const p = String(t.ik || '').split('|'); return p.length >= 5 && p[1] !== 'f' && /^-?\d+$/.test(p[2]) ? Number(p[2]) : null; };
+  // two or three of the list that add up to exactly the amount
+  function sumOf(list, amt) {
+    const n = Math.min(list.length, 25);
+    for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+      if (list[a].amt + list[b].amt === amt) return [list[a], list[b]];
+      for (let c = b + 1; c < n; c++) if (list[a].amt + list[b].amt + list[c].amt === amt) return [list[a], list[b], list[c]];
+    }
+    return null;
+  }
+  function recDiff() {
+    const r = UI.rec, acct = r.acct, cut = recCutoff(), skip = UI.recSkip || {};
+    const rows = ((S.items('bankrows')[acct] || {}).rows || []).map((x) => { const [d, a, ...rest] = x.split('|'); return { d, amt: Number(a), desc: rest.join(' ') }; }).filter((x) => x.d <= cut);
+    const start = rows.length ? rows[0].d : null;
+    const mine = D.tx.filter((t) => t.acct === acct);
+    const items = [], used = new Set(), done = new Set();
+    const add = (kind, ts, bs, extra) => { items.push(Object.assign({ kind, ts, bs }, extra || {})); ts.forEach((t) => done.add(t.id)); bs.forEach((b) => used.add(b.id)); };
+    // changed in YNABB after it came from the bank
+    for (const t of mine) {
+      const was = ikAmt(t);
+      if (was != null && was !== t.amt && !skip[t.id]) add('edited', [t], [], { was });
+    }
+    // a pending hold the bank file no longer shows
+    if (start) for (const t of mine) {
+      if (!t.ik || !E.isPending(t.bank) || t.date < start || t.date >= cut || done.has(t.id) || skip[t.id]) continue;
+      if (rows.some((x) => x.amt === t.amt && /^POS\b/i.test(x.desc) && gapDays(x.d, t.date) <= 2)) continue;
+      const w = flatText(tidyPayee(t.bank)).slice(0, 6);
+      const fin = mine.find((b) => b !== t && b.ik && !E.isPending(b.bank) && b.date >= t.date && gapDays(b.date, t.date) <= 14 && w.length >= 4 && flatText(b.bank).includes(w));
+      add('hold', [t], [], { fin });
+    }
+    if (!start) return { items, start, cut, future: mine.filter((t) => t.date > cut) };
+    // typed by hand, not reconciled; and the bank's own lines they could be
+    const typed = mine.filter((t) => !t.ik && t.cleared !== 'r' && !done.has(t.id) && t.date >= shiftDay(start, -10) && !/^(starting balance|reconciliation adjustment)$/i.test(t.payee || ''));
+    const bank = mine.filter((b) => b.ik && !done.has(b.id) && b.date >= shiftDay(start, -10) && b.date <= cut);
+    const ok = (t) => !done.has(t.id) && !skip[t.id];
+    // "Not the same" rules out just that pairing
+    const free = (b, t) => !used.has(b.id) && !(t && skip[t.id + '|' + b.id]);
+    // the same amount: counted twice. far: the date typed wrong (1 Nov for 1 Oct, 2025 for 2026), which only
+    // pairs with a line not reconciled yet: pay and bills repeat, and last fortnight's pay is not this one
+    const sameAmt = (far) => {
+      for (const t of typed) {
+        if (!ok(t)) continue;
+        let best = null, sc = 1e9;
+        for (const b of bank) {
+          if (!free(b, t) || b.amt !== t.amt || b.pair) continue;
+          const g = gapDays(t.date, b.date), sim = sameShop(t, b);
+          if (far ? !(sim && b.cleared !== 'r' && (g <= 62 || Math.abs(g - 365) <= 3)) : g > 10) continue;
+          const v = g - (sim ? 20 : 0) + (b.match ? 30 : 0); // a line already matched to another entry comes last
+          if (v < sc) { best = b; sc = v; }
+        }
+        if (best) add(t.pair ? 'transfer' : 'same', [t], [best]);
+      }
+    };
+    // 1. the same amount within ten days
+    sameAmt(false);
+    // 2. one order the bank took in parts, or several entries the bank took in one go
+    for (const t of typed) {
+      if (!ok(t) || t.pair) continue;
+      const hit = sumOf(bank.filter((b) => free(b, t) && !b.pair && Math.sign(b.amt) === Math.sign(t.amt) && gapDays(t.date, b.date) <= 7 && sameShop(t, b)), t.amt);
+      if (hit) add('parts', [t], hit.sort((x, y) => (x.date < y.date ? -1 : 1)));
+    }
+    for (const b of bank) {
+      if (!free(b) || b.pair) continue;
+      const hit = sumOf(typed.filter((t) => ok(t) && free(b, t) && !t.pair && Math.sign(b.amt) === Math.sign(t.amt) && gapDays(t.date, b.date) <= 3 && sameShop(t, b)), b.amt);
+      if (hit) add('joined', hit, [b]);
+    }
+    // 3. a transfer typed with a different amount
+    for (const t of typed) {
+      if (!ok(t) || !t.pair) continue;
+      // the bank line says it's a transfer, or names the other account ("Savings")
+      const other = flatText((D.accounts[t.transfer] || {}).name).replace(/^nab/, '');
+      const says = (x) => /transfer|online|tfr/i.test(x.bank || '') || (other.length >= 4 && flatText(x.bank).includes(other));
+      const b = bank.find((x) => free(x, t) && !x.pair && Math.sign(x.amt) === Math.sign(t.amt) && gapDays(t.date, x.date) <= 3 && says(x));
+      if (b) add('transfer', [t], [b]);
+    }
+    // 4. the same shop around the same day, with a different amount (a typo, a tip, a fuel hold, a pay rise)
+    for (const t of typed) {
+      if (!ok(t) || t.pair) continue;
+      let best = null, sc = 1e9;
+      for (const b of bank) {
+        if (!free(b, t) || b.pair || Math.sign(b.amt) !== Math.sign(t.amt) || !sameShop(t, b)) continue;
+        const g = gapDays(t.date, b.date), ratio = Math.abs(b.amt / t.amt);
+        if (g > 7 || ratio < 0.4 || ratio > 2.5) continue;
+        if (g < sc) { best = b; sc = g; }
+      }
+      if (best) add('amount', [t], [best]);
+    }
+    // 5. the same amount with the date typed wrong
+    sameAmt(true);
+    // 6. typed, inside the bank file's dates, with nothing at the bank
+    for (const t of typed) if (ok(t) && t.date >= start && t.date <= cut) add('extra', [t], []);
+    // what each one adds to the gap (only days the bank balance covers count)
+    const cnt = (t) => (t.date <= cut ? t.amt : 0);
+    items.forEach((it) => { it.effect = it.kind === 'edited' ? cnt(it.ts[0]) - (it.ts[0].date <= cut ? it.was : 0) : it.ts.reduce((n, t) => n + cnt(t), 0); });
+    const inItems = new Set(items.flatMap((it) => it.ts.map((t) => t.id)));
+    return { items, start, cut, future: mine.filter((t) => t.date > cut && !inItems.has(t.id)) };
+  }
+  // what a fix changes: { puts, removes }
+  function recFixPlan(it) {
+    const [t] = it.ts, approvedIf = (k) => (k.cat || (k.splits && k.splits.length) || k.transfer ? Object.assign(k, { approved: true }) : k);
+    if (it.kind === 'edited') return t.splits && t.splits.length ? null : { puts: [Object.assign({}, t, { amt: it.was })], removes: [] };
+    if (it.kind === 'hold' || it.kind === 'extra') return { puts: [], removes: [t] };
+    if (it.kind === 'same' || it.kind === 'amount') return { puts: [approvedIf(carryInto(it.bs[0], t))], removes: [t] };
+    if (it.kind === 'parts') return { puts: it.bs.map((b) => approvedIf(carryInto(b, Object.assign({}, t, { splits: null })))), removes: [t] };
+    if (it.kind === 'transfer') {
+      const b = it.bs[0], p = D.txById[t.pair];
+      const k = Object.assign(carryInto(b, Object.assign({}, t, { cat: null })), { transfer: t.transfer, pair: p ? p.id : null, cat: null, splits: null, approved: true });
+      return { puts: p ? [k, Object.assign({}, p, { amt: -b.amt, pair: b.id, date: b.date })] : [k], removes: [t] };
+    }
+    if (it.kind === 'joined') {
+      const b = it.bs[0], cats = [...new Set(it.ts.map((x) => x.cat || null))];
+      const k = Object.assign({}, b, { payee: it.ts[0].payee || b.payee, memo: [b.memo].concat(it.ts.map((x) => x.memo)).filter(Boolean).join(' · ') || null });
+      if (cats.length === 1 && cats[0]) Object.assign(k, { cat: cats[0], splits: null });
+      else if (it.ts.every((x) => x.cat)) Object.assign(k, { cat: null, splits: it.ts.map((x) => ({ cat: x.cat, amt: x.amt, memo: x.memo || undefined })) });
+      return { puts: [approvedIf(k)], removes: it.ts };
+    }
+    return null;
+  }
+  async function recFix(list) {
+    const puts = {}, removes = {};
+    let n = 0;
+    for (const it of list) {
+      const p = recFixPlan(it);
+      if (!p) continue;
+      n++;
+      p.puts.forEach((x) => (puts[x.id] = x));
+      p.removes.forEach((x) => (removes[x.id] = x));
+    }
+    if (!n) return;
+    S.newStep(); await putTxs(Object.values(puts), Object.values(removes)); S.newStep();
+    const { diff } = recState();
+    toast(`${n === 1 ? 'Fixed' : `Fixed ${n}`}. ${diff ? `Still out by ${money(Math.abs(diff))}.` : 'It matches the bank now.'}`, { label: 'Undo', fn: () => undoRedo(false) });
+    render();
+  }
+  // each item: a short label, then the two sides as rows (who, date, amount), then its buttons
+  function recItemHTML(it, i) {
+    const [t] = it.ts, b = it.bs[0];
+    const row = (label, x, amt) => `<div class="rd-row"><span class="rd-l">${label}</span><span class="rd-p">${esc(x.payee || tidyPayee(x.bank) || 'No payee')}<small>${esc(dateLabel(x.date))}${E.isPending(x.bank) ? ' · pending' : ''}</small></span><b>${esc(money(Math.abs(amt != null ? amt : x.amt)))}</b></div>`;
+    const typedRows = () => it.ts.map((x) => row('You typed', x)).join('');
+    const bankRows = () => it.bs.map((x) => row('Bank', x)).join('');
+    const K = {
+      same: ['In twice', typedRows() + bankRows(), "Keep the bank's"],
+      amount: ['Different amount', typedRows() + bankRows(), "Use the bank's"],
+      parts: ['Charged in parts', typedRows() + bankRows(), "Use the bank's"],
+      joined: ['Charged in one go', typedRows() + bankRows(), "Use the bank's"],
+      transfer: ['Transfer amount', typedRows() + bankRows(), "Use the bank's"],
+      hold: ['Hold released', row('Bank hold', t) + (it.fin ? row('Final charge', it.fin) : ''), 'Remove the hold', 'Keep it'],
+      edited: ['Amount changed', row('Bank', t, it.was) + row('YNABB', t), t.splits && t.splits.length ? '' : "Use the bank's", 'Leave it'],
+      extra: ['Not at the bank', typedRows(), 'Delete', 'Keep it'],
+    }[it.kind];
+    return `<li class="rd-card"><span class="rd-tag">${K[0]}</span>${K[1]}
+      <div class="rd-act">${K[2] ? `<button class="btn sm ${it.kind === 'extra' ? '' : 'primary'}" data-action="rd-fix" data-i="${i}">${K[2]}</button>` : ''}<button class="btn sm" data-action="rd-skip" data-i="${i}">${K[3] || 'Not the same'}</button></div></li>`;
+  }
+  function recPanel() {
+    const { diff } = recState();
+    if (!diff) return '';
+    const res = recDiff();
+    UI.recItems = res.items;
+    if (!res.items.length) return '';
+    return `<section class="rd" aria-label="Not matched yet"><h3>Not matched yet</h3><ol class="rd-list">${res.items.map(recItemHTML).join('')}</ol></section>`;
+  }
+
   async function recFinish(adjust) {
     const r = UI.rec, a = D.accounts[r.acct];
-    const list = D.tx.filter((t) => t.acct === r.acct && t.cleared !== 'r').map((t) => Object.assign({}, t, { cleared: 'r' }));
-    if (adjust) list.push({ id: S.uid(), acct: r.acct, date: E.todayISO(), payee: 'Reconciliation adjustment', cat: INCOME, amt: adjust, cleared: 'r', memo: 'Added to make the balance match the bank', by: myId() });
-    await putTxs(list);
-    await putAcct(Object.assign({}, a, { reconciledAt: E.todayISO(), reconciledBalance: r.bank }));
+    const cut = recCutoff();
+    const list = D.tx.filter((t) => t.acct === r.acct && t.cleared !== 'r' && t.date <= cut).map((t) => Object.assign({}, t, { cleared: 'r' }));
+    if (adjust) list.push({ id: S.uid(), acct: r.acct, date: cut, payee: 'Reconciliation adjustment', cat: INCOME, amt: adjust, cleared: 'r', memo: 'Added to make the balance match the bank', by: myId() });
+    S.newStep(); await putTxs(list); S.newStep();
+    await putAcct(Object.assign({}, a, { reconciledAt: cut, reconciledBalance: r.bank }));
+    UI.recSkip = null;
     UI.rec = null; saveUI();
-    toast(`${a.name} reconciled`); render();
+    UI.only = null; UI.f = Object.assign(NO_FILTERS(), { acct: a.id }); // stay on the account just reconciled
+    toast(`${a.name} is reconciled ✓`); render();
   }
-  function recStart() {
-    const acct = ($('#rec-acct') && $('#rec-acct').value) || UI.recPop || (UI.f.acct && D.accounts[UI.f.acct] ? UI.f.acct : '');
-    const raw = ($('#rec-bank') && $('#rec-bank').value || '').trim(), v = E.parseMoney(raw);
-    if (!acct) { toast('Choose the account to reconcile.'); return; }
-    if (!raw || Number.isNaN(v)) { toast("Type the bank's current balance."); $('#rec-bank') && $('#rec-bank').focus(); return; }
-    UI.rec = { acct, bank: isDebt(acct) ? -Math.abs(v) : v }; UI.recPop = null; UI.recAll = false;
-    UI.f = Object.assign(NO_FILTERS(), { acct }); UI.q = ''; UI.showFilters = false; UI.view = 'tx'; saveUI(); render();
+  // start reconciling an account against the bank's balance; from = the bank file's date it was read from
+  function startRec(acct, bank, from) {
+    UI.rec = { acct, bank, from: from || null }; UI.recAll = false; UI.only = null; UI.recSkip = null;
+    UI.f = Object.assign(NO_FILTERS(), { acct }); UI.q = ''; UI.showFilters = false; UI.view = 'tx'; saveUI(); render(); window.scrollTo(0, 0);
+  }
+  // the account the import & reconcile panel starts on: the one being shown, or the last one used
+  function flowAcct(id) {
+    const ok = (x) => x && D.accounts[x] && !D.accounts[x].closed;
+    return ok(id) ? id : ok(UI.f.acct) ? UI.f.acct : ok(UI.lastImport) ? UI.lastImport : undefined;
   }
   function viewTx() {
+    if (UI.rec && D.accounts[UI.rec.acct]) return recView();
     const list = filteredTx();
     const total = list.reduce((s, t) => s + t.amt, 0);
     const f = UI.f;
@@ -1523,14 +1818,29 @@
       return viewTx();
     }
     const toReview = review ? 0 : D.tx.filter((t) => t.approved === false).length;
-    return `${acctBalanceHead()}
+    // showing just the uncategorised ones and none are left: say so and go back to the full list
+    if (f.cat === '_none' && !list.length && !UI.q && !UI.only) {
+      UI.f = Object.assign({}, f, { cat: '' }); saveUI();
+      setTimeout(() => toast('Everything has a category ✓'), 0);
+      return viewTx();
+    }
+    // a strip at the top while anything still needs a category (the reconcile card has its own while reconciling)
+    const uncat = UI.rec || f.cat === '_none' ? 0 : D.tx.filter(isUncat).length;
+    // one strip for what's still to do, each part a button that shows just those
+    const todo = [];
+    if (toReview && !UI.rec) todo.push(`<button class="chip" data-action="goto-review"><b>${toReview}</b> to review</button>`);
+    if (uncat) todo.push(`<button class="chip" data-action="goto-uncat"><b>${uncat}</b> ${uncat === 1 ? 'needs' : 'need'} a category</button>`);
+    const uncatBar = todo.length ? `<div class="todo-bar"><span>Still to do</span>${todo.join('')}</div>` : '';
+    // the line under the search only when there's something to say: a filter, a search, or review buttons
+    const sumBits = activeFilters || UI.q || UI.only || matches || updates || (review && reviewable) || !isPhone();
+    return `${acctBalanceHead()}${uncatBar}
       <div class="tx-tools">
         <div class="tools-l">
           <button class="btn sm primary" data-action="add-tx" aria-label="Add a transaction">${ICON.plus}<span class="add-lbl"> Add</span></button>
-          <button class="btn sm" data-action="import">Import from bank</button>
           <div class="filt-wrap">
           <button class="btn sm ${UI.showFilters || activeFilters ? 'on' : ''}" data-action="toggle-filters" aria-expanded="${UI.showFilters}">Filters${activeFilters ? ` <b class="count">${activeFilters}</b>` : ''} ${ICON.down}</button>
       ${UI.showFilters ? `<div class="filters pop" role="dialog" aria-label="Filters">
+            ${isPhone() ? `<div class="field"><span class="lbl">Each row shows</span><div class="seg-ctl tl-ctl" role="group" aria-label="Each row shows"><button data-action="tx-line" data-v="payee" aria-pressed="${txLine() === 'payee'}">Payee</button><button data-action="tx-line" data-v="note" aria-pressed="${txLine() === 'note'}">Note</button></div></div>` : ''}
             <div class="field"><label for="f-acct">Account</label><select id="f-acct" data-filter="acct" data-live="0"><option value="">All accounts</option>${Object.values(D.accounts).map((a) => `<option value="${a.id}" ${f.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
             <div class="field"><label for="f-cat">Category</label><select id="f-cat" data-filter="cat" data-live="0"><option value="">All categories</option><option value="_none" ${f.cat === '_none' ? 'selected' : ''}>Uncategorized</option><option value="${INCOME}" ${f.cat === INCOME ? 'selected' : ''}>Ready to Assign (income)</option>${D.tree.order.map((id) => `<option value="${id}" ${f.cat === id ? 'selected' : ''}>${esc(D.tree.path[id].join(' › '))}</option>`).join('')}</select></div>
             <div class="field"><label for="f-from">From</label><input id="f-from" type="date" data-filter="from" data-live="0" value="${f.from}"></div>
@@ -1545,20 +1855,18 @@
         </div>
         <div class="search"><span aria-hidden="true">${ICON.search}</span><input id="txq" type="search" data-live="0" placeholder="${isPhone() ? 'Search' : 'Search payee, bank description, note, amount, date, category'}" value="${esc(UI.q)}" aria-label="Search transactions"></div>
       </div>
-      <div class="tx-sum">
+      ${sumBits ? `<div class="tx-sum">
         <div class="ts-l">
           ${UI.only ? `<button class="chip fchip" data-action="clear-only" title="Back to the full list">${UI.onlyWhat === 'balance' ? 'Could explain the difference' : 'Possible doubles'} only <span aria-hidden="true">×</span></button>` : filterChips()}
           <span class="ts-count${activeFilters || UI.q || UI.only ? '' : ' plain'}">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
         </div>
         <div class="ts-r">
-          ${isPhone() ? `<div class="seg-ctl tl-ctl" role="group" aria-label="Show"><button data-action="tx-line" data-v="payee" aria-pressed="${txLine() === 'payee'}">Payee</button><button data-action="tx-line" data-v="note" aria-pressed="${txLine() === 'note'}">Note</button></div>` : ''}
           ${list.length > 1 && (activeFilters || UI.q || UI.only) ? `<button class="btn sm" data-action="select-all" title="${MAC ? '⌘' : 'Ctrl+'}A">Select all ${list.length}</button>` : ''}
           ${matches ? `<span class="hint">${matches} matched ${matches === 1 ? 'transaction needs' : 'transactions need'} approving one by one</span>` : ''}
           ${updates ? `<button class="btn sm" data-action="approve-updates">Approve ${updates} description ${updates === 1 ? 'update' : 'updates'}</button>` : ''}
           ${review && reviewable ? `<button class="btn sm primary" data-action="approve-all">Approve ${reviewable} with a category</button>` : ''}
-          ${!review && toReview ? `<button class="btn sm" data-action="goto-review">Review imported <b class="count">${toReview}</b></button>` : ''}
         </div>
-      </div>
+      </div>` : ''}
       <div class="txl${byDay ? ' by-day' : ''} ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
         ${shown.length ? txHeader() : ''}
         ${multiBar()}${shown.map((t, i) => (byDay && (i === 0 || shown[i - 1].date !== t.date) ? `<div class="tx-day" role="presentation">${esc(dateLabel(t.date))}</div>` : '') + txRow(t) + bcMark(t)).join('') || `<p class="empty-note">${D.tx.length ? 'No transactions match.' : 'No transactions yet. Add one, or import a file from your bank.'}</p>`}
@@ -1566,6 +1874,8 @@
       ${list.length > shown.length ? `<div class="row-btns center"><button class="btn" data-action="more-tx">Show more (${list.length - shown.length} left)</button></div>` : ''}`;
   }
 
+  // needs a category: not a transfer, split or tracking entry, and none chosen
+  const isUncat = (t) => !t.cat && !(t.splits && t.splits.length) && !t.transfer && !isTrack(t.acct);
   function txCatLabel(t) {
     if (t.transfer) return `<span class="tcat xfer">${isDebt(t.transfer) && t.amt < 0 ? 'Payment to' : isDebt(t.acct) && t.amt > 0 ? 'Payment from' : t.amt < 0 ? 'Transfer to' : 'Transfer from'} ${esc(acctName(t.transfer))}</span>`;
     if (t.splits && t.splits.length) return `<span class="tcat">Split: ${t.splits.map((p) => esc(p.cat ? catName(p.cat) : 'Uncategorized')).join(', ')}</span>`;
@@ -1742,34 +2052,59 @@
   function txRow(t) {
     if (UI.editTx === t.id && !isPhone()) return txEditRow(t);
     const cl = t.cleared === 'r' ? `<span class="clr r" title="Reconciled">${ICON.lock}</span>` : `<button class="clr ${t.cleared === 'c' ? 'c' : 'u'}" data-action="toggle-clear" data-id="${t.id}" aria-label="${t.cleared === 'c' ? 'Cleared. Mark as not cleared' : 'Not cleared. Mark as cleared'}" title="${t.cleared === 'c' ? 'Cleared by the bank' : 'Not yet cleared'}">C</button>`;
-    return `<div class="txr${UI.peekTx === t.id ? ' open' : ''}${t.match ? ' matched' : t.approved === false ? ' review' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
-      <div class="t-side">${t.match ? `<button class="ic ic-match" data-action="open-tx" data-id="${t.id}" title="${t.match.kind === 'update' ? 'Bank description updated. Click to compare and approve' : 'Matched to a bank line. Click to compare and approve'}" aria-label="${t.match.kind === 'update' ? 'Updated' : 'Matched'}">${t.match.kind === 'update' ? ICON.redo : ICON.link}</button>` : t.approved === false ? `<button class="ic ic-approve" data-action="approve" data-id="${t.id}" title="Approve" aria-label="Approve">${ICON.tick}</button>` : ''}</div>
+    return `<div class="txr${UI.peekTx === t.id ? ' open' : ''}${t.match ? ' matched' : t.approved === false ? ' review' : ''}${isUncat(t) ? ' nocat' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
+      <div class="t-side">${t.match ? `<button class="ic ic-match" data-action="${isPhone() ? 'approve' : 'open-tx'}" data-id="${t.id}" title="${isPhone() ? 'Approve' : t.match.kind === 'update' ? 'Bank description updated. Click to compare and approve' : 'Matched to a bank line. Click to compare and approve'}" aria-label="${t.match.kind === 'update' ? 'Updated' : 'Matched'}">${t.match.kind === 'update' ? ICON.redo : ICON.link}</button>` : t.approved === false ? `<button class="ic ic-approve" data-action="approve" data-id="${t.id}" title="Approve" aria-label="Approve">${ICON.tick}</button>` : ''}</div>
       <button class="tx-main" data-action="${isPhone() ? 'tx-peek' : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
         <span class="t-date">${esc(dateLabel(t.date))}</span>
         <span class="t-payee" title="${esc(t.payee || '')}">${esc(t.payee || (t.transfer ? 'Transfer' : t.bank) || 'No payee')}${t.receipt ? `<i class="ricon" title="Has a receipt">${ICON.receipt}</i>` : ''}</span>
         <span class="t-cat" title="${esc(t.transfer ? 'Transfer' : t.splits && t.splits.length ? 'Split' : t.cat ? catPath(t.cat) : 'Uncategorized')}">${txCatLabel(t)}<span class="t-acct">${esc(acctName(t.acct))}</span></span>
         <span class="t-ac" title="${esc(acctName(t.acct))}">${esc(acctName(t.acct))}</span>
-        <span class="t-desc" title="${esc([t.memo, t.bank].filter(Boolean).join(' · '))}">${t.memo ? `<i class="d-memo">${esc(t.memo)}</i>` : ''}${t.memo && t.bank ? '<span class="d-sep"> · </span>' : ''}${t.bank ? `<span class="d-bank">${esc(t.bank)}</span>` : ''}</span>
+        <span class="t-desc" title="${esc([t.memo, t.bank].filter(Boolean).join(' · '))}">${t.memo ? `<i class="d-memo">${esc(t.memo)}</i>` : ''}${t.memo && t.bank ? '<span class="d-sep"> · </span>' : ''}${t.bank ? `<span class="d-bank">${esc(t.bank)}</span>` : ''}${checkOf(t) ? `<span class="d-mnote">${esc(checkOf(t)[1])}</span>` : ''}</span>
+        ${checkOf(t) ? `<span class="t-chk c-${checkOf(t)[0]}">${esc(checkOf(t)[1])}</span>` : ''}
         <span class="t-amt ${t.amt > 0 ? 'pos' : ''}${REC_FLAGS[t.id] ? ' flagamt' : ''}"${REC_FLAGS[t.id] ? ` title="${esc(REC_FLAGS[t.id].map(([sh, lo]) => sh + ' ' + lo).join('\n'))}"` : ''}${twinIds(t.id) ? ` data-action="show-twins" data-ids="${twinIds(t.id)}"` : ''}>${txAmt(t.amt)}</span>
       </button>
       <div class="t-clr">${cl}</div>
       <button class="tx-pen" data-action="open-tx" data-id="${t.id}" aria-label="Edit this transaction" title="Edit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>`;
   }
+  // what there is to check on a transaction waiting for approval: [group, one short line], or null
+  function checkOf(t) {
+    const m = t.match, p = (m && m.prev) || {}, mm = (x) => money(Math.abs(x));
+    if (m && m.fix) return ['fix', `Edited ${mm(p.amt)} → Bank ${mm(t.amt)}`];
+    if (m && m.kind === 'update') return p.amt != null && p.amt !== t.amt ? ['amount', `Pending ${mm(p.amt)} → Bank ${mm(t.amt)}`] : ['update', 'Was pending, now gone through'];
+    if (m && p.absorbed && p.absorbed.length) return ['joined', `Manual ${[p.amt].concat(p.absorbed.map((x) => x.amt)).map(mm).join(' + ')} → Bank ${mm(t.amt)} in one payment`];
+    if (m && m.how === 'parts') return ['parts', `Manual ${mm(p.amt)} · Bank charged it in parts`];
+    if (m && 'date' in p && p.date !== t.date) return ['date', `Manual ${dateLabel(p.date)} → Bank ${dateLabel(t.date)}`];
+    if (m && 'amt' in p && p.amt !== t.amt) return ['amount', `Manual ${mm(p.amt)} → Bank ${mm(t.amt)}`];
+    // two entries with the same amount on close dates, and the bank lines don't name them: it had to guess
+    if (m && !m.how && !t.transfer && D.tx.some((o) => o !== t && o.acct === t.acct && o.match && !o.match.kind && !o.match.how && o.amt === t.amt && gapDays(o.date, t.date) <= 10
+      && !(sameShop(t, { bank: m.bank }) && sameShop(o, { bank: o.match.bank })))) return ['swap', `Bank says ${tidyPayee(m.bank)}`];
+    if (m) return ['match', 'Perfect match'];
+    if (t.approved !== false) return null;
+    return t.cat || (t.splits && t.splits.length) || t.transfer || isTrack(t.acct) ? ['new', 'New from the bank'] : ['nocat', 'Needs a category'];
+  }
+
+
   // side by side: what was already in YNABB, and what the bank file says
   function matchCompare(t) {
-    const m = t.match, upd = m.kind === 'update';
-    const youDate = t.date, bankDate = m.date || t.date;
+    const m = t.match, upd = m.kind === 'update', p = m.prev || {};
+    // a likely match keeps what you typed in prev (amount, date, category, note), and any entries it joined
+    const was = !upd && 'amt' in p;
+    const youDate = was ? p.date : t.date, bankDate = m.date || t.date;
     const diffDate = youDate !== bankDate;
-    const cat = t.transfer ? 'Transfer' : t.splits && t.splits.length ? 'Split' : t.cat ? catName(t.cat) : 'Uncategorized';
-    const oldAmt = upd && m.prev && m.prev.amt != null ? m.prev.amt : t.amt, diffAmt = oldAmt !== t.amt;
-    const row = (label, date, what, posted, cls, amt) => `<div class="mc-row ${cls}"><span class="mc-who">${label}</span><span class="mc-date ${diffDate ? 'mc-diff' : ''}">${esc(dateLabel(date))}${posted ? `<small>bank posted ${esc(dateLabel(posted))}</small>` : ''}</span><span class="mc-what">${what}</span><span class="mc-amt ${amt > 0 ? 'pos' : ''} ${diffAmt ? 'mc-diff' : ''}">${txAmt(amt)}</span></div>`;
+    const catOf = (x) => (x.transfer ? 'Transfer' : x.splits && x.splits.length ? 'Split' : x.cat ? catName(x.cat) : 'Uncategorized');
+    const oldAmt = (upd || was) && p.amt != null ? p.amt : t.amt, joined = was ? [Object.assign({}, t, { date: p.date, amt: p.amt, cat: p.cat, splits: p.splits, memo: p.memo })].concat(p.absorbed || []) : null;
+    const typedAmt = joined ? joined.reduce((n, x) => n + x.amt, 0) : oldAmt, diffAmt = typedAmt !== t.amt;
+    const row = (label, date, what, posted, cls, amt, dd, da) => `<div class="mc-row ${cls}"><span class="mc-who">${label}</span><span class="mc-date ${dd ? 'mc-diff' : ''}">${esc(dateLabel(date))}${posted ? `<small>bank posted ${esc(dateLabel(posted))}</small>` : ''}</span><span class="mc-what">${what}</span><span class="mc-amt ${amt > 0 ? 'pos' : ''} ${da ? 'mc-diff' : ''}">${txAmt(amt)}</span></div>`;
+    const typedRow = (x, i) => row(i ? '' : 'You typed', x.date, `<b>${esc(x.payee || 'No payee')}</b> · ${esc(catOf(x))}${x.memo ? ` · <i>${esc(x.memo)}</i>` : ''}`, '', 'you', x.amt, diffDate, diffAmt);
+    const q = m.fix ? 'Put back the bank\'s amount? It had been changed in YNABB.' : upd ? 'Is the bank\'s new line the same purchase as the one imported earlier?' : 'Is this bank line the same as the transaction you typed in?';
     return `<div class="mcmp">
-        <div class="mc-q">${upd ? 'Is the bank\'s new line the same purchase as the one imported earlier?' : 'Is this bank line the same as the transaction you typed in?'}${diffDate ? ' <b class="mc-diff">The dates are different.</b>' : ''}${diffAmt ? ` <b class="mc-diff">The amount changed by ${esc(money(Math.abs(t.amt - oldAmt)))}.</b>` : ''}</div>
-        ${upd
-          ? row('Imported earlier', youDate, `<span class="mono">${esc(m.prev.bank || '')}</span>`, '', 'you', oldAmt)
-          : row('You typed', youDate, `<b>${esc(t.payee || 'No payee')}</b> · ${esc(cat)}${t.memo ? ` · <i>${esc(t.memo)}</i>` : ''}`, '', 'you', t.amt)}
-        ${row(upd ? 'Bank now says' : 'Bank file says', bankDate, `<span class="mono">${esc(m.bank || '')}</span>`, m.posted && m.posted !== bankDate ? m.posted : '', 'bank', t.amt)}
+        <div class="mc-q">${q}${diffDate ? ' <b class="mc-diff">The dates are different.</b>' : ''}${joined && joined.length > 1 ? ' <b class="mc-diff">The bank took them in one go.</b>' : diffAmt ? ` <b class="mc-diff">The amount is ${esc(money(Math.abs(t.amt - typedAmt)))} different.</b>` : ''}</div>
+        ${m.fix ? row('YNABB had', t.date, `<b>${esc(t.payee || 'No payee')}</b>`, '', 'you', oldAmt, false, true)
+          : upd ? row('Imported earlier', youDate, `<span class="mono">${esc(p.bank || '')}</span>`, '', 'you', oldAmt, diffDate, diffAmt)
+          : joined ? joined.map(typedRow).join('')
+          : typedRow(t, 0)}
+        ${row(upd && !m.fix ? 'Bank now says' : 'Bank file says', bankDate, `<span class="mono">${esc(m.bank || '')}</span>`, m.posted && m.posted !== bankDate ? m.posted : '', 'bank', t.amt, diffDate, diffAmt)}
       </div>`;
   }
 
@@ -1801,29 +2136,32 @@
 
     const body = () => `
       ${reconciled ? '<p class="hint">This transaction is reconciled with your bank. Changing its amount or account will unbalance the account.</p>' : ''}
-      ${t.match && t.match.kind === 'update' ? `<div class="warn-box">The bank's description changed from <b>${esc(t.match.prev.bank || '')}</b> to <b>${esc(t.match.bank)}</b>, which usually means the purchase has cleared. Is it the same purchase?
-          <div class="row-btns"><button class="btn sm primary" data-saction="approve-match">Yes, same purchase</button><button class="btn sm" data-saction="unmatch">No, it's a different purchase</button></div></div>`
-        : t.match ? `<div class="warn-box">The bank transaction <b>${esc(t.match.bank)}</b> on ${esc(dateLabel(t.match.date))} was matched to this entry. Is that right?
-          <div class="row-btns"><button class="btn sm primary" data-saction="approve-match">Yes, approve the match</button><button class="btn sm" data-saction="unmatch">No, unmatch</button></div></div>`
+      ${t.match ? (() => {
+        // the same words as the reconcile list: what was there → what the bank says
+        const [k, line] = checkOf(t);
+        const yes = { fix: `Put Back ${money(Math.abs(t.amt))}`, update: 'Same Purchase' }[k] || 'Match';
+        const no = k === 'fix' ? `Keep ${money(Math.abs(t.match.prev.amt))}` : 'Keep Separate';
+        return `<div class="warn-box tx-mbox"><b>${esc(CHECK_HEAD[k] || 'Matched')}</b>${k === 'match' || k === 'new' ? '' : `<span>${esc(line)}</span>`}
+          <div class="row-btns"><button class="btn sm primary" data-saction="approve-match">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-saction="unmatch">${esc(no)}</button></div></div>`;
+      })()
         : t.approved === false ? '<p class="hint warn">Imported from your bank. Check the payee and category, then approve it.</p>' : ''}
-      <div class="dir seg-ctl" role="group" aria-label="Money out or in">
-        <button data-saction="dir" data-v="out" aria-pressed="${dir === 'out'}">Money out</button>
-        <button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">Money in</button>
-      </div>
-      <div class="grid2">
-        <div class="field"><label for="tx-amt">Amount</label><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? plain(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
+      <div class="grid2 tx-pair">
+        <div class="field"><span class="lbl-row"><label for="tx-amt">Amount</label><span class="dir seg-ctl" role="group" aria-label="Money out or in">
+          <button data-saction="dir" data-v="out" aria-pressed="${dir === 'out'}">Out</button><button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">In</button></span></span><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? plain(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
         <div class="field"><label for="tx-date">Date</label><input id="tx-date" type="date" value="${t.date}"></div>
       </div>
-      <div class="field"><label for="tx-payee">Payee or business</label><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" ${isPhone() ? 'readonly placeholder="Tap to choose a payee"' : 'placeholder="Type to search your payees"'}></div>
-      <div class="field"><label for="tx-acct">Account</label><select id="tx-acct">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
+      <div class="grid2 tx-pair">
+        <div class="field"><label for="tx-payee">Payee</label><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" ${isPhone() ? 'readonly placeholder="Tap to choose"' : 'placeholder="Type to search your payees"'}></div>
+        <div class="field"><label for="tx-acct">Account</label><select id="tx-acct">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
+      </div>
       ${splits ? `<div class="field"><span class="lbl">Split between categories</span><div id="splits">${splitRows()}</div>
           <div class="row-btns"><button class="btn sm" data-saction="add-split">${ICON.plus} Add line</button><button class="btn sm" data-saction="unsplit">Stop splitting</button><span id="split-left" class="hint"></span></div></div>`
-        : `<div class="field"><label for="tx-cat">Category</label><select id="tx-cat">${catSel()}</select><button class="linkish" data-saction="split">Split between categories</button></div>`}
+        : `<div class="field"><span class="lbl-row"><label for="tx-cat">Category</label><button class="linkish" data-saction="split">Split</button></span><select id="tx-cat">${catSel()}</select></div>`}
       ${t.posted ? `<p class="fine">Bought ${esc(dateLabel(t.date))}. The bank processed it on ${esc(dateLabel(t.posted))}.</p>` : ''}
       <div class="field"><label for="tx-bank">Bank description</label><input id="tx-bank" autocomplete="off" value="${esc(t.bank || '')}" placeholder="As it appears on your statement"></div>
-      <div class="field"><label for="tx-memo">Your note</label><textarea id="tx-memo" rows="2" placeholder="Anything you want to remember">${esc(t.memo || '')}</textarea></div>
-      <div class="field"><span class="lbl">Receipt</span><div id="rcpt">${receiptBox()}</div></div>
-      <label class="check"><input type="checkbox" id="tx-clear" ${t.cleared === 'c' || t.cleared === 'r' ? 'checked' : ''} ${reconciled ? 'disabled' : ''}> Cleared by the bank</label>
+      <div class="field"><label for="tx-memo">Your note</label><textarea id="tx-memo" rows="${isPhone() ? 1 : 2}" placeholder="Anything you want to remember">${esc(t.memo || '')}</textarea></div>
+      <div class="tx-foot"><div id="rcpt">${receiptBox()}</div>
+        <label class="check"><input type="checkbox" id="tx-clear" ${t.cleared === 'c' || t.cleared === 'r' ? 'checked' : ''} ${reconciled ? 'disabled' : ''}> Cleared by the bank</label></div>
       ${!t.match && t.ik && t.bank && !isNew ? '<p class="fine">Came from a bank import. If it was matched to the wrong entry, <button class="linkish" data-saction="split-bank">split the bank transaction off</button>.</p>' : ''}
       <p class="fine" id="tx-by"></p>`;
     const receiptBox = () => {
@@ -1835,7 +2173,7 @@
           <input type="file" id="rfile" accept="image/*,application/pdf" hidden></div>`;
       }
       if (!S.assets) return `<p class="hint">${S.mode === 'local' ? 'Receipts can be attached when you sign in to YNABB.' : 'Attaching receipts needs edit access to this budget.'}</p>`;
-      return `<label class="btn sm" for="rfile">${ICON.receipt} Add photo or PDF</label><input type="file" id="rfile" accept="image/*,application/pdf" hidden><span id="rstat" class="hint"></span>`;
+      return `<label class="btn sm" for="rfile">${ICON.receipt} Add receipt</label><input type="file" id="rfile" accept="image/*,application/pdf" hidden><span id="rstat" class="hint"></span>`;
     };
     const readForm = () => {
       t.amt = E.parseMoney($('#tx-amt').value);
@@ -2001,6 +2339,14 @@
     const m = t.match || { bank: t.bank, date: t.date, ik: t.ik, prev: { bank: null, ik: null, cleared: 'u', approved: null } };
     const restored = Object.assign({}, t, { bank: m.prev.bank, ik: m.prev.ik, cleared: m.prev.cleared, approved: m.prev.approved, match: null });
     if (m.kind === 'update') Object.assign(restored, { iks: m.prev.iks || null, posted: m.prev.posted || null, amt: m.prev.amt != null ? m.prev.amt : t.amt });
+    // the bank's amount put back over one changed in YNABB: saying no just keeps YNABB's
+    if (m.fix) { await putTxs([Object.assign(restored, { bank: t.bank, ik: t.ik })]); toast(`Kept ${money(Math.abs(m.prev.amt))}.`); return; }
+    // a likely match: your amount, date, category and note come back, and anything it joined or changed
+    const back = [];
+    if (m.kind !== 'update') ['amt', 'date', 'splits', 'cat', 'memo'].forEach((k) => { if (k in m.prev) restored[k] = m.prev[k]; });
+    const p = m.prev.pairAmt != null && t.pair && D.txById[t.pair];
+    if (p) back.push(Object.assign({}, p, { amt: m.prev.pairAmt }));
+    (m.prev.absorbed || []).forEach((x) => { if (!D.txById[x.id]) back.push(x); });
     const rule = ruleFor(m.bank, m.amt != null ? m.amt : t.amt, t.acct, m.date || t.date);
     const useRule = !!rule;
     const bankTx = {
@@ -2011,7 +2357,7 @@
     // you've said these two are different purchases, so never flag them as a double-up
     restored.notWith = (t.notWith || []).concat(bankTx.id);
     bankTx.notWith = [t.id];
-    await putTxs([restored, bankTx]);
+    await putTxs([restored, bankTx].concat(back));
     toast(m.kind === 'update' ? 'Kept separate. The earlier transaction is back as it was, and this one is listed on its own.' : 'Unmatched. Your entry is back as it was, and the bank transaction is listed separately.');
   }
 
@@ -2022,17 +2368,115 @@
   }
 
   // ---------- import ----------
-  function openImport(acctPreset) {
+  // After the sure matches: pair what's left with entries typed by hand that are probably the same thing.
+  // Each becomes a match waiting for approval (Needs review), so nothing is final until you say so.
+  // r.how says what was different; r.copyFrom marks the other parts of an order the bank took in parts.
+  function likelyLinks(rows, existing) {
+    const claimed = new Set(rows.map((r) => r.matchId || r.updateId).filter(Boolean));
+    const byIk = {}; existing.forEach((t) => { if (t.ik) byIk[t.ik] = t; });
+    // a line already imported whose amount was changed in YNABB since: put the bank's amount back
+    for (const r of rows) {
+      const t = r.status === 'dupe' && byIk[r.ik];
+      if (t && t.amt !== r.amt && !(t.splits && t.splits.length) && !t.pair && !claimed.has(t.id)) Object.assign(r, { status: 'update', updateId: t.id, amtFrom: t.amt, fix: true });
+    }
+    const typed = existing.filter((t) => !t.ik && t.cleared !== 'r' && !claimed.has(t.id) && !/^(starting balance|reconciliation adjustment)$/i.test(t.payee || ''));
+    const news = rows.filter((r) => r.status === 'new');
+    const taken = new Set(), usedR = new Set();
+    const bv = (r) => ({ bank: r.desc, payee: r.payee || '' });
+    const okT = (t) => !taken.has(t.id), okR = (r) => !usedR.has(r), sgn = (a, b) => Math.sign(a) === Math.sign(b);
+    const plain = (t) => !t.pair && !(t.splits && t.splits.length);
+    const link = (r, t, how) => { Object.assign(r, { status: 'match', matchId: t.id, how }); usedR.add(r); taken.add(t.id); };
+    // the same amount up to ten days apart (a bill paid days after its due date), or with the date typed wrong
+    const sameAmt = (far) => {
+      for (const t of typed) {
+        if (!okT(t)) continue;
+        let best = null, sc = 1e9;
+        for (const r of news) {
+          if (!okR(r) || r.amt !== t.amt) continue;
+          const g = gapDays(t.date, r.date), sim = sameShop(t, bv(r));
+          if (far ? !(sim && g > 10 && (g <= 62 || Math.abs(g - 365) <= 3)) : g > 10) continue;
+          const v = g - (sim ? 20 : 0);
+          if (v < sc) { best = r; sc = v; }
+        }
+        if (best) link(best, t, { kind: far ? 'date' : 'same' });
+      }
+    };
+    sameAmt(false);
+    // one order the bank took in parts
+    for (const t of typed) {
+      if (!okT(t) || !plain(t)) continue;
+      const hit = sumOf(news.filter((r) => okR(r) && sgn(r.amt, t.amt) && gapDays(t.date, r.date) <= 7 && sameShop(t, bv(r))), t.amt);
+      if (!hit) continue;
+      hit.sort((a, b) => (a.date < b.date ? -1 : 1));
+      link(hit[0], t, { kind: 'parts', n: hit.length });
+      hit.slice(1).forEach((r) => { r.copyFrom = t.id; usedR.add(r); });
+    }
+    // several entries the bank took in one go
+    for (const r of news) {
+      if (!okR(r)) continue;
+      const hit = sumOf(typed.filter((t) => okT(t) && plain(t) && sgn(r.amt, t.amt) && gapDays(t.date, r.date) <= 3 && sameShop(t, bv(r))), r.amt);
+      if (!hit) continue;
+      link(r, hit[0], { kind: 'joined', ids: hit.map((t) => t.id) });
+      hit.forEach((t) => taken.add(t.id));
+    }
+    // a transfer typed with a different amount: the bank line says it's a transfer, or names the other account
+    for (const t of typed) {
+      if (!okT(t) || !t.pair) continue;
+      const other = flatText((D.accounts[t.transfer] || {}).name).replace(/^nab/, '');
+      const says = (x) => /transfer|online|tfr/i.test(x) || (other.length >= 4 && flatText(x).includes(other));
+      const r = news.find((x) => okR(x) && sgn(x.amt, t.amt) && gapDays(t.date, x.date) <= 3 && says(x.desc));
+      if (r) link(r, t, { kind: 'amount' });
+    }
+    // the same shop around the same day with a different amount: a typo, a tip, a fuel hold, a pay rise
+    for (const t of typed) {
+      if (!okT(t) || !plain(t)) continue;
+      let best = null, sc = 1e9;
+      for (const r of news) {
+        if (!okR(r) || !sgn(r.amt, t.amt) || !sameShop(t, bv(r))) continue;
+        const g = gapDays(t.date, r.date), ratio = Math.abs(r.amt / t.amt);
+        if (g <= 7 && ratio >= 0.4 && ratio <= 2.5 && g < sc) { best = r; sc = g; }
+      }
+      if (best) link(best, t, { kind: 'amount' });
+    }
+    sameAmt(true);
+  }
+  // one short line on what was different about a likely match
+  function howNote(h, t, r) {
+    const m = (x) => money(Math.abs(x));
+    if (h.kind === 'amount') return `You typed ${m(t.amt)}. The bank's ${m(r.amt)} is used.`;
+    if (h.kind === 'date') return `You dated it ${dateLabel(t.date)}. The bank's ${dateLabel(r.date)} is used.`;
+    if (h.kind === 'same') { const g = Math.round(gapDays(t.date, r.date)); return g ? `Your date and the bank's are ${g} ${g === 1 ? 'day' : 'days'} apart.` : ''; }
+    if (h.kind === 'parts') return `You typed ${m(t.amt)}. The bank took it in ${h.n} parts.`;
+    if (h.kind === 'joined') return `You typed ${h.ids.length} entries (${h.ids.map((x) => m((D.txById[x] || {}).amt || 0)).join(' + ')}). The bank took them in one go.`;
+    return '';
+  }
+  // Import & reconcile: one place to bring in a bank file and check the balance, or just type the balance.
+  // mode: 'import' or 'rec'; note: a line shown at the top (e.g. after an import with no balance in the file)
+  function openImport(acctPreset, mode, note) {
     const accts = Object.values(D.accounts).filter((a) => !a.closed);
     if (!accts.length) { toast('Add an account first.'); UI.view = 'accounts'; saveUI(); render(); return; }
-    const st = { step: 1, acct: acctPreset || UI.f.acct || accts[0].id, rows: null, header: null, map: {}, flip: false, datefmt: 'dmy', classified: null, include: {} };
+    const st = { step: 1, acct: flowAcct(acctPreset) || accts[0].id, mode: mode || 'import', note: note || '', rows: null, header: null, map: {}, flip: false, datefmt: 'dmy', classified: null, include: {} };
+    const isTrk = () => D.accounts[st.acct].type === 'tracking';
     const paint = () => {
       let html = '';
       if (st.step === 1) {
-        html = `<p>Download a statement file from your bank's website or app (CSV, OFX, QFX or QIF). In NAB Internet Banking, open the account, choose Export and pick CSV, then choose it here. The app skips transactions it already has and matches ones you entered by hand.</p>
-          <div class="field"><label for="im-acct">Import into</label><select id="im-acct">${accts.map((a) => `<option value="${a.id}" ${a.id === st.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
-          <div class="field"><label class="btn primary" for="im-file">Choose bank file</label><input type="file" id="im-file" accept=".csv,.ofx,.qfx,.qif,.txt,text/csv" hidden></div>
-          ${importsListHTML()}`;
+        const mode = isTrk() ? 'rec' : st.mode, url = S.settings().bankUrl || '';
+        const bb = S.items('bankbal')[st.acct] || {}, last = Object.keys(bb).sort().pop(), v = last != null ? (isDebt(st.acct) ? -bb[last] : bb[last]) : null;
+        html = `${st.note ? `<p class="im-note">${st.note}</p>` : ''}
+          ${accts.length > 1 ? `<div class="field"><label for="im-acct">Account</label><select id="im-acct">${accts.map((a) => `<option value="${a.id}" ${a.id === st.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>` : ''}
+          ${isTrk() ? '' : `<div class="seg-ctl im-mode" role="group" aria-label="What to do"><button data-saction="mode" data-v="import" aria-pressed="${mode === 'import'}">Import from my bank</button><button data-saction="mode" data-v="rec" aria-pressed="${mode === 'rec'}">Just reconcile</button></div>`}
+          ${mode === 'import' ? `<ol class="im-steps">
+            <li><b>Download a CSV from your bank.</b> In NAB Internet Banking, open the account, choose Export and pick CSV.
+              ${url ? `<div class="row-btns"><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Open my bank &#8599;</a><button class="linkish" data-saction="edit-url">Change</button></div>`
+                : `<div class="field im-url"><label for="im-url">Your bank's login page, to open it from here (optional)</label><div class="im-url-row"><input id="im-url" type="url" inputmode="url" autocomplete="off" placeholder="https://ib.nab.com.au" value="${esc(st.urlDraft || '')}"><button class="btn sm" data-saction="save-url">Save</button></div></div>`}</li>
+            <li><b>Choose the file you downloaded.</b> YNABB skips what it already has, matches what you typed, then checks the balance.
+              <div class="row-btns"><button class="btn primary" data-saction="pick">Choose bank file</button><input type="file" id="im-file" accept=".csv,.ofx,.qfx,.qif,.txt,text/csv" hidden></div></li>
+          </ol>
+          <p class="fine">To undo an import, see Settings › Bank imports.</p>`
+          : `<div class="field narrow"><label for="rec-bank">${isDebt(st.acct) ? 'Amount owing' : isTrk() ? "What it's worth now" : "Bank's current balance"}</label><input id="rec-bank" class="cents" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${v != null && !isTrk() ? plain(v) : ''}"></div>
+          ${v != null && !isTrk() ? `<p class="hint">Filled in from your last bank file (end of ${esc(dateLabel(last))}). Check it matches your banking app.</p>` : ''}
+          ${isTrk() ? '' : '<p class="hint">Use the balance in your banking app. If there are pending purchases, use the <b>available</b> balance.</p>'}
+          <div class="row-btns"><button class="btn primary" data-saction="rec">${isTrk() ? 'Next' : 'Start reconciling'}</button></div>`}`;
       } else if (st.step === 2) {
         const cols = st.rows[0].map((_, i) => i);
         const name = (i) => (st.header ? st.header[i] || `Column ${i + 1}` : `Column ${i + 1}`);
@@ -2053,8 +2497,8 @@
         html = `${st.rows ? `<p class="hint">Read ${c.length} transactions from ${esc(st.file || 'your file')}. <button class="linkish" data-saction="cols">Columns look wrong?</button></p>` : ''}<div class="im-sum"><span class="chip ok">${n.new} new</span><span class="chip">${n.match} matched to ones you entered</span><span class="chip">${n.dupe} already imported</span>${n.update ? `<span class="chip">${n.update} updated descriptions</span>` : ''}${n.early ? `<span class="chip">${n.early} skipped: before your starting balance</span>` : ''}</div>
           ${n.early ? `<p class="hint">${n.early} ${n.early === 1 ? 'line is' : 'lines are'} from before ${esc(acctName(st.acct))}'s starting balance on ${esc(dateLabel(st.startDate))}. That balance already includes ${n.early === 1 ? 'it' : 'them'}, so ${n.early === 1 ? "it's" : "they're"} left out.</p>` : ''}
           <p class="hint">Matches are bank transactions that look like ones you entered yourself. After importing, each one waits in Needs review for you to approve or unmatch. Already-imported rows are skipped unless you tick them.</p>
-          <div class="table-wrap"><table class="ptable"><thead><tr><th><span class="sr">Include</span></th><th>Date</th><th>Description</th><th>Amount</th><th>What happens</th></tr></thead><tbody>
-          ${c.map((r, i) => `<tr class="${r.status}"><td><input type="checkbox" id="inc-${i}" data-inc="${i}" ${st.include[i] ? 'checked' : ''} aria-label="Include row ${i + 1}"></td><td>${esc(dateLabel(r.date))}${r.posted && r.posted !== r.date ? `<br><small class="muted">bank: ${esc(dateLabel(r.posted))}</small>` : ''}</td><td>${esc(r.desc)}</td><td class="num ${r.amt > 0 ? 'pos' : ''}">${signed(r.amt)}</td><td>${r.status === 'new' ? (r.rule ? `New · ${esc(r.rule.payee || tidyPayee(r.desc))}${r.rule.cat ? ` → ${esc(catName(r.rule.cat))}` : ''}${r.rule.mine ? ` <small class="muted">(your rule${r.rule.turn ? ', taking turns' : ''})</small>` : ''}` : 'New') : r.status === 'update' ? `Looks like “${esc(D.txById[r.updateId].payee || D.txById[r.updateId].bank)}” clearing (imported before as ${esc(D.txById[r.updateId].bank)})${r.amtFrom != null ? `. <b>The amount changed from ${esc(money(Math.abs(r.amtFrom)))} to ${esc(money(Math.abs(r.amt)))}.</b>` : ''} You'll approve it after importing.` : r.status === 'early' ? 'Skipped: before the starting balance' : r.status === 'match' ? `Matches your entry “${esc(D.txById[r.matchId].payee || 'no payee')}” (${esc(dateLabel(D.txById[r.matchId].date))}). You'll approve it after importing.` : 'Already imported'}</td></tr>`).join('')}
+          <div class="table-wrap"><table class="ptable im-table"><thead><tr><th><span class="sr">Include</span></th><th>Date</th><th>Description</th><th>Amount</th><th>What happens</th></tr></thead><tbody>
+          ${c.map((r, i) => `<tr class="${r.status}"><td><input type="checkbox" id="inc-${i}" data-inc="${i}" ${st.include[i] ? 'checked' : ''} aria-label="Include row ${i + 1}"></td><td>${esc(dateLabel(r.date))}${r.posted && r.posted !== r.date ? `<br><small class="muted">bank: ${esc(dateLabel(r.posted))}</small>` : ''}</td><td>${esc(r.desc)}</td><td class="num ${r.amt > 0 ? 'pos' : ''}">${signed(r.amt)}</td><td>${r.copyFrom ? `Part of your “${esc((D.txById[r.copyFrom] || {}).payee || '')}” entry` : r.status === 'update' && r.fix ? `<b>Already here, but changed to ${esc(money(Math.abs(r.amtFrom)))} in YNABB.</b> Puts back the bank's amount.` : r.status === 'new' ? (r.rule ? `New · ${esc(r.rule.payee || tidyPayee(r.desc))}${r.rule.cat ? ` → ${esc(catName(r.rule.cat))}` : ''}${r.rule.mine ? ` <small class="muted">(your rule${r.rule.turn ? ', taking turns' : ''})</small>` : ''}` : 'New') : r.status === 'update' ? `Looks like “${esc(D.txById[r.updateId].payee || D.txById[r.updateId].bank)}” clearing (imported before as ${esc(D.txById[r.updateId].bank)})${r.amtFrom != null ? `. <b>The amount changed from ${esc(money(Math.abs(r.amtFrom)))} to ${esc(money(Math.abs(r.amt)))}.</b>` : ''} You'll approve it after importing.` : r.status === 'early' ? 'Skipped: before the starting balance' : r.status === 'match' ? `Matches your entry “${esc(D.txById[r.matchId].payee || 'no payee')}” (${esc(dateLabel(D.txById[r.matchId].date))}).${r.how && howNote(r.how, D.txById[r.matchId], r) ? ` <b>${esc(howNote(r.how, D.txById[r.matchId], r))}</b>` : ''} You'll approve it after importing.` : 'Already imported'}</td></tr>`).join('')}
           </tbody></table></div>
           ${st.gone && st.gone.length ? `<div class="warn-box gone-box"><b>${st.gone.length === 1 ? 'A pending charge is' : `${st.gone.length} pending charges are`} no longer in the bank file.</b> ${st.gone.length === 1 ? 'It was' : 'They were'} imported while pending, but this file covers ${st.gone.length === 1 ? 'its date' : 'their dates'} and doesn't include ${st.gone.length === 1 ? 'it' : 'them'}, cleared or pending. That usually means the bank released a hold (a hotel, a hire car, a fuel pre-authorisation). Ticked ones are removed when you import.
             <ul class="rc-list">${st.gone.map((t) => `<li><label class="check"><input type="checkbox" data-gone="${t.id}" ${st.goneSel.has(t.id) ? 'checked' : ''}><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || '')} <small class="muted">${esc(t.bank || '')}${t.cleared === 'r' ? ' · reconciled' : ''}</small></span><b class="${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</b></label></li>`).join('')}</ul></div>` : ''}`;
@@ -2064,14 +2508,16 @@
         ? '<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="check">Next</button>'
         : `<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="go">Import ${Object.values(st.include).filter(Boolean).length} rows${st.goneSel && st.goneSel.size ? ` and remove ${st.goneSel.size} released` : ''}</button>`);
     };
-    openSheet({ title: 'Import from bank', body: '', wide: true });
+    openSheet({ title: 'Import & reconcile', body: '', wide: true });
     paint();
     const classify = (rows) => {
       // the date the purchase was made (from the description), keeping the bank's date for duplicate checks
       rows = rows.map((r) => { const d = E.dateFromDesc(r.desc, r.date, st.datefmt); return Object.assign({}, r, { posted: r.date, date: d || r.date }); });
       const existing = D.tx.filter((t) => t.acct === st.acct);
-      st.classified = E.classifyImport(st.acct, rows, existing).map((r) => {
-        if (r.status === 'new') { const rule = ruleFor(r.desc, r.amt, st.acct, r.date); if (rule && (rule.payee || rule.cat || rule.memo || rule.alt)) r.rule = rule; }
+      st.classified = E.classifyImport(st.acct, rows, existing);
+      likelyLinks(st.classified, existing);
+      st.classified = st.classified.map((r) => {
+        if (r.status === 'new' && !r.copyFrom) { const rule = ruleFor(r.desc, r.amt, st.acct, r.date); if (rule && (rule.payee || rule.cat || rule.memo || rule.alt)) r.rule = rule; }
         return r;
       });
       // rules that take turns: go through the new lines oldest first, each one after the last that matched
@@ -2100,45 +2546,76 @@
       const posted = rows.map((r) => r.posted || r.date).filter(Boolean).sort();
       const from = posted[0], to = posted[posted.length - 1];
       const iks = new Set(st.classified.map((r) => r.ik)), updated = new Set(st.classified.filter((r) => r.updateId || r.matchId).map((r) => r.updateId || r.matchId));
-      // only holds YNABB itself imported while pending: never anything brought over from YNAB, entered by hand, or already reconciled
-      st.gone = from ? existing.filter((t) => t.ik && t.cleared !== 'r' && t.bank && E.isPending(t.bank) && !t.match && t.date >= from && t.date < to && !updated.has(t.id)
+      // only holds YNABB itself imported while pending: never anything brought over from YNAB or entered by hand
+      st.gone = from ? existing.filter((t) => t.ik && t.bank && E.isPending(t.bank) && !t.match && t.date >= from && t.date < to && !updated.has(t.id)
         && !iks.has(t.ik) && !(t.iks || []).some((k) => iks.has(k))).sort((a, b) => (a.date < b.date ? -1 : 1)) : [];
       st.goneSel = new Set(st.gone.map((t) => t.id));
       st.step = 3; paint();
     };
     sheet.onChange = async (el) => {
       if (el.dataset.gone) { if (el.checked) st.goneSel.add(el.dataset.gone); else st.goneSel.delete(el.dataset.gone); paint(); return; }
-      if (el.id === 'im-acct') st.acct = el.value;
-      if (el.id === 'im-file' && el.files[0]) {
-        st.file = el.files[0].name;
-        const text = await el.files[0].text();
-        if (/<OFX>|<STMTTRN>/i.test(text) || /^!Type:/im.test(text)) {
-          const rows = /^!Type:/im.test(text) ? E.parseQIF(text) : E.parseOFX(text);
-          if (!rows.length) { toast('No transactions found in that file.'); return; }
-          classify(rows);
-          return;
-        }
-        const rows = E.parseCSV(text);
-        if (!rows.length) { toast('That file looks empty.'); return; }
-        const first = rows[0];
-        const looksHeader = first.every((v) => !E.parseDate(v, 'dmy') && Number.isNaN(Number(String(v).replace(/[$,\s]/g, ''))) || v === '');
-        st.header = looksHeader ? first : null;
-        st.rows = looksHeader ? rows.slice(1) : rows;
-        if (!st.rows.length) { toast('That file has no transactions.'); return; }
-        const saved = D.accounts[st.acct].csvMap;
-        if (saved && saved.cols === st.rows[0].length) { st.map = Object.assign({}, saved.map); st.flip = !!saved.flip; st.datefmt = saved.datefmt || 'dmy'; }
-        else guessMap(st);
-        // when every row reads cleanly, go straight on; the columns can still be changed from the next step
-        const m = st.map, test = m.date != null && m.desc != null && (m.amt != null || m.debit != null || m.credit != null) ? parseRows(st) : [];
-        if (test.length && test.every((r) => r.date && !Number.isNaN(r.amt))) { st.autoCols = true; await sheet.actions.check(); return; }
-        st.step = 2; paint();
-      }
+      if (el.id === 'im-acct') { st.acct = el.value; UI.lastImport = el.value; saveUI(); paint(); }
+      if (el.id === 'im-file' && el.files[0]) await loadFile(el.files[0]);
       if (el.dataset.map) { st.map[el.dataset.map] = el.value === '' ? undefined : Number(el.value); paint(); }
       if (el.id === 'im-flip') { st.flip = el.checked; paint(); }
       if (el.id === 'im-datefmt') { st.datefmt = el.value; paint(); }
       if (el.dataset.inc) { st.include[el.dataset.inc] = el.checked; setSheetFoot(`<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="go">Import ${Object.values(st.include).filter(Boolean).length} rows</button>`); }
     };
+    const loadFile = async (file) => {
+      st.file = file.name;
+      const text = await file.text();
+      if (/<OFX>|<STMTTRN>/i.test(text) || /^!Type:/im.test(text)) {
+        const rows = /^!Type:/im.test(text) ? E.parseQIF(text) : E.parseOFX(text);
+        if (!rows.length) { toast('No transactions found in that file.'); return; }
+        classify(rows);
+        return;
+      }
+      const rows = E.parseCSV(text);
+      if (!rows.length) { toast('That file looks empty.'); return; }
+      const first = rows[0];
+      const looksHeader = first.every((v) => !E.parseDate(v, 'dmy') && Number.isNaN(Number(String(v).replace(/[$,\s]/g, ''))) || v === '');
+      st.header = looksHeader ? first : null;
+      st.rows = looksHeader ? rows.slice(1) : rows;
+      if (!st.rows.length) { toast('That file has no transactions.'); return; }
+      const saved = D.accounts[st.acct].csvMap;
+      if (saved && saved.cols === st.rows[0].length) { st.map = Object.assign({}, saved.map); st.flip = !!saved.flip; st.datefmt = saved.datefmt || 'dmy'; }
+      else guessMap(st);
+      // when every row reads cleanly, go straight on; the columns can still be changed from the next step
+      const m = st.map, test = m.date != null && m.desc != null && (m.amt != null || m.debit != null || m.credit != null) ? parseRows(st) : [];
+      if (test.length && test.every((r) => r.date && !Number.isNaN(r.amt))) { st.autoCols = true; await sheet.actions.check(); return; }
+      st.step = 2; paint();
+    };
+    const saveUrl = () => {
+      let u = ($('#im-url') && $('#im-url').value || '').trim();
+      if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+      if (u && !/^https:\/\/[^\s/]+\.[^\s]+/i.test(u)) { toast("That doesn't look like a web address."); return; }
+      if (!u) { toast("Type your bank's login page first."); return; }
+      guard(S.write('meta', 'settings', { bankUrl: u })); st.urlDraft = ''; paint();
+    };
+    sheet.onEnter = () => {
+      const id = document.activeElement && document.activeElement.id;
+      if (id === 'rec-bank') sheet.actions.rec();
+      if (id === 'im-url') saveUrl();
+    };
     sheet.actions = {
+      mode: (el) => { st.mode = el.dataset.v; st.note = ''; paint(); if (st.mode === 'rec') setTimeout(() => $('#rec-bank') && $('#rec-bank').focus(), 30); },
+      'save-url': saveUrl,
+      'edit-url': () => { st.urlDraft = S.settings().bankUrl || ''; guard(S.write('meta', 'settings', { bankUrl: null })); paint(); },
+      // Chrome on a computer can open the file chooser straight in Downloads; elsewhere the normal chooser
+      pick: async () => {
+        if (window.showOpenFilePicker) {
+          try {
+            const [h] = await window.showOpenFilePicker({ startIn: 'downloads', id: 'bank-file', types: [{ description: 'Bank file', accept: { 'text/plain': ['.csv', '.ofx', '.qfx', '.qif', '.txt'] } }] });
+            await loadFile(await h.getFile());
+          } catch (e) { if (e.name !== 'AbortError') $('#im-file').click(); }
+        } else $('#im-file').click();
+      },
+      rec: () => {
+        const raw = ($('#rec-bank') && $('#rec-bank').value || '').trim(), v = E.parseMoney(raw);
+        if (!raw || Number.isNaN(v)) { toast(isTrk() ? "Type what it's worth now." : "Type the bank's current balance."); $('#rec-bank') && $('#rec-bank').focus(); return; }
+        UI.lastImport = st.acct;
+        closeSheet(); startRec(st.acct, isDebt(st.acct) ? -Math.abs(v) : v);
+      },
       back: () => { st.step = st.step === 3 && st.rows && !st.autoCols ? 2 : 1; paint(); },
       cols: () => { st.autoCols = false; st.step = 2; paint(); },
       check: async () => {
@@ -2152,26 +2629,51 @@
         if (bad) toast(`${bad} unreadable rows were left out.`);
       },
       go: async () => {
-        const add = [], upd = [];
+        const add = [], upd = [], side = [], absorbed = [];
         st.classified.forEach((r, i) => {
           if (!st.include[i]) return;
           if (r.status === 'update') {
             const t = D.txById[r.updateId];
             upd.push(Object.assign({}, t, {
-              bank: r.desc, ik: r.ik, iks: (t.iks || []).concat(t.ik ? [t.ik] : []), amt: r.amt, bal: Number.isFinite(r.bal) ? r.bal : t.bal || null,
+              bank: r.desc, ik: r.ik, iks: r.fix ? t.iks || null : (t.iks || []).concat(t.ik ? [t.ik] : []), amt: r.amt, bal: Number.isFinite(r.bal) ? r.bal : t.bal || null,
               posted: r.posted !== r.date ? r.posted : null, cleared: t.cleared === 'r' ? 'r' : 'c', approved: false,
-              match: { kind: 'update', bank: r.desc, date: r.date, posted: r.posted !== r.date ? r.posted : null, ik: r.ik, amt: r.amt,
+              match: { kind: 'update', fix: r.fix || undefined, bank: r.desc, date: r.date, posted: r.posted !== r.date ? r.posted : null, ik: r.ik, amt: r.amt,
                 prev: { bank: t.bank || null, ik: t.ik || null, iks: t.iks || null, posted: t.posted || null, cleared: t.cleared || 'u', approved: t.approved === false ? false : null, amt: t.amt } },
             }));
             return;
           }
           if (r.status === 'match') {
-            const t = D.txById[r.matchId];
-            upd.push(Object.assign({}, t, {
+            const t = D.txById[r.matchId], h = r.how;
+            // kept so the match can be undone exactly
+            const prev = { bank: t.bank || null, ik: t.ik || null, cleared: t.cleared || 'u', approved: t.approved === false ? false : null };
+            const more = {};
+            if (h) {
+              // a likely match takes the bank's amount and, if the date was typed wrong, its date
+              Object.assign(prev, { amt: t.amt, date: t.date, splits: t.splits || null, cat: t.cat || null, memo: t.memo || null });
+              more.amt = r.amt;
+              if (h.kind === 'date') more.date = r.date;
+              if (h.kind === 'joined') {
+                const ts = h.ids.map((x) => D.txById[x]).filter(Boolean), cats = [...new Set(ts.map((x) => x.cat || null))];
+                more.memo = ts.map((x) => x.memo).filter(Boolean).join(' · ') || null;
+                if (cats.length === 1) Object.assign(more, { cat: cats[0], splits: null });
+                else if (ts.every((x) => x.cat)) Object.assign(more, { cat: null, splits: ts.map((x) => ({ cat: x.cat, amt: x.amt, memo: x.memo || undefined })) });
+                prev.absorbed = ts.slice(1);
+                absorbed.push(...ts.slice(1));
+              }
+              const p = t.pair && D.txById[t.pair];
+              if (p && r.amt !== t.amt) { side.push(Object.assign({}, p, { amt: -r.amt })); prev.pairAmt = p.amt; }
+            }
+            upd.push(Object.assign({}, t, more, {
               bank: r.desc, ik: r.ik, cleared: t.cleared === 'r' ? 'r' : 'c', approved: false, bal: Number.isFinite(r.bal) ? r.bal : t.bal || null,
-              // kept so the match can be undone exactly
-              match: { bank: r.desc, date: r.date, posted: r.posted !== r.date ? r.posted : null, ik: r.ik, prev: { bank: t.bank || null, ik: t.ik || null, cleared: t.cleared || 'u', approved: t.approved === false ? false : null } },
+              match: { bank: r.desc, date: r.date, posted: r.posted !== r.date ? r.posted : null, ik: r.ik, how: h ? h.kind : undefined, note: h ? howNote(h, t, r) : undefined, prev },
             }));
+          } else if (r.copyFrom && D.txById[r.copyFrom]) {
+            // the rest of an order the bank took in parts: it takes the details of the entry you typed
+            const t = D.txById[r.copyFrom];
+            add.push({
+              id: S.uid(), acct: st.acct, date: r.date, posted: r.posted !== r.date ? r.posted : null, amt: r.amt, bank: r.desc, payee: t.payee || tidyPayee(r.desc), cat: t.cat || null,
+              memo: t.memo || null, cleared: 'c', approved: false, ik: r.ik, by: myId(), bal: Number.isFinite(r.bal) ? r.bal : null,
+            });
           } else {
             add.push({
               id: S.uid(), acct: st.acct, date: r.date, posted: r.posted !== r.date ? r.posted : null, amt: r.amt, bank: r.desc,
@@ -2183,14 +2685,15 @@
         const batch = S.uid();
         add.forEach((t) => (t.imp = batch));
         const changed = {};
-        for (const t of upd) {
+        for (const t of upd.concat(side)) {
           const o = D.txById[t.id];
-          changed[t.id] = { bank: o.bank || null, ik: o.ik || null, iks: o.iks || null, posted: o.posted || null, cleared: o.cleared || 'u', approved: o.approved === false ? false : null, match: o.match || null, amt: o.amt };
+          changed[t.id] = { bank: o.bank || null, ik: o.ik || null, iks: o.iks || null, posted: o.posted || null, cleared: o.cleared || 'u', approved: o.approved === false ? false : null, match: o.match || null, amt: o.amt,
+            date: o.date, cat: o.cat || null, splits: o.splits || null, memo: o.memo || null };
         }
         upd.forEach((t) => (t.impd = true)); // touched by a recorded import (not an "earlier import")
-        const gone = (st.gone || []).filter((t) => st.goneSel.has(t.id) && D.txById[t.id]).map((t) => D.txById[t.id]);
+        const gone = (st.gone || []).filter((t) => st.goneSel.has(t.id) && D.txById[t.id]).map((t) => D.txById[t.id]).concat(absorbed);
         // the page updates straight away; saving carries on in the background (the header shows when it's done)
-        putTxs(add.concat(upd), gone, saveBar(`Importing ${add.length + upd.length} transactions`));
+        putTxs(add.concat(upd, side), gone, saveBar(`Importing ${add.length + upd.length} transactions`));
         if (st.days) saveDayBalances(st.acct, st.days, st.parsedRows);
         // keep the 15 most recent imports undoable
         const old = Object.values(S.items('imports')).sort((a, b) => b.ts - a.ts).slice(14);
@@ -2198,11 +2701,17 @@
         old.forEach((b) => (items[b.id] = null));
         guard(S.write('meta', 'imports', { items }));
         closeSheet();
+        UI.lastImport = st.acct;
         const auto = add.filter((t) => t.cat).length;
         const nUpd = upd.filter((t) => t.match && t.match.kind === 'update').length, nMatch = upd.length - nUpd;
-        toast(`Imported ${add.length}${auto ? ` (${auto} categorized from past choices)` : ''}${nMatch ? `. ${nMatch} matched to your ${nMatch === 1 ? 'entry' : 'entries'}` : ''}${nUpd ? `. ${nUpd} bank ${nUpd === 1 ? 'description' : 'descriptions'} updated` : ''}${nMatch || nUpd ? ', waiting for you to approve' : ''}${gone.length ? `. Removed ${gone.length} released pending ${gone.length === 1 ? 'charge' : 'charges'}` : ''}.`);
-        UI.view = 'tx'; UI.f = NO_FILTERS(); UI.q = ''; UI.showFilters = false; saveUI();
-        render();
+        const said = `Imported ${add.length}${auto ? ` (${auto} categorized from past choices)` : ''}${nMatch ? `. ${nMatch} matched to your ${nMatch === 1 ? 'entry' : 'entries'}` : ''}${nUpd ? `. ${nUpd} bank ${nUpd === 1 ? 'description' : 'descriptions'} updated` : ''}${nMatch || nUpd ? ', waiting for you to approve' : ''}${gone.length > absorbed.length ? `. Removed ${gone.length - absorbed.length} released pending ${gone.length - absorbed.length === 1 ? 'charge' : 'charges'}` : ''}.`;
+        // straight on to reconciling, against the newest balance in the file
+        const last = st.days ? Object.keys(st.days).sort().pop() : null;
+        if (last == null) { render(); openImport(st.acct, 'rec', `${esc(said)} Now type the bank's balance to check it matches.`); return; }
+        startRec(st.acct, st.days[last], last);
+        const { diff } = recState();
+        const n = recWaiting().length;
+        toast(`${said} ${diff ? `YNABB is ${money(Math.abs(diff))} ${diff < 0 ? 'over' : 'under'} the bank.` : n ? `It adds up. ${n} to check.` : 'It matches the bank.'}`);
       },
     };
   }
@@ -2462,7 +2971,7 @@
     acct = acct && D.accounts[acct] ? acct : UI.f.acct && D.accounts[UI.f.acct] ? UI.f.acct : (Object.values(D.accounts).find((a) => !a.closed && a.type !== 'tracking') || {}).id;
     if (!acct) { toast('Add an account first.'); return; }
     UI.bc = { acct, step: null };
-    UI.view = 'tx'; UI.only = null; UI.q = ''; UI.f = Object.assign(NO_FILTERS(), { acct, from: bcSince(acct) }); UI.sel = null; UI.recPop = null;
+    UI.view = 'tx'; UI.only = null; UI.q = ''; UI.f = Object.assign(NO_FILTERS(), { acct, from: bcSince(acct) }); UI.sel = null;
     saveUI(); render(); window.scrollTo(0, 0);
   }
   async function bcLoadFile(acct, file) {
@@ -2656,7 +3165,7 @@
         <span class="ar-ic">${acctIcon(a)}</span>
         <div class="ar-main">${nameBtn(a)}<span class="ar-meta">${meta.join(' · ')}${a.closed ? ' · closed' : ''}${b.review ? ` · <b class="warn">${b.review} to review</b>` : ''}</span></div>
         <div class="ar-amt ${b.balance < 0 ? 'neg' : ''}">${money(b.balance)}</div>
-        <div class="ar-act">${a.type === 'tracking' ? '' : `<button class="btn xs" data-action="import" data-id="${a.id}">Import</button>`}<button class="btn xs" data-action="reconcile" data-id="${a.id}">${a.type === 'tracking' ? 'Update' : 'Reconcile'}</button>${more(a)}</div>
+        <div class="ar-act"><button class="btn xs" data-action="reconcile" data-id="${a.id}">${a.type === 'tracking' ? 'Update' : 'Import &amp; reconcile'}</button>${more(a)}</div>
       </div>`;
     };
     const debtRow = (a) => {
@@ -2678,7 +3187,7 @@
         <div class="ar-main">${nameBtn(a)}<span class="ar-meta">${meta.join(' · ')}${b.review ? ` · <b class="warn">${b.review} to review</b>` : ''}</span>
           <div class="ar-bar" title="${esc(say)}"><i style="width:${Math.round(pct * 100)}%" class="${ok ? 'ok' : ''}"></i></div><span class="ar-say ${ok ? 'ok' : ''}">${say}</span></div>
         <div class="ar-amt owe">${owing ? `<small>owing</small>${money(owing)}` : b.balance > 0 ? `<small>in credit</small>${money(b.balance)}` : 'Paid off'}</div>
-        <div class="ar-act"><button class="btn xs" data-action="payoff" data-id="${a.id}">Payoff plan</button><button class="btn xs" data-action="reconcile" data-id="${a.id}">Reconcile</button>${more(a)}</div>
+        <div class="ar-act"><button class="btn xs" data-action="payoff" data-id="${a.id}">Payoff plan</button><button class="btn xs" data-action="reconcile" data-id="${a.id}">Import &amp; reconcile</button>${more(a)}</div>
       </div>`;
     };
     const tile = (label, amt, cls) => `<div class="at-tile ${cls || ''}"><span>${label}</span><b>${money(amt)}</b></div>`;
@@ -2895,6 +3404,8 @@
       <div class="row-btns"><label class="btn" for="ynab-file">Choose YNAB export (.zip)</label><input type="file" id="ynab-file" accept=".zip,.csv,application/zip,text/csv" multiple hidden data-live="0"></div>
 
       <h2>Bank imports</h2>
+      <div class="field"><label for="set-bankurl">Your bank's login page</label><input id="set-bankurl" type="url" inputmode="url" autocomplete="off" data-live="0" placeholder="https://ib.nab.com.au" value="${esc(S.settings().bankUrl || '')}"></div>
+      <p class="fine">Import &amp; reconcile shows an Open my bank button for it, so you can log in and download your CSV. Shared with everyone on this budget.</p>
       <p>Undo a whole import here at any time. ⌘Z only works until the page is reloaded.</p>
       ${importsListHTML() || '<p class="hint">No imports yet.</p>'}
 
@@ -3156,7 +3667,13 @@
     'ie-rcpt-view': () => { const t = D.txById[UI.editTx], d = UI.editDraft || {}; const r = 'receipt' in d ? d.receipt : t && t.receipt; if (r) openLightbox('/_blob/' + r); },
     'ie-rcpt-rm': () => { const d = UI.editDraft; if (!d) return; d.receipt = null; d.receiptType = null; d._dirty = true; render(); },
     'toggle-clear': (el) => toggleClear(el.dataset.id),
-    approve: async (el) => { const id = el.dataset.id; if (UI.editTx === id) { await saveInline(); fresh(); } await approve([id]); render(); },
+    approve: async (el) => {
+      const id = el.dataset.id, t = D.txById[id], rec = UI.rec;
+      if (UI.editTx === id) { await saveInline(); fresh(); }
+      S.newStep(); await approve([id]); S.newStep();
+      render();
+      if (t && !(rec && !UI.rec)) toast(`Approved ${t.payee || 'it'}.`, { label: 'Undo', fn: () => undoRedo(false) });
+    },
     'approve-all': () => approve(filteredTx().filter((t) => t.approved === false && !t.match && (t.cat || (t.splits && t.splits.length) || t.transfer || isTrack(t.acct))).map((t) => t.id)),
     unmatch: async (el) => { const id = el.dataset.id; if (UI.editTx === id) { await saveInline(); fresh(); } await unmatch(id); render(); },
     'undo-import': (el) => openUndoImport(el.dataset.id),
@@ -3179,8 +3696,8 @@
     payees: () => openPayees(),
     'debt-plan': openDebtPlan,
     'acct-tx': (el) => { UI.view = 'tx'; UI.f = Object.assign(defaultFilters(), { acct: el.dataset.id }); UI.showFilters = false; saveUI(); render(); },
-    reconcile: (el) => { UI.view = 'tx'; UI.rec = null; UI.f = Object.assign(NO_FILTERS(), { acct: el.dataset.id }); UI.q = ''; UI.recPop = el.dataset.id; saveUI(); render(); setTimeout(() => $('#rec-bank') && $('#rec-bank').focus(), 30); },
-    'rec-pop': () => { UI.recPop = UI.recPop != null ? null : (UI.f.acct && D.accounts[UI.f.acct] ? UI.f.acct : ''); render(); setTimeout(() => { const el = $('#rec-acct') && !$('#rec-acct').value ? $('#rec-acct') : $('#rec-bank'); if (el) el.focus(); }, 30); },
+    reconcile: (el) => openImport(el.dataset.id),
+    'rec-flow': () => openImport(),
     'ie-cal': () => { const p = $('#ie-date-pick'); if (!p) return; p.value = isoOr($('#ie-date').value, p.value); try { p.showPicker(); } catch (e) { p.focus(); p.click(); } },
     'multi-clear': () => { UI.multi = null; render(); },
     'select-all': () => selectAll(),
@@ -3226,13 +3743,40 @@
     'dbl-see': (el) => { const id = el.dataset.id, t = D.txById[id]; if (!t) return; UI.q = ''; UI.only = null; if ((UI.f.from && t.date < UI.f.from) || (UI.f.to && t.date > UI.f.to)) { UI.f.from = ''; UI.f.to = ''; } if (UI.rec && t.cleared === 'r') UI.recAll = true; UI.sel = id; render(); setTimeout(() => { const r = document.querySelector(`.txr[data-row="${id}"]`); if (r) r.scrollIntoView({ block: 'center' }); }, 40); },
     'dbl-merge': (el) => mergePair(el.dataset.a, el.dataset.b),
     'dbl-not': (el) => notDouble(el.dataset.a, el.dataset.b),
+    'chk-open': (el) => openTx(D.txById[el.dataset.id]),
+    'chk-pair-ok': async (el) => {
+      const ids = [el.dataset.a, el.dataset.b], rec = UI.rec;
+      S.newStep(); await approve(ids); S.newStep(); render();
+      if (!(rec && !UI.rec)) toast('Both matched.', { label: 'Undo', fn: () => undoRedo(false) });
+    },
+    // two matches that crossed (two $60 purchases): each keeps your details and takes the other's bank line
+    'chk-swap': async (el) => {
+      const a = D.txById[el.dataset.a], b = D.txById[el.dataset.b];
+      if (!a || !b || !a.match || !b.match) return;
+      const na = Object.assign({}, a), nb = Object.assign({}, b);
+      ['bank', 'ik', 'posted', 'bal'].forEach((x) => { na[x] = b[x] == null ? null : b[x]; nb[x] = a[x] == null ? null : a[x]; });
+      // the bank halves trade places but both stay matched, so the card shows the new way round to approve
+      const bankSide = (m) => ({ bank: m.bank, date: m.date, posted: m.posted, ik: m.ik });
+      na.match = Object.assign({}, a.match, bankSide(b.match), { swapped: !a.match.swapped });
+      nb.match = Object.assign({}, b.match, bankSide(a.match), { swapped: !b.match.swapped });
+      S.newStep(); await putTxs([na, nb]); S.newStep();
+      UI.ckOpen = null; render();
+      toast('Swapped. Check them, then tick Right Way Round.', { label: 'Undo', fn: () => undoRedo(false) });
+    },
+    'ck-info': (el) => { UI.ckInfo = Object.assign({}, UI.ckInfo, { [el.dataset.k]: !(UI.ckInfo && UI.ckInfo[el.dataset.k]) }); render(); },
+    'chk-peek': (el) => { UI.ckOpen = UI.ckOpen === el.dataset.id ? null : el.dataset.id; render(); },
+    // approve a whole section at once (perfect matches, or new lines already given a category): one undo step
+    'chk-all': async (el) => {
+      const ids = recWaiting().filter((t) => checkOf(t)[0] === el.dataset.k).map((t) => t.id), rec = UI.rec;
+      S.newStep(); await approve(ids); S.newStep();
+      render();
+      if (!(rec && !UI.rec)) toast(`Approved ${ids.length}.`, { label: 'Undo', fn: () => undoRedo(false) });
+    },
     'rec-show': (el) => { UI.only = el.dataset.ids.split(','); UI.onlyWhat = el.dataset.what; UI.editTx = null; render(); },
     'show-twins': () => { UI.dbl = true; UI.bc = null; UI.editTx = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     'clear-only': () => { UI.only = null; render(); },
     'acct-pick': (el) => { if (UI.bc) UI.bc = el.dataset.id ? { acct: el.dataset.id, step: null } : null; UI.f = Object.assign({}, UI.f, { acct: el.dataset.id, from: UI.bc ? bcSince(el.dataset.id) : UI.f.from, to: UI.bc ? '' : UI.f.to }); UI.only = null; UI.limit = 150; UI.editTx = null; UI.sel = null; saveUI(); render(); },
     'tx-sort': (el) => { const k = el.dataset.k; UI.sort = UI.sort.k === k ? { k, dir: -UI.sort.dir } : { k, dir: k === 'date' || k === 'amt' ? -1 : 1 }; render(); },
-    'rec-pop-close': () => { UI.recPop = null; render(); },
-    'rec-start': () => recStart(),
     'bank-check': () => { const a = UI.rec && UI.rec.acct; UI.rec = null; openBankCheck(a); },
     'bc-close': () => { if (UI.bc && UI.bc.find != null) UI.q = ''; UI.bc = null; UI.f.from = ''; UI.f.to = ''; render(); },
     'bc-step': (el) => {
@@ -3253,7 +3797,18 @@
     'bc-go': (el) => { const id = el.dataset.id || null, tt = D.txById[id];
       if (!el.dataset.q) { if (tt && ((UI.f.from && tt.date < UI.f.from) || (UI.f.to && tt.date > UI.f.to))) { UI.f.from = ''; UI.f.to = ''; UI.bc.step = null; } }
       else { UI.bc.find = el.dataset.q; UI.q = UI.bc.find; UI.f.from = ''; UI.f.to = ''; } UI.f.acct = UI.bc.acct; UI.limit = 150; UI.sel = id; render(); if (!id) { window.scrollTo(0, 0); return; } setTimeout(() => { const r = document.querySelector(`.txr[data-row="${id}"]`); if (r) r.scrollIntoView({ block: 'center' }); }, 40); },
-    'rec-stop': () => { UI.dbl = false; UI.rec = null; UI.only = null; saveUI(); render(); },
+    'rec-stop': () => { UI.dbl = false; UI.rec = null; UI.only = null; UI.recSkip = null; saveUI(); render(); },
+    'rd-fix': (el) => { const it = (UI.recItems || [])[+el.dataset.i]; if (it) recFix([it]); },
+    // "Not the same" / "Keep it": stop suggesting this one while reconciling
+    'rd-skip': (el) => {
+      const it = (UI.recItems || [])[+el.dataset.i];
+      if (!it) return;
+      UI.recSkip = UI.recSkip || {};
+      if (it.bs.length) it.ts.forEach((t) => it.bs.forEach((b) => (UI.recSkip[t.id + '|' + b.id] = true)));
+      else it.ts.forEach((t) => (UI.recSkip[t.id] = true));
+      render();
+    },
+    'rec-flow-import': () => openImport(UI.rec && UI.rec.acct, 'import'),
     'rec-finish': () => recFinish(0),
     'rec-adjust': () => recFinish(recState().diff),
     'export-json': exportJSON,
@@ -3326,7 +3881,6 @@
   const fresh = () => { if (S.ready()) D = snapshot(); };
   document.addEventListener('click', (ev) => {
     if (UI.showFilters && !ev.target.closest('.filt-wrap') && !ev.target.closest('#sheet') && !ev.target.closest('.cbx-pop')) { UI.showFilters = false; render(); }
-    if (UI.recPop != null && !ev.target.closest('.ah-rec') && !ev.target.closest('#sheet') && !ev.target.closest('.cbx-pop')) { UI.recPop = null; render(); }
     if (ev.target.closest('[data-saction],[data-action]')) fresh();
     const s = ev.target.closest('[data-saction]');
     if (s && sheet && $('#sheet').contains(s)) {
@@ -3431,13 +3985,27 @@
     // save just after the cursor lands in the next box, so the refresh can put it back there
     if (el.classList.contains('asg')) { const id = el.dataset.id; setTimeout(() => { fresh(); setAssigned(id, el); }, 0); return; }
     if (el.dataset.filter) { UI.f[el.dataset.filter] = el.value; UI.limit = 150; render(); return; }
-    if (el.id === 'rec-acct') { UI.recPop = el.value; render(); setTimeout(() => $('#rec-bank') && $('#rec-bank').focus(), 30); return; }
     if (el.id === 'rec-all') { UI.recAll = el.checked; render(); return; }
     if (el.id === 'rec-bank-live' && UI.rec) { const v = E.parseMoney(el.value); if (el.value.trim() && !Number.isNaN(v)) { UI.rec.bank = isDebt(UI.rec.acct) ? -Math.abs(v) : v; saveUI(); } render(); return; }
     if (el.id === 'showhidden') { UI.showHidden = el.checked; render(); return; }
     if (el.id === 'set-layout') { setLayout(el.value); return; }
     if (el.id === 'ah-acct') { actions['acct-pick']({ dataset: { id: el.value } }); return; }
     if (el.id === 'split-basis') { try { localStorage.setItem('zeroline-split-basis', el.value); } catch (e) { /* ignore */ } render(); return; }
+    if (el.dataset.ckCat) {
+      const t = D.txById[el.dataset.ckCat];
+      if (!t || !el.value) return;
+      const x = el.value.startsWith('xfer:') ? null : el.value;
+      if (!x) { openTx(t); return; } // a transfer needs the other account: use the full editor
+      S.newStep(); await putTxs([Object.assign({}, t, { cat: x, approved: null, match: null })]); S.newStep();
+      render(); toast(`${t.payee || 'It'} → ${catName(x)}.`, { label: 'Undo', fn: () => undoRedo(false) });
+      return;
+    }
+    if (el.id === 'set-bankurl') {
+      let u = el.value.trim();
+      if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+      if (u && !/^https:\/\/[^\s/]+\.[^\s]+/i.test(u)) { toast("That doesn't look like a web address."); return; }
+      guard(S.write('meta', 'settings', { bankUrl: u || null })); toast(u ? 'Bank login page saved.' : 'Bank login page removed.'); return;
+    }
     if (el.id === 'set-cur') { guard(S.write('meta', 'settings', { currency: el.value })); return; }
     if (el.id === 'restore-file' && el.files[0]) { restore(el.files[0]); el.value = ''; }
     if (el.id === 'ynab-file' && el.files.length) { openYnab([...el.files]); el.value = ''; }
@@ -3524,9 +4092,7 @@
       undoRedo(k === 'y' || ev.shiftKey);
       return;
     }
-    if (ev.key === 'Enter' && ev.target.id === 'rec-bank') { ev.preventDefault(); recStart(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rec-bank-live') { ev.preventDefault(); ev.target.blur(); return; }
-    if (ev.key === 'Escape' && UI.recPop != null) { UI.recPop = null; render(); return; }
     // the transaction list: Enter edits, Delete twice deletes, arrows move, Esc clears
     if (UI.view === 'tx' && !isPhone() && (ev.metaKey || ev.ctrlKey) && !ev.shiftKey && !ev.altKey && (ev.key === 'a' || ev.key === 'A') && !(sheet && !$('#sheet').hidden) && !/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName) && !UI.editTx) { ev.preventDefault(); selectAll(); return; }
     if (UI.view === 'tx' && picked().length > 1 && !/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName) && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
@@ -4026,6 +4592,13 @@
     w.classList.remove('on');
     setTimeout(() => w.remove(), 180);
   }
+  // choosing a category from the reconcile list: say which purchase it's for
+  function pickTx(sel) {
+    const t = sel.dataset.ckCat && D.txById[sel.dataset.ckCat];
+    if (!t) return '';
+    return `<div class="pk-tx"><span class="pk-tx1"><b>${esc(t.payee || tidyPayee(t.bank) || 'No payee')}</b><b class="${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</b></span>
+      <small>${esc(dateLabel(t.date))}${t.memo ? ` · ${esc(t.memo)}` : ''}</small>${t.bank ? `<small class="mono">${esc(t.bank)}</small>` : ''}</div>`;
+  }
   function openPick(sel) {
     closePick(); closePayee(); closeCombo();
     const items = [];
@@ -4055,6 +4628,7 @@
     wrap.innerHTML = `<div class="pk-back" data-pk="cancel"></div>
       <div class="pk-sheet${items.length > 12 ? ' has-s' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
         <div class="pk-top"><b>${esc(title)}</b><button class="linkish" data-pk="cancel">Cancel</button></div>
+        ${pickTx(sel)}
         ${items.length > 12 ? '<div class="pk-s"><input class="pym-q" type="search" placeholder="Search" autocomplete="off" enterkeyhint="search" aria-label="Search the list"></div>' : ''}
         <div class="pk-list" role="listbox"></div>
       </div>`;
@@ -4213,9 +4787,7 @@
     return [
       ['head', esc(a.name)],
       ['tx', 'Transactions', '', () => actions['acct-tx']({ dataset: { id } })],
-      a.type !== 'tracking' ? ['import', 'Import from bank', '', () => openImport(id)] : null,
-      ['rec', a.type === 'tracking' ? 'Update balance' : 'Reconcile', '', () => actions.reconcile({ dataset: { id } })],
-      a.type !== 'tracking' ? ['check', 'Check against the bank', '', () => openBankCheck(id)] : null,
+      ['rec', a.type === 'tracking' ? 'Update balance' : 'Import &amp; reconcile', '', () => openImport(id)],
       DEBT_TYPES[a.type] ? ['plan', 'Payoff plan', '', () => openPayoff(id)] : null,
       ['sep'],
       ['edit', 'Edit account', '', () => openAcct(id)],
@@ -4241,10 +4813,8 @@
       const filtered = UI.only || UI.q || Object.values(UI.f).some(Boolean);
       return [
         ['add', 'Add transaction', '', () => openTx(null)],
-        ['import', 'Import from bank', '', () => openImport(UI.f.acct || undefined)],
-        UI.rec ? ['stop', 'Stop reconciling', '', () => actions['rec-stop']()] : ['rec', 'Reconcile&hellip;', '', () => actions['rec-pop']()],
+        UI.rec ? ['stop', 'Stop reconciling', '', () => actions['rec-stop']()] : ['rec', 'Import &amp; reconcile', '', () => openImport()],
         filtered ? ['clear', 'Clear filters', '', () => actions['clear-filters']()] : null,
-        ['check', 'Check against the bank', '', () => openBankCheck(UI.f.acct || UI.rec && UI.rec.acct || undefined)],
         ['payees', 'Payees and rules', '', () => openPayees()],
       ].concat(goItems());
     }

@@ -433,10 +433,10 @@
     show: { add: ['tx', '[data-action="add-tx"]', 'Tap Add to put in something you\'ve bought.'] } });
 
   step({ id: 'import', ch: 5, title: 'Bringing in from your bank',
-    body: () => `<ol class="g-steps"><li>In your bank, find <b>Export</b> or <b>Download transactions</b>.</li><li>Choose <b>CSV</b> or <b>QIF</b>.</li><li>In YNABB, tap <b>Import from bank</b>.</li></ol>` +
+    body: () => `<ol class="g-steps"><li>In your bank, find <b>Export</b> or <b>Download transactions</b>.</li><li>Choose <b>CSV</b> or <b>QIF</b>.</li><li>In YNABB, tap <b>Import &amp; reconcile</b> on the Transactions page.</li></ol>` +
       soft('YNABB skips anything it already has.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="imp">Show me where</button></div>`,
-    show: { imp: ['tx', '[data-action="import"]', 'Import from bank is here.'] } });
+    show: { imp: ['tx', '[data-action="rec-flow"]', 'Import & reconcile is here.'] } });
 
   step({ id: 'review', ch: 5, title: 'Pop each one in its envelope',
     body: () => p('New spending waits for you. Tap it and choose its envelope.') +
@@ -448,9 +448,9 @@
     show: { avail: ['budget', '.bud-head span:last-child', 'This column is what\'s in each envelope. Tap an amount to move money.'] } });
 
   step({ id: 'match', ch: 5, title: 'Check it matches your bank',
-    body: () => p('Every week or two, tap <b>Reconcile</b> and enter your bank balance. YNABB shows you anything that\'s missing.') +
+    body: () => p('Every week or two, tap <b>Import &amp; reconcile</b>. Bring in your bank file and YNABB checks it matches, or just type your bank balance.') +
       `<div class="g-row"><button class="g-btn ghost" data-show="rec">Show me where</button></div>`,
-    show: { rec: ['tx', '[data-action="rec-pop"]', 'Reconcile is here. Type the balance your banking app shows.'] } });
+    show: { rec: ['tx', '[data-action="rec-flow"]', 'Import & reconcile is here.'] } });
 
   step({ id: 'payday', ch: 5, title: 'On payday, fill your envelopes',
     body: () => p('Your pay waits in <b>Ready to Assign</b> at the top of the Budget page. Tap <b>Fund targets</b> and YNABB fills your envelopes for you.') +

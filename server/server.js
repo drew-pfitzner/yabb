@@ -358,7 +358,10 @@ function serveBlob(res, who, id) {
   if (!b) fail(404, 'Not found.');
   res.writeHead(200, Object.assign({}, SECURITY_HEADERS, {
     'Content-Type': b.type, 'Content-Length': b.size, 'Cache-Control': 'private, max-age=31536000, immutable',
-    'Content-Security-Policy': "sandbox; default-src 'none'; img-src 'self'; style-src 'unsafe-inline'", 'Content-Disposition': 'inline',
+    // receipts may be shown inside YNABB's own viewer (a PDF in a frame), never inside anyone else's page.
+    // Chrome won't draw a sandboxed PDF, and only photos and PDFs are accepted, so only PDFs drop the sandbox.
+    'Content-Security-Policy': `${b.type === 'application/pdf' ? '' : 'sandbox; '}default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'self'`,
+    'X-Frame-Options': 'SAMEORIGIN', 'Content-Disposition': 'inline',
   }));
   fs.createReadStream(path.join(BLOB_DIR, b.id)).pipe(res);
 }

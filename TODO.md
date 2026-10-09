@@ -18,11 +18,11 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 - Two-factor login codes
 - Rules screen as its own page, with more powers
 - Unit tests for `engine.js`
-- PDF receipts show as a broken image in the receipt viewer (it only shows pictures)
 - Serve Google Fonts locally (no outside calls)
 
 ## Done
 
+- 2026-10-10: **PDF receipts open inside YNABB (Dani).** They show in the receipt viewer with a × to close, instead of opening a page with no way back in the home-screen app.
 - 2026-10-10: **Import & reconcile in one go (Dani).** One button opens your bank, takes the downloaded file, imports it and reconciles straight away using the file's balance (which you can change). Likely pairs (different amount or date, paid in one go, charged in parts, pending gone through, edited since the last reconcile) are matched at import for you to check, in a grouped checklist with Manual → Bank lines and a ? for what each group means. Reconcile finishes by itself once everything is ticked. Uncategorised transactions show orange with a Still to do strip, Might Be Swapped pairs swap in two steps, and the edit screen fits a phone. New practice test: `test-data/ANSWER-KEY-3.md`.
 - 2026-10-09: **Phone polish (Drew).** Accounts: the totals fit on a phone, with net worth as a slim line beside Add account. Money boxes fill from the right like a card terminal (type 1 0 0 for 1.00) and do sums (25.00×3); on phones and tablets they use YNABB's own number pad. Payee boxes search your payees (full screen on a phone), drop-downs on a phone slide up from the bottom, and date boxes no longer push sheets sideways on iPhone.
 - 2026-10-06: **Envelope guide (Dani).** The guide now teaches budgeting with envelopes and small animations: great-grandma's payday envelopes, then give every dollar a job, plan for big rare bills, roll with the punches, know where it goes, choose what matters, and work towards freedom. YNABB only comes in at the end, with a map from each envelope idea to its YNABB name. Two quick tap-an-answer checks, far fewer words, and the setup and weekly steps use the same envelope wording.

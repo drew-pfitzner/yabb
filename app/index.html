@@ -1094,6 +1094,8 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .im-table td:nth-child(5) { grid-area: what; }
 #lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.85); display: grid; place-items: center; padding: 20px; }
 #lightbox img { max-width: 100%; max-height: 90vh; border-radius: 6px; }
+#lightbox .lb-pdf { width: 100%; height: 100%; border: 0; border-radius: 6px; background: #fff; }
+#lightbox:has(.lb-pdf) { padding: calc(64px + env(safe-area-inset-top, 0px)) 0 env(safe-area-inset-bottom, 0px); place-items: stretch; }
 .lb-close { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 16px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.15); color: #fff; font-size: 26px; }
 .toast-btn { margin-left: 10px; border: 0; background: var(--bg); color: var(--ink); border-radius: 7px; padding: 4px 10px; font-weight: 700; font-size: 13px; }
 #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 200; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow); max-width: calc(100% - 32px); }

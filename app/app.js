@@ -2168,7 +2168,7 @@
       if (receipt) {
         const src = '/_blob/' + receipt;
         const img = !receiptType || receiptType.indexOf('image/') === 0;
-        return `<div class="rbox">${img ? `<button class="rthumb" data-saction="view-receipt"><img src="${src}" alt="Receipt"></button>` : `<a class="btn sm" href="${src}" target="_blank" rel="noopener">Open receipt (PDF)</a>`}
+        return `<div class="rbox">${img ? `<button class="rthumb" data-saction="view-receipt"><img src="${src}" alt="Receipt"></button>` : `<button class="btn sm" data-saction="view-receipt">${ICON.receipt} Open receipt (PDF)</button>`}
           <div class="row-btns"><label class="btn sm" for="rfile">Replace</label><button class="btn sm" data-saction="rm-receipt">Remove</button></div>
           <input type="file" id="rfile" accept="image/*,application/pdf" hidden></div>`;
       }
@@ -2261,7 +2261,7 @@
       'add-split': () => { readForm(); splits.push({ cat: null, amt: 0, memo: null }); paint(); },
       'rm-split': (el) => { readForm(); splits.splice(Number(el.dataset.i), 1); if (splits.length < 2) { t.cat = splits[0] ? splits[0].cat : null; splits = null; } paint(); },
       'rm-receipt': () => { readForm(); receipt = null; receiptType = null; paint(); },
-      'view-receipt': () => openLightbox('/_blob/' + receipt),
+      'view-receipt': () => openLightbox('/_blob/' + receipt, receiptType),
       delete: () => {
         setSheetFoot(`<span class="hint bad">Delete this transaction${t.pair ? ' and its matching transfer' : ''}?</span><button class="btn danger" data-saction="delete-yes">Delete</button><button class="btn" data-saction="delete-no">Keep</button>`);
       },
@@ -2321,9 +2321,11 @@
     throw { code: 'unsupported_type' };
   }
 
-  function openLightbox(src) {
+  // PDFs show inside YNABB too: a link out of the home-screen app leaves no way back
+  function openLightbox(src, type) {
     const lb = $('#lightbox');
-    lb.innerHTML = `<button class="lb-close" data-action="close-lb" aria-label="Close receipt">×</button><img src="${src}" alt="Receipt">`;
+    const pdf = type && type.indexOf('image/') !== 0;
+    lb.innerHTML = `<button class="lb-close" data-action="close-lb" aria-label="Close receipt">×</button>${pdf ? `<iframe class="lb-pdf" src="${src}" title="Receipt"></iframe>` : `<img src="${src}" alt="Receipt">`}`;
     lb.hidden = false;
   }
 
@@ -3664,7 +3666,7 @@
     'ie-sp-add': () => { const d = UI.editDraft; if (!d || !d.splits) return; d.splits.push({ cat: '', amt: '', memo: '' }); d._dirty = true; render(); const n = $('#ie-sp-cat-' + (d.splits.length - 1)); if (n) n.focus(); },
     'ie-sp-rm': (el) => { const d = UI.editDraft; if (!d || !d.splits) return; d.splits.splice(Number(el.dataset.i), 1); d._dirty = true; if (d.splits.length < 2) { d.cat = d.splits[0] ? d.splits[0].cat : ''; d.splits = null; } render(); },
     'ie-sp-stop': () => { const d = UI.editDraft; if (!d || !d.splits) return; d.cat = d.splits[0] ? d.splits[0].cat : ''; d.splits = null; d._dirty = true; render(); },
-    'ie-rcpt-view': () => { const t = D.txById[UI.editTx], d = UI.editDraft || {}; const r = 'receipt' in d ? d.receipt : t && t.receipt; if (r) openLightbox('/_blob/' + r); },
+    'ie-rcpt-view': () => { const t = D.txById[UI.editTx], d = UI.editDraft || {}; const r = 'receipt' in d ? d.receipt : t && t.receipt; if (r) openLightbox('/_blob/' + r, 'receipt' in d ? d.receiptType : t && t.receiptType); },
     'ie-rcpt-rm': () => { const d = UI.editDraft; if (!d) return; d.receipt = null; d.receiptType = null; d._dirty = true; render(); },
     'toggle-clear': (el) => toggleClear(el.dataset.id),
     approve: async (el) => {
@@ -4736,7 +4738,7 @@
       t.match ? ['unmatch', t.match.kind === 'update' ? 'Different purchases: keep both' : 'Unlink (split them)', 'U', async () => { await unmatch(id); render(); }] : null,
       twins ? ['twins', 'Show possible doubles', '', () => { UI.dbl = true; UI.bc = null; render(); window.scrollTo(0, 0); }] : null,
       t.cleared !== 'r' ? ['clear', t.cleared === 'c' ? 'Mark as not cleared' : 'Mark as cleared', '', () => toggleClear(id)] : null,
-      t.receipt ? ['receipt', 'View receipt', '', () => openLightbox('/_blob/' + t.receipt)] : null,
+      t.receipt ? ['receipt', 'View receipt', '', () => openLightbox('/_blob/' + t.receipt, t.receiptType)] : null,
       t.cat && D.cats[t.cat] ? ['cat', 'Show all in ' + esc(catName(t.cat)), '', showCatTx(t.cat)] : null,
       t.payee ? ['payee', `Manage payee &ldquo;${esc(t.payee)}&rdquo;`, '', () => openPayees({ tab: 'payees', payee: t.payee })] : null,
       bankText(t) ? ['rule', 'Make a rule from this&hellip;', '', () => openPayees({ tab: 'rules', prefill: { text: cleanDesc(bankText(t)).split(' ').slice(0, 3).join(' '), payee: t.payee || '', cat: t.cat && okCat(t.cat) && t.cat !== START ? t.cat : '' } })] : null,

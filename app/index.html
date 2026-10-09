@@ -666,14 +666,14 @@ button.pm-chip { cursor: pointer; padding-right: 10px; }
 @media (max-width: 700px) {
   .ar { grid-template-columns: 34px minmax(0, 1fr) auto; }
   .ar-act { grid-column: 2 / -1; justify-content: flex-start; }
-  /* phone: the tiles get the full width in an even 2-up grid, the button drops below, so big numbers fit */
-  .at-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); flex: 1 1 100%; }
+  /* phone: an even 2-up grid of totals with Add account in the last spare cell, so big numbers fit */
+  .acc-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .at-tiles { display: contents; }
   .at-tile { min-width: 0; padding: 8px 12px; }
-  /* an odd one out (usually Net worth) becomes a slim full-width line, not a big box */
-  .at-tile:last-child:nth-child(odd) { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 12px; }
-  .at-tile:last-child:nth-child(odd) b { font-size: 17px; }
   .at-tile b { display: block; font-size: clamp(16px, 5vw, 21px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-  .acc-top > .btn { flex: 1 1 100%; justify-content: center; }
+  .acc-top > .btn { align-self: stretch; justify-content: center; }
+  /* an even number of totals leaves no spare cell: the button takes its own row */
+  .at-tiles:has(> .at-tile:nth-child(even):last-child) + .btn { grid-column: 1 / -1; }
 }
 /* debt payment lines in the budget: a soft blue-grey band and an icon of what they pay */
 /* debt lines: a thin plum edge, a faint plum wash and a plum icon. Quiet, but you can't miss which lines are debts */

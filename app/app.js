@@ -2184,7 +2184,7 @@
     let receipt = t.receipt || null, receiptType = t.receiptType || null;
     const reconciled = t.cleared === 'r';
     // the rarely-used bits stay tucked away until asked for
-    let noteOpen = !!t.memo, bankOpen = false, moreOpen = false;
+    let noteOpen = !!t.memo, bankOpen = false;
     const canSplitBank = () => !t.match && t.ik && t.bank && !isNew;
 
     const catSel = () => {
@@ -2218,7 +2218,8 @@
         <select id="tx-acct" aria-label="Account">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
       <div class="field tx-who"><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" aria-label="Payee" ${isPhone() ? 'readonly placeholder="Payee (tap to choose)"' : 'placeholder="Payee"'}>
         ${bankOpen ? `<input id="tx-bank" class="tx-bankin" autocomplete="off" value="${esc(t.bank || '')}" placeholder="Bank description" aria-label="Bank description">`
-          : t.bank ? `<button class="tx-bankcap" data-saction="edit-bank" title="Bank description. Tap to edit">${esc(t.bank)}</button>` : ''}</div>
+          : t.bank ? `<button class="tx-bankcap" data-saction="edit-bank" title="Bank description. Tap to edit">${esc(t.bank)}</button>`
+          : '<button class="linkish tx-bankadd" data-saction="edit-bank">Add a bank description</button>'}</div>
       ${splits ? `<div class="field"><span class="lbl">Split between categories</span><div id="splits">${splitRows()}</div>
           <div class="row-btns"><button class="btn sm" data-saction="add-split">${ICON.plus} Add line</button><button class="btn sm" data-saction="unsplit">Stop splitting</button><span id="split-left" class="hint"></span></div></div>`
         : `<div class="field tx-catrow"><select id="tx-cat" aria-label="Category">${catSel()}</select><button class="linkish" data-saction="split">Split</button></div>`}
@@ -2229,9 +2230,7 @@
         ${noteOpen ? '' : `<button class="chip" data-saction="note">${ICON.plus} Note</button>`}
         <div id="rcpt">${receiptBox()}</div>
         <label class="chip"><input type="checkbox" id="tx-clear" ${t.cleared === 'c' || t.cleared === 'r' ? 'checked' : ''} ${reconciled ? 'disabled' : ''}> Cleared</label></div>
-      ${moreOpen ? `<div class="tx-more">
-        ${canSplitBank() ? '<button class="linkish" data-saction="split-bank">Wrong match? Split the bank line off</button>' : ''}
-        ${!t.bank && !bankOpen ? '<button class="linkish" data-saction="edit-bank">Add a bank description</button>' : ''}</div>` : ''}
+      ${canSplitBank() ? '<button class="linkish tx-splitoff" data-saction="split-bank">Wrong match? Split the bank line off</button>' : ''}
       <p class="fine" id="tx-by"></p>`;
     const receiptBox = () => {
       if (receipt) {
@@ -2276,8 +2275,7 @@
       body: '',
       foot: `<button class="btn primary" data-saction="save">Save</button>
         ${t.approved === false ? '<button class="btn" data-saction="save-approve">Save & approve</button>' : ''}
-        <span class="tx-fr">${canSplitBank() || !t.bank ? '<button class="icon-btn" data-saction="more" aria-label="More options" title="More">⋯</button>' : ''}
-        ${isNew ? '' : `<button class="icon-btn danger" data-saction="delete" aria-label="Delete" title="Delete">${ICON.trash}</button>`}</span>`,
+        <span class="tx-fr">        ${isNew ? '' : `<button class="icon-btn danger" data-saction="delete" aria-label="Delete" title="Delete">${ICON.trash}</button>`}</span>`,
     });
     paint();
     if (isNew) setTimeout(() => $('#tx-amt') && $('#tx-amt').focus(), 60);
@@ -2331,8 +2329,7 @@
       'add-split': () => { readForm(); splits.push({ cat: null, amt: 0, memo: null }); paint(); },
       'rm-split': (el) => { readForm(); splits.splice(Number(el.dataset.i), 1); if (splits.length < 2) { t.cat = splits[0] ? splits[0].cat : null; splits = null; } paint(); },
       note: () => { readForm(); noteOpen = true; paint(); $('#tx-memo').focus(); },
-      'edit-bank': () => { readForm(); bankOpen = true; moreOpen = false; paint(); $('#tx-bank').focus(); },
-      more: () => { readForm(); moreOpen = !moreOpen; paint(); },
+      'edit-bank': () => { readForm(); bankOpen = true; paint(); $('#tx-bank').focus(); },
       'rm-receipt': () => { readForm(); receipt = null; receiptType = null; paint(); },
       'view-receipt': () => openLightbox('/_blob/' + receipt, receiptType),
       delete: () => {
@@ -3442,52 +3439,57 @@
 
   // Reconcile: every transaction in the account should add up to what the bank shows.
   // ---------- settings ----------
+  // grouped cards of one-line rows: icon and label on the left, the control on the right
+  const SET_IC = {
+    cur: '<path d="M10 3v14M13.5 6.5c-.6-1-1.9-1.6-3.5-1.6-2 0-3.4 1-3.4 2.5 0 3.4 7 1.8 7 5.2 0 1.6-1.5 2.6-3.6 2.6-1.7 0-3.1-.7-3.7-1.8"/>',
+    layout: '<rect x="2.5" y="4" width="11" height="9" rx="1.5"/><path d="M6 16h4"/><rect x="14.5" y="7" width="3.5" height="9" rx="1"/>',
+    guide: '<circle cx="10" cy="10" r="7.5"/><path d="M7.8 7.8a2.3 2.3 0 114 1.6c-.9.6-1.8 1.1-1.8 2.3M10 14.2v.1"/>',
+    bank: '<path d="M3 8l7-4.5L17 8M4.5 8.5v6M8.2 8.5v6M11.8 8.5v6M15.5 8.5v6M3 16.5h14"/>',
+    payee: '<path d="M3.5 4.5h7l6 6-6 6-7-7z"/><circle cx="7" cy="8" r="1.2"/>',
+    down: '<path d="M10 3v10M6 9.5l4 4 4-4M4 16.5h12"/>',
+    sheet: '<rect x="3.5" y="3" width="13" height="14" rx="1.5"/><path d="M3.5 8h13M3.5 12.5h13M8.5 8v9"/>',
+    up: '<path d="M10 13.5V3.5M6 7l4-4 4 4M4 16.5h12"/>',
+    ynab: '<path d="M4 10h11M11 6l4 4-4 4"/><path d="M4 4v12"/>',
+    share: '<circle cx="7" cy="7.5" r="2.5"/><circle cx="14" cy="8.5" r="2"/><path d="M2.5 16c.6-2.6 2.3-4 4.5-4s3.9 1.4 4.5 4M11.5 12.6c.7-.4 1.5-.6 2.5-.6 1.8 0 3 1.1 3.5 3"/>',
+  };
+  const setIc = (k) => `<span class="set-ic" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${SET_IC[k]}</svg></span>`;
+  // a row that is the whole button: label, a short line under it, and an arrow
+  const setGo = (ic, label, sub, attrs, tag = 'button') => `<${tag} class="set-row go" ${attrs}>${setIc(ic)}<span class="set-t">${label}${sub ? `<small>${sub}</small>` : ''}</span><span class="set-arr" aria-hidden="true">${ICON.right}</span></${tag}>`;
   function viewSettings() {
     const cur = S.settings().currency || guessCurrency();
-    const rules = Object.entries(D.rules);
-    return `<section class="set">
-      <h2>Currency</h2>
-      <div class="field narrow"><label for="set-cur">Show amounts in</label><select id="set-cur" data-live="0">${['AUD', 'NZD', 'USD', 'CAD', 'GBP', 'EUR', 'SGD', 'ZAR', 'INR'].map((c) => `<option ${c === cur ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
-
-      <h2>Guide and lessons</h2>
-      <p>A gentle, step-by-step guide: how this way of budgeting works, setting up your accounts and plan, and how to use YNABB day to day.</p>
-      <div class="row-btns"><button class="btn primary" data-action="guide">Open the guide</button></div>
-
-      <h2>Layout on this device</h2>
-      <div class="field narrow"><label for="set-layout">Show</label><select id="set-layout" data-live="0">
-        ${[['auto', `Automatic (${detectedLayout() === 'phone' ? 'phone' : 'computer'} for this device)`], ['desktop', 'Computer layout'], ['phone', 'Phone layout']].map(([v, l]) => `<option value="${v}" ${layoutPref() === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <p class="fine">Each device remembers its own choice.</p>
-
-      ${S.mode === 'server' ? `<h2>Your login</h2>
-      <p>Signed in as <b>${esc(S.account.name)}</b>${S.account.budget ? `, using the <b>${esc(S.account.budget.name)}</b> budget` : ''}. Everyone who shares this budget has their own login, and changes sync live between you on phones and computers.</p>
-      <p class="fine">${S.account.admin ? 'Add people, make new budgets and reset passwords on the account page.' : 'To add someone, ask the admin to make them a login.'}</p>
-      <div class="row-btns"><a class="btn" href="/account">${S.account.admin ? 'Account and admin' : 'Account and password'}</a><button class="btn" data-action="sign-out">Sign out</button></div>
-      <p class="fine">YNABB version ${esc(S.account.version)}</p>
-` : `<h2>Sharing with your partner</h2>
-      <p>Open the share menu on this page in claude.ai and invite your partner as an <b>Editor</b>. They need their own claude.ai account. Everything syncs live between both of you, on phones and computers. Editors can also attach receipts. Anyone given view-only access can't see the budget data.</p>
-      <p class="fine">Status: ${S.mode === 'cloud' ? 'syncing through claude.ai' : 'saving in this browser only'}.</p>
-`}
-      <h2>Backup</h2>
-      <p>Download everything (categories, targets, accounts, transactions, assignments) as one file. Keep a copy now and then, and use it to move to another app later.</p>
-      <div class="row-btns">
-        <button class="btn" data-action="export-json">Download backup (.json)</button>
-        <button class="btn" data-action="export-csv">Download transactions (.csv)</button>
-        <label class="btn" for="restore-file">Restore from backup</label><input type="file" id="restore-file" accept=".json,application/json" hidden data-live="0">
+    const opts = (list, on) => list.map(([v, l]) => `<option value="${v}" ${on === v ? 'selected' : ''}>${l}</option>`).join('');
+    const who = S.account || {};
+    const you = S.mode === 'server' ? `<div class="set-card set-you">
+        <span class="set-av" aria-hidden="true">${esc((who.name || '?').trim().charAt(0).toUpperCase())}</span>
+        <span class="set-t"><b>${esc(who.name)}</b>${who.budget ? `<small>${esc(who.budget.name)} budget</small>` : ''}</span>
+        <span class="set-btns"><a class="btn sm" href="/account">${who.admin ? 'Account and admin' : 'Account'}</a><button class="btn sm" data-action="sign-out">Sign out</button></span>
+      </div>` : `<div class="set-card"><div class="set-row">${setIc('share')}<span class="set-t">Share with your partner<small>In claude.ai, share this page and invite them as an Editor. ${S.mode === 'cloud' ? 'Syncing now.' : 'Saving in this browser only.'}</small></span></div></div>`;
+    return `<section class="set"><div class="set-col">
+      ${you}
+      <h2>Display</h2>
+      <div class="set-card">
+        <label class="set-row" for="set-cur">${setIc('cur')}<span class="set-t">Currency</span><select id="set-cur" data-live="0">${opts(['AUD', 'NZD', 'USD', 'CAD', 'GBP', 'EUR', 'SGD', 'ZAR', 'INR'].map((c) => [c, c]), cur)}</select></label>
+        <label class="set-row" for="set-layout">${setIc('layout')}<span class="set-t">Layout<small>Just this device</small></span><select id="set-layout" data-live="0">${opts([['auto', `Automatic (${detectedLayout() === 'phone' ? 'phone' : 'computer'})`], ['desktop', 'Computer'], ['phone', 'Phone']], layoutPref())}</select></label>
       </div>
-
-      <h2>Move from YNAB</h2>
-      <p>Bring in your whole YNAB budget: accounts (including tracking accounts), categories, every transaction and split, what you assigned each month, and your monthly targets. In YNAB, go to your budget name › <b>Export budget</b>, then choose the zip file it downloads here. You'll see a preview before anything changes.</p>
-      <div class="row-btns"><label class="btn" for="ynab-file">Choose YNAB export (.zip)</label><input type="file" id="ynab-file" accept=".zip,.csv,application/zip,text/csv" multiple hidden data-live="0"></div>
-
-      <h2>Bank imports</h2>
-      <div class="field"><label for="set-bankurl">Your bank's login page</label><input id="set-bankurl" type="url" inputmode="url" autocomplete="off" data-live="0" placeholder="https://ib.nab.com.au" value="${esc(S.settings().bankUrl || '')}"></div>
-      <p class="fine">Import &amp; reconcile shows an Open my bank button for it, so you can log in and download your CSV. Shared with everyone on this budget.</p>
-      <p>Undo a whole import here at any time. ⌘Z only works until the page is reloaded.</p>
-      ${importsListHTML() || '<p class="hint">No imports yet.</p>'}
-
-      <h2>Payees and rules</h2>
-      <p>Rename and merge payees, choose the category each one fills in, and set rules that tidy bank descriptions on every import.</p>
-      <div class="row-btns"><button class="btn" data-action="payees">Manage payees and rules</button></div>
+      <h2>Help</h2>
+      <div class="set-card">${setGo('guide', 'Guide and lessons', 'How budgeting works and how to use YNABB', 'data-action="guide"')}</div>
+    </div><div class="set-col">
+      <h2>Bank</h2>
+      <div class="set-card">
+        <label class="set-row" for="set-bankurl">${setIc('bank')}<span class="set-t">Bank login page<small>Adds an Open my bank button when importing</small></span></label>
+        <div class="set-in"><input id="set-bankurl" type="url" inputmode="url" autocomplete="off" data-live="0" placeholder="https://ib.nab.com.au" value="${esc(S.settings().bankUrl || '')}"></div>
+        ${setGo('payee', 'Payees and rules', 'Rename, merge and tidy bank descriptions', 'data-action="payees"')}
+        <div class="set-imps">${importsListHTML() || '<h3>Recent imports</h3><p class="hint">No imports yet.</p>'}</div>
+      </div>
+      <h2>Backup and moving</h2>
+      <div class="set-card">
+        ${setGo('down', 'Download backup', 'Everything, as one .json file', 'data-action="export-json"')}
+        ${setGo('sheet', 'Download transactions', 'A .csv for spreadsheets', 'data-action="export-csv"')}
+        ${setGo('up', 'Restore from backup', 'Replaces the whole budget, after a check', 'for="restore-file"', 'label')}<input type="file" id="restore-file" accept=".json,application/json" hidden data-live="0">
+        ${setGo('ynab', 'Move from YNAB', 'In YNAB: budget name › Export budget, then pick the .zip', 'for="ynab-file"', 'label')}<input type="file" id="ynab-file" accept=".zip,.csv,application/zip,text/csv" multiple hidden data-live="0">
+      </div>
+    </div>
+    ${S.mode === 'server' && who.version ? `<p class="set-ver">YNABB ${esc(who.version)}</p>` : ''}
     </section>`;
   }
 
@@ -4264,10 +4266,10 @@
     el.value = el.value.replace(/[^0-9.,+\-*/()$\s]/g, ''); // pasted text with letters in it
   }, true);
 
-  // ---------- money boxes: fill in from the right, and do sums ----------
-  // Like a card terminal: the cents are always there, so typing 1 0 0 gives 1.00 and a typed dot is skipped. Each amount
-  // in a sum fills the same way (2500 + 1000 shows 25.00+10.00), but after × or ÷ it's a plain count (25.00×3).
-  // Leaving the box works the sum out. On a phone or tablet our own number pad replaces the system keyboard.
+  // ---------- money boxes: type the amount, and do sums ----------
+  // Typed as written, dot and all (12.5 is $12.50); an amount stops at two places after the dot. After × or ÷ it's a
+  // plain count (25×3). Leaving the box works out any sum and tidies it to 12.50. On a phone or tablet our own
+  // number pad replaces the system keyboard.
   const centsFmt = (c, neg) => (neg ? '-' : '') + commas((c / 100).toFixed(2));
   const CALC_OP = /([+−×÷])/;
   const isSum = (s) => /[+\-−×÷*/]/.test(String(s).trim().slice(1));
@@ -4288,18 +4290,16 @@
       if (/^[\d.]$/.test(k)) x = { neg: x.neg, terms: [{ op: '', v: '' }] }; // typing over the amount keeps its sign
     }
     const last = x.terms[x.terms.length - 1], count = last.op === '×' || last.op === '÷', only = x.terms.length === 1;
-    const c = Math.round(Number(last.v || 0) * 100);
     if (k === 'neg') k = only && !last.v ? '±' : '−';
     if (/^\d$/.test(k)) {
-      if (count) { if (last.v.length >= 9) return null; last.v = (last.v === '0' ? '' : last.v) + k; }
-      else { const n = c * 10 + Number(k); if (n >= 1e11) return null; last.v = (n / 100).toFixed(2); }
+      if (last.v.replace('.', '').length >= 11 || (!count && /\.\d\d$/.test(last.v))) return null; // cents stop at two places
+      last.v = (last.v === '0' ? '' : last.v) + k;
     } else if (k === '.') {
-      if (!count || last.v.includes('.')) return null;
+      if (last.v.includes('.')) return null;
       last.v = (last.v || '0') + '.';
     } else if (k === '⌫') {
       if (!last.v) { if (!only) x.terms.pop(); else if (x.neg) x.neg = false; else return null; }
-      else if (count) last.v = last.v.slice(0, -1);
-      else { const n = Math.floor(c / 10); last.v = n ? (n / 100).toFixed(2) : ''; }
+      else last.v = last.v.slice(0, -1);
     } else if (CALC_OP.test(k)) {
       if (last.v) x.terms.push({ op: k, v: '' });
       else if (!only) last.op = k; // change your mind about the sign
@@ -4348,7 +4348,7 @@
     el.centsDirty = false;
     if (!el.classList || !el.classList.contains('cents')) return;
     if (el.value.trim() === '-') el.value = '';
-    else if (isSum(el.value)) { const v = calcValue(el.value); if (!Number.isNaN(v)) el.value = centsFmt(Math.abs(v), v < 0); }
+    else if (el.value.trim()) { const v = calcValue(el.value); if (!Number.isNaN(v)) el.value = centsFmt(Math.abs(v), v < 0); } // 12.5 → 12.50
   }, true);
   document.addEventListener('focusout', (ev) => {
     const el = ev.target;
@@ -4359,7 +4359,7 @@
   // Taps on the pad never take the focus, so the box keeps its cursor and the system keyboard stays away.
   const kpOn = () => matchMedia('(pointer: coarse)').matches;
   let kp = null, kpEl = null;
-  const KP_KEYS = [['7'], ['8'], ['9'], ['÷', 'Divide'], ['4'], ['5'], ['6'], ['×', 'Times'], ['1'], ['2'], ['3'], ['−', 'Minus'], ['±', 'Money in or out'], ['0'], ['⌫', 'Delete'], ['+', 'Plus']];
+  const KP_KEYS = [['7'], ['8'], ['9'], ['÷', 'Divide'], ['4'], ['5'], ['6'], ['×', 'Times'], ['1'], ['2'], ['3'], ['−', 'Minus'], ['.', 'Dot'], ['0'], ['⌫', 'Delete'], ['+', 'Plus']];
   function kpPaint() {
     if (!kp || kp.hidden || !kpEl) return;
     const v = isSum(kpEl.value) ? calcValue(kpEl.value) : NaN;
@@ -4370,7 +4370,7 @@
       kp = document.createElement('div');
       kp.id = 'kp'; kp.hidden = true;
       kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', 'Number pad');
-      kp.innerHTML = `<div class="kp-top"><span class="kp-sum" aria-live="polite"></span><button type="button" class="kp-done" data-k="done">Done</button></div>
+      kp.innerHTML = `<div class="kp-top"><span class="kp-sum" aria-live="polite"></span><span class="kp-acts"><button type="button" class="kp-pm" data-k="±" aria-label="Money in or out" title="Money in or out">±</button><button type="button" class="kp-done" data-k="done">Done</button></span></div>
         <div class="kp-keys">${KP_KEYS.map(([k, l]) => `<button type="button" data-k="${k}"${/[÷×−+±⌫]/.test(k) ? ' class="kp-op"' : ''}${l ? ` aria-label="${l}"` : ''}>${k}</button>`).join('')}</div>`;
       ['pointerdown', 'mousedown'].forEach((t) => kp.addEventListener(t, (e) => e.preventDefault()));
       kp.addEventListener('click', (e) => {

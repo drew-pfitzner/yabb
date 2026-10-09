@@ -22,7 +22,8 @@ Drew and Dani don't use git themselves. Do every step, and report in plain words
    - Run `gh pr merge --auto --squash --delete-branch`.
 8. **Wait for the checks.** Run `gh pr checks --watch`; it takes a few minutes. If a check fails, read `gh run view --log-failed`, fix, commit and push. Auto-merge stays on.
 9. **Wait for it to go live.**
-   - Once merged, run `git switch main`, `git pull --ff-only`, and `git branch -D <branch>`.
+   - Once merged, check nothing was saved on the branch after the pull request was sent: `git rev-parse HEAD` must match `gh pr view --json headRefOid`. If it doesn't, those later fixes aren't live. Move them onto a new branch from main (`git rebase --onto origin/main <headRefOid>`) and ship them too. Never delete a branch that has them.
+   - Then run `git switch main`, `git pull --ff-only`, and `git branch -D <branch>`.
    - The A6 installs `main` within about 2 minutes. Wait until `curl -s https://ynabb.tail8c1464.ts.net/api/health` shows `git rev-parse --short HEAD`, up to 5 minutes.
    - If it doesn't appear, the A6 probably rolled back. Say so and offer to look into why.
 10. **Tell them** in two or three plain sentences: what changed, how to use it, and that it's live (reload the page to see it).

@@ -352,12 +352,18 @@ button.pill:hover { box-shadow: inset 0 0 0 2px var(--accent); }
 .fchip span { margin-left: 4px; opacity: .7; }
 .fchip:hover span { opacity: 1; }
 .acct-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px 24px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
-.ah-name { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.ah-sel { appearance: none; -webkit-appearance: none; border: 1px solid transparent; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 8l5 5 5-5' stroke='%234F6772' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 4px center / 14px; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; padding: 2px 24px 2px 6px; margin-left: -6px; border-radius: 7px; cursor: pointer; max-width: 100%; field-sizing: content; }
-.ah-sel:hover, .ah-sel:focus-visible { border-color: var(--line); background-color: var(--surface); outline: none; }
+.ah-name { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.ah-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; padding: 2px 6px; margin-left: -6px; border: 1px solid transparent; border-radius: 7px; cursor: pointer; }
+.ah-pick-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ah-pick svg { width: 14px; height: 14px; flex: none; }
+/* the real drop-down sits invisibly over the name, so a long name can end in "…" */
+.ah-sel { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; appearance: none; -webkit-appearance: none; border: 0; font-size: 16px; }
+.ah-pick:hover, .ah-pick:focus-within { border-color: var(--line); background-color: var(--surface); }
 .ah-bal { font-size: 30px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
 .ah-bal.neg { color: var(--bad); }
-.ah-main { display: flex; align-items: center; gap: 12px; }
+.ah-main { display: flex; align-items: center; gap: 12px; flex: 1 1 260px; min-width: 0; }
+.ah-main > div { min-width: 0; }
+.ah-name > span:not(.ah-pick) { flex: none; white-space: nowrap; }
 .ah-ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; }
 .ah-ic svg { width: 21px; height: 21px; }
 /* bank account: green; card or loan: plum; tracking: grey */
@@ -1212,7 +1218,23 @@ button.bc-line { cursor: pointer; } button.bc-line:hover, button.bc-line:focus-v
 :root[data-layout="phone"] .tx-tools [data-action="add-tx"] { width: 38px; height: 38px; padding: 0; justify-content: center; border-radius: 10px; }
 :root[data-layout="phone"] .tx-tools [data-action="add-tx"] svg { width: 20px; height: 20px; }
 :root[data-layout="phone"] .tx-tools [data-action="toggle-filters"] { height: 38px; }
-:root[data-layout="phone"] .ts-count.plain { display: none; }
+:root[data-layout="phone"] .tx-tools .search input { height: 40px; }
+:root[data-layout="phone"] .tx-tools [data-action="toggle-filters"] { height: 40px; }
+:root[data-layout="phone"] .tx-tools [data-action="add-tx"] { width: 40px; height: 40px; }
+:root[data-layout="phone"] .tx-fchips { margin: 0 2px 6px; }
+:root[data-layout="phone"] .tx-fchips .fchips { margin: 0; }
+:root[data-layout="phone"] .tx-fchips .fchip { text-align: left; }
+:root[data-layout="phone"] .tx-sum { flex-wrap: nowrap; }
+:root[data-layout="phone"] .ts-l { min-width: 0; }
+:root[data-layout="phone"] .ts-r { flex: none; margin-left: auto; }
+/* account card on a phone: name and balance up top, reconcile as a footer row */
+:root[data-layout="phone"] .ah-rec { flex: 1 1 100%; flex-direction: row-reverse; justify-content: space-between; align-items: center; margin-left: 0; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); }
+/* the selection bar stacks on a phone, so nothing runs off the side */
+:root[data-layout="phone"] #multi-bar { padding: 10px 12px; }
+:root[data-layout="phone"] #multi-bar .mb-note, :root[data-layout="phone"] #multi-bar .mb-f, :root[data-layout="phone"] #multi-bar .mb-f.mb-n { flex: 1 1 100%; }
+:root[data-layout="phone"] #multi-bar .mb-f { flex-wrap: wrap; }
+:root[data-layout="phone"] #multi-bar .mb-f input { min-width: 0; flex: 1 1 140px; }
+:root[data-layout="phone"] #multi-bar .mb-line > .btn:first-of-type { margin-left: 0; }
 :root[data-layout="phone"] .tx-tools [data-action="add-tx"] { order: 2; }
 :root[data-layout="phone"] .txl.by-day > .tx-day:first-of-type { padding-top: 4px; }
 :root[data-layout="phone"] .tx-day { display: block; padding: 14px 4px 5px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg); }

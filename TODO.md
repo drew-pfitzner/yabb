@@ -4,7 +4,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Now
 
-- [ ] **Dani: get set up** with `docs/GETTING-STARTED.md` (invite sent 5 Oct; YNABB login made) (Dani)
+- [x] **Dani: get set up** with `docs/GETTING-STARTED.md` (invite sent 5 Oct; YNABB login made) (Dani)
 - [ ] **Test-open one iCloud backup on the Mac** with the key from the password manager (`node server/backup.js decrypt`), to prove a restore works away from the A6.
 
 ## Next

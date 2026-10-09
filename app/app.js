@@ -84,6 +84,9 @@
   const money = (c) => fmt().format((c || 0) / 100).replace('-', '\u2212\u2060'); // minus sign that never wraps away from its number
   const signed = (c) => (c > 0 ? '+' : '') + money(c);
   const plain = (c) => ((c || 0) / 100).toFixed(2);
+  // money in an edit box, with commas to read it by: 1,234.50 (parseMoney skips them)
+  const commas = (s) => String(s).replace(/^(-?\d+)(\.\d*)?$/, (m, w, f) => w.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (f || ''));
+  const box = (c) => commas(plain(c));
   function monthLabel(m, short) {
     const [y, mo] = m.split('-').map(Number);
     return new Date(y, mo - 1, 1).toLocaleDateString(undefined, short ? { month: 'short', year: 'numeric' } : { month: 'long', year: 'numeric' });
@@ -130,7 +133,9 @@
     const tx = S.allTx();
     const assigned = S.assignedByMonth();
     // tracking accounts (investments, super, crypto) show a balance but stay out of the budget
-    const btx = tx.filter((t) => !(accounts[t.acct] && accounts[t.acct].type === 'tracking'));
+    const trk = (id) => !!(accounts[id] && accounts[id].type === 'tracking');
+    // money moved into a tracking account leaves the budget, so it's spent from its category like a purchase
+    const btx = tx.filter((t) => !trk(t.acct)).map((t) => (t.transfer && trk(t.transfer) ? Object.assign({}, t, { transfer: null }) : t));
     // credit cards and loans each have a payment category that holds the money to pay them
     const debt = {};
     for (const id in cats) { const a = cats[id].debtFor && accounts[cats[id].debtFor]; if (a && DEBT_TYPES[a.type]) debt[a.id] = id; }
@@ -146,8 +151,10 @@
   const isTrack = (id) => !!(D.accounts[id] && D.accounts[id].type === 'tracking');
   const isDebt = (id) => !!(D.accounts[id] && DEBT_TYPES[D.accounts[id].type]);
   const START = E.START;
-  // transfers only go between two budget accounts or two tracking accounts
-  const xferOK = (a, b) => isTrack(a) === isTrack(b);
+  // the budget side of a transfer to or from a tracking account: it leaves the budget, so it keeps a category
+  const trkXfer = (t) => !!(t.transfer && isTrack(t.transfer) && !isTrack(t.acct));
+  // the other side of a transfer: a tracking account's side has no category; a budget account's side keeps its own
+  const pairCat = (t, p) => (isTrack(t.acct) && !isTrack(t.transfer) ? p.cat || null : null);
 
   // ---------- writes ----------
   const CAT_KEYS = ['id', 'name', 'parent', 'order', 'hidden', 'target', 'note', 'kind', 'linked', 'debtFor'];
@@ -674,7 +681,7 @@
       <button class="b-edit" data-action="cat-edit" data-id="${id}" aria-label="Edit ${esc(c.name)}: target, name and more" title="Edit target, name and more"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <div class="b-bar">${bar(r.parts)}</div>
       ${tgtCell(r.target ? r.target.need : null, r.target ? tgtDesc(id, r) : '')}
-      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>
+      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents${D.tree.isLinkable(id) ? ' has-link' : ''}" inputmode="numeric" autocomplete="off" data-id="${id}" value="${box(r.assigned)}" aria-label="Assigned to ${esc(c.name)}">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span>${c.debtFor && D.debt[c.debtFor] === id ? `<button class="num spent-link" data-action="spent" data-id="${id}" title="Spending on the card moved in, less payments made. Click to see the transactions">${r.activity ? signed(r.activity) : money(0)}</button>` : `<button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-r.activity)}</button>`}</div>
       <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(c.name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
@@ -716,7 +723,7 @@
       </div>
       <div class="b-bar">${bar(g.parts)}</div>
       ${tgtCell(g.needSub || (g.target ? 0 : null), g.target ? tgtDesc(id, g) : g.needSub ? `Total of the targets inside ${c.name}` : '')}
-      <div class="b-asg"><label class="m-lbl" for="asgt-${id}">Assigned</label><input id="asgt-${id}" class="asg cents${D.tree.isLinkable(id) ? ' has-link' : ''}" data-mode="total" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(g.assigned)}" aria-label="Total assigned to ${esc(c.name)}" title="Total for ${esc(c.name)}. Changing it adds to or takes from Unallocated.">${linkBtn(id)}</div>
+      <div class="b-asg"><label class="m-lbl" for="asgt-${id}">Assigned</label><input id="asgt-${id}" class="asg cents${D.tree.isLinkable(id) ? ' has-link' : ''}" data-mode="total" inputmode="numeric" autocomplete="off" data-id="${id}" value="${box(g.assigned)}" aria-label="Total assigned to ${esc(c.name)}" title="Total for ${esc(c.name)}. Changing it adds to or takes from Unallocated.">${linkBtn(id)}</div>
       <div class="b-act"><span class="m-lbl">Spent</span><button class="num spent-link" data-action="spent" data-id="${id}" title="See the transactions">${money(-g.activity)}</button></div>
       <div class="b-avl"><span class="m-lbl">Available</span><button class="pill st-${g.status}" data-action="move" data-id="${id}" aria-label="Available in all of ${esc(c.name)}: ${money(g.available)}. Move money in or out of its Unallocated.">${money(g.available)}</button></div>
     </div>`;
@@ -728,7 +735,7 @@
       <div class="b-name"><span class="twisty-sp"></span><span class="cname muted" title="Money in ${esc(name)} not given to a subcategory">Unallocated</span>${tlineHTML(line)}</div>
       <div class="b-bar">${bar(r.parts)}</div>
       <div class="b-tgt"></div>
-      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Unallocated in ${esc(name)}"></div>
+      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents" inputmode="numeric" autocomplete="off" data-id="${id}" value="${box(r.assigned)}" aria-label="Unallocated in ${esc(name)}"></div>
       <div class="b-act"><span class="m-lbl">Spent</span><span class="num">${money(-r.activity)}</span></div>
       <div class="b-avl"><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Unallocated in ${esc(name)}: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
@@ -741,7 +748,7 @@
         ${tlineHTML(`<span class="tdesc">Money from before ${esc(name)} had subcategories. Set it to 0, or click the amount on the right to move it into a subcategory.</span>`)}</div>
       <div class="b-bar">${bar(r.parts)}</div>
       <div class="b-tgt"></div>
-      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents" inputmode="numeric" autocomplete="off" data-id="${id}" value="${plain(r.assigned)}" aria-label="Assigned to ${esc(name)} itself"></div>
+      <div class="b-asg"><label class="m-lbl" for="asg-${id}">Assigned</label><input id="asg-${id}" class="asg cents" inputmode="numeric" autocomplete="off" data-id="${id}" value="${box(r.assigned)}" aria-label="Assigned to ${esc(name)} itself"></div>
       <div class="b-act"><span class="m-lbl">Spent</span><span class="num">${money(-r.activity)}</span></div>
       <div class="b-avl"><button class="pill st-${r.status}" data-action="move" data-id="${id}" aria-label="Available in ${esc(name)} itself: ${money(r.available)}. Move money.">${money(r.available)}</button></div>
     </div>`;
@@ -763,8 +770,8 @@
     const total = input.dataset.mode === 'total';
     const cur = total ? D.month.roll[id].assigned : D.month.rows[id].assigned;
     const v = E.parseMoney(input.value);
-    if (Number.isNaN(v)) { toast('Enter an amount, like 250.00.'); input.value = plain(cur); return; }
-    if (v === cur) { input.value = plain(v); return; }
+    if (Number.isNaN(v)) { toast('Enter an amount, like 250.00.'); input.value = box(cur); return; }
+    if (v === cur) { input.value = box(v); return; }
     const delta = v - cur;
     const map = { [id]: D.month.rows[id].assigned + delta };
     const src = D.tree.source(id); // the group whose Unallocated this comes from, if any
@@ -877,7 +884,7 @@
         D = snapshot();
         sheet.actions['save-target']();
       },
-      'use-min': () => { $('#t-amount').value = plain(Number($('[data-saction="use-min"]').dataset.k)); previewTarget(id); sheet.actions['save-target'](); },
+      'use-min': () => { $('#t-amount').value = box(Number($('[data-saction="use-min"]').dataset.k)); previewTarget(id); sheet.actions['save-target'](); },
       'open-cat': (el) => openCat(el.dataset.id),
       'ttype': (el) => { $('#tgt-fields').innerHTML = targetFields(el.value, D.cats[id].target || {}); previewTarget(id); },
     };
@@ -967,7 +974,7 @@
     </div>`;
   }
   function targetFields(type, t) {
-    const amt = (id, label, v) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" class="cents" inputmode="numeric" autocomplete="off" value="${v ? plain(v) : ''}" placeholder="0.00"></div>`;
+    const amt = (id, label, v) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" class="cents" inputmode="numeric" autocomplete="off" value="${v ? box(v) : ''}" placeholder="0.00"></div>`;
     switch (type) {
       case 'refill': return amt('t-amount', 'Refill to', t.amount) + `<div class="field"><label for="t-day">Bill is due on day (optional)</label><input id="t-day" type="number" min="1" max="31" inputmode="numeric" value="${t.day || ''}" placeholder="e.g. 19"></div>`;
       case 'monthly': return amt('t-amount', 'Amount each month', t.amount);
@@ -1156,7 +1163,7 @@
     openSheet({
       title: av < 0 && id !== INCOME ? 'Cover overspending' : 'Move money',
       body: `<div class="move">
-        <div class="field"><label for="mv-amt">Amount</label><input id="mv-amt" class="cents" inputmode="numeric" autocomplete="off" value="${amount ? plain(amount) : ''}" placeholder="0.00"></div>
+        <div class="field"><label for="mv-amt">Amount</label><input id="mv-amt" class="cents" inputmode="numeric" autocomplete="off" value="${amount ? box(amount) : ''}" placeholder="0.00"></div>
         <div class="field"><label for="mv-from">Take from</label><select id="mv-from">${catOptions(from, { avail: true })}</select></div>
         <button class="icon-btn swap" data-saction="swap" aria-label="Swap from and to">${ICON.swap}</button>
         <div class="field"><label for="mv-to">Give to</label><select id="mv-to">${catOptions(to, { avail: true })}</select></div>
@@ -1278,7 +1285,8 @@
     const f = UI.f, chips = [];
     const st = { review: 'Needs review', uncleared: 'Not yet cleared', receipt: 'Has a receipt', noreceipt: 'No receipt' };
     if (f.status) chips.push(['status', st[f.status]]);
-    if (f.acct) chips.push(['acct', 'Account: ' + acctName(f.acct)]);
+    // a phone already names the account in the card above
+    if (f.acct && !isPhone()) chips.push(['acct', 'Account: ' + acctName(f.acct)]);
     if (f.cat) chips.push(['cat', f.cat === '_none' ? 'Uncategorized' : f.cat === INCOME ? 'Ready to Assign (income)' : 'Category: ' + (D.tree.path[f.cat] ? D.tree.path[f.cat].join(' › ') : 'deleted')]);
     if (f.from) chips.push(['from', f.from === daysAgo(30) && !f.to ? 'Last 30 days' : 'From ' + dateLabel(f.from)]);
     if (f.to) chips.push(['to', 'To ' + dateLabel(f.to)]);
@@ -1300,7 +1308,7 @@
     // more than one account: the name is a drop-down to switch accounts
     const grp = (label, list) => (list.length ? `<optgroup label="${label}">${list.map((a) => `<option value="${a.id}" ${ids.length === 1 && ids[0] === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</optgroup>` : '');
     const pick = !rec && open.length > 1
-      ? `<select id="ah-acct" class="ah-sel" data-live="0" aria-label="Show account"><option value="" ${ids.length > 1 ? 'selected' : ''}>All accounts</option>${grp('Bank accounts and cash', open.filter((a) => a.type !== 'tracking' && !DEBT_TYPES[a.type]))}${grp('Credit cards and loans', open.filter((a) => DEBT_TYPES[a.type]))}${grp('Tracking', open.filter((a) => a.type === 'tracking'))}</select>`
+      ? `<span class="ah-pick"><span class="ah-pick-t">${esc(name)}</span>${ICON.down}<select id="ah-acct" class="ah-sel" data-live="0" aria-label="Show account"><option value="" ${ids.length > 1 ? 'selected' : ''}>All accounts</option>${grp('Bank accounts and cash', open.filter((a) => a.type !== 'tracking' && !DEBT_TYPES[a.type]))}${grp('Credit cards and loans', open.filter((a) => DEBT_TYPES[a.type]))}${grp('Tracking', open.filter((a) => a.type === 'tracking'))}</select></span>`
       : esc(name);
     // one account: green for a bank account, plum for a card or loan, grey for tracking
     const one = ids.length === 1 ? D.accounts[ids[0]] : null;
@@ -1390,9 +1398,11 @@
     const rank = (t) => (t.ik ? 4 : 0) + (t.bank ? 2 : 0) - (E.isPending(t.bank) ? 1 : 0);
     return rank(y) > rank(x) ? [y, x] : [x, y];
   }
+  // a transfer typed by hand and the bank's own line for it: [bank, typed], or null
+  const xferPair = (x, y) => (x.ik && !x.pair && y.pair && !y.ik ? [x, y] : y.ik && !y.pair && x.pair && !x.ik ? [y, x] : null);
   function mergeProblem(x, y) {
     if (x.acct !== y.acct) return "They're in different accounts.";
-    if (x.pair || y.pair) return 'One is a transfer. Delete the extra one instead.';
+    if ((x.pair || y.pair) && !xferPair(x, y)) return 'One is a transfer. Delete the extra one instead.';
     return '';
   }
   function selectAll() {
@@ -1408,7 +1418,7 @@
     let act = '';
     if (ids.length === 2) {
       const [k, d] = keeperOf(ts[0], ts[1]), bad = mergeProblem(k, d);
-      const note = bad || (k.amt !== d.amt ? `The amounts differ: keeps ${signed(k.amt)}${k.ik ? ' from the bank' : ''}.` : k.ik && d.ik ? 'Both came from the bank, so check they really are the same purchase.' : `Keeps the ${k.ik ? "bank's copy" : 'copy'} from ${dateLabel(k.date)} with the category, note and payee from both.`);
+      const note = bad || (k.amt !== d.amt ? `The amounts differ: keeps ${signed(k.amt)}${k.ik ? ' from the bank' : ''}.` : k.ik && d.ik ? 'Both came from the bank, so check they really are the same purchase.' : xferPair(k, d) ? `Keeps the bank's copy from ${dateLabel(k.date)}, as your transfer.` : `Keeps the ${k.ik ? "bank's copy" : 'copy'} from ${dateLabel(k.date)} with the category, note and payee from both.`);
       act = `<span class="mb-note${bad ? ' bad' : ''}">${esc(note)}</span>${bad ? '' : `<button class="btn sm primary" data-action="multi-merge">Merge into one</button>`}`;
     }
     const toOk = ts.filter((t) => t.match || t.approved === false), noCat = toOk.filter((t) => !t.match && !t.cat && !(t.splits && t.splits.length) && !t.transfer && !isTrack(t.acct)).length;
@@ -1440,6 +1450,13 @@
     toast(`Merged into one: kept the ${a.ik ? "bank's" : ''} copy from ${dateLabel(a.date)} with the details from both. ${MAC ? '⌘Z' : 'Ctrl+Z'} to undo.`);
     render();
   }
+  // keeps the bank's line, made into the transfer you typed (the other account's side moves onto it)
+  async function mergeXfer(bank, typed) {
+    const plan = recFixPlan({ kind: 'transfer', ts: [typed], bs: [bank] });
+    S.newStep(); await putTxs(plan.puts, plan.removes); S.newStep();
+    toast(`Merged into one: kept the bank's copy as a transfer ${bank.amt < 0 ? 'to' : 'from'} ${acctName(typed.transfer)}. ${MAC ? '⌘Z' : 'Ctrl+Z'} to undo.`);
+    render();
+  }
   async function notDouble(aId, bId) {
     const a = D.txById[aId], b = D.txById[bId];
     if (!a || !b) return;
@@ -1462,7 +1479,7 @@
       <ol class="dp-list">${pairs.map((p) => `<li class="dp-card${p.same ? ' strong' : ''}">
         <p class="dp-why">${p.exact ? `<b>Very likely:</b> the same amount, and both bank descriptions say <b>${esc(dateLabel(p.day))}</b>.` : p.same ? `<b>Likely:</b> the same amount, and the bank descriptions are a day apart (${esc(dateLabel(p.day))} and ${esc(dateLabel(p.day2))}). That happens when a pending POS line becomes the final card line.` : `The same amount, ${p.gap < 1 ? 'on the same day' : `${Math.round(p.gap)} ${Math.round(p.gap) === 1 ? 'day' : 'days'} apart`}.`}</p>
         <div class="dp-two">${side(p.a)}${side(p.b)}</div>
-        <div class="dp-act">${p.a.pair || p.b.pair ? '<span class="hint">One is a transfer, so delete the extra one by hand if they are the same.</span>' : `<button class="btn sm primary" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}">Merge into one</button>`}<button class="btn sm" data-action="dbl-not" data-a="${p.a.id}" data-b="${p.b.id}">Not a double</button></div></li>`).join('')}</ol></div>`;
+        <div class="dp-act">${(p.a.pair || p.b.pair) && !xferPair(p.a, p.b) ? '<span class="hint">One is a transfer, so delete the extra one by hand if they are the same.</span>' : `<button class="btn sm primary" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}">Merge into one</button>`}<button class="btn sm" data-action="dbl-not" data-a="${p.a.id}" data-b="${p.b.id}">Not a double</button></div></li>`).join('')}</ol></div>`;
   }
   // the last day the bank's balance covers: the bank file's last day, or today when the balance was typed in.
   // Anything dated later (a bill booked ahead) isn't at the bank yet, so it isn't counted.
@@ -1491,7 +1508,10 @@
     let sub = diff ? `YNABB has ${gap} ${diff < 0 ? 'more' : 'less'} than the bank.${waiting.length ? ' Check the list below first.' : ''}`
       : waiting.length ? "The totals match the bank. Approve these and it's reconciled." : '';
     let act = '';
-    if (res && !res.start) act = '<button class="btn sm" data-action="rec-flow-import">Import your bank file</button>';
+    // the same amount in twice close together: often the whole gap, and easiest to see side by side
+    const dbl = diff ? recPairs(r.acct).length : 0;
+    if (dbl && !UI.dbl) act = `<button class="btn sm" data-action="dbl-open">Possible ${dbl === 1 ? 'double' : `doubles (${dbl})`}</button>`;
+    else if (res && !res.start) act = '<button class="btn sm" data-action="rec-flow-import">Import your bank file</button>';
     else if (res && !res.items.length) act = `<button class="linkish rc-adj" data-action="rec-adjust">Can't find it? Add a ${gap} adjustment</button>`;
     return `<div class="rc ${diff ? 'off' : waiting.length ? 'wait' : 'ok'}">
         <div class="rc-top"><span>Reconciling <b>${esc(acctName(r.acct))}</b></span><button class="rb-x" data-action="rec-stop" aria-label="Stop reconciling" title="Stop reconciling">&times;</button></div>
@@ -1535,7 +1555,7 @@
         ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${body}</section>`;
     };
     const search = !UI.ckFind ? `<button class="linkish ck-findlink" data-action="ck-find">${ICON.search} Search past transactions</button>` : `<div class="search ck-q"><span aria-hidden="true">${ICON.search}</span><input id="ckq" type="search" data-live="0" placeholder="Search past transactions" value="${esc(UI.ckQ || '')}" aria-label="Search past transactions" autocomplete="off" enterkeyhint="search"></div>${pastSearch()}`;
-    return recCard() + recPanel() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
+    return recCard() + (UI.dbl ? dblPanel() : '') + recPanel() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
   }
   // two matches with the same amount and close dates: shown as a pair, right way round or swapped
   const swapPartner = (t, l) => l.find((o) => o !== t && o.amt === t.amt && gapDays(o.date, t.date) <= 10);
@@ -1802,6 +1822,19 @@
     UI.only = null; UI.f = Object.assign(NO_FILTERS(), { acct: a.id }); // stay on the account just reconciled
     toast(`${a.name} is reconciled ✓`); render();
   }
+  // a tracking account's new value: the gap is gains or losses, so it goes in as one adjustment, like YNAB.
+  // Everything up to today is locked in, as there's no bank file to match it against.
+  async function updateValue(acct, value) {
+    const a = D.accounts[acct], cut = E.todayISO();
+    const mine = D.tx.filter((t) => t.acct === acct && t.date <= cut), gap = value - mine.reduce((s, t) => s + t.amt, 0);
+    const list = mine.filter((t) => t.cleared !== 'r').map((t) => Object.assign({}, t, { cleared: 'r' }));
+    if (gap) list.push({ id: S.uid(), acct, date: cut, payee: 'Reconciliation adjustment', cat: null, amt: gap, cleared: 'r', memo: 'Change in value', by: myId() });
+    S.newStep(); await putTxs(list); S.newStep();
+    await putAcct(Object.assign({}, a, { reconciledAt: cut, reconciledBalance: value }));
+    UI.rec = null; UI.only = null; UI.f = Object.assign(NO_FILTERS(), { acct }); UI.view = 'tx'; saveUI();
+    toast(gap ? `${a.name} is now ${money(value)}: ${gap > 0 ? 'up' : 'down'} ${money(Math.abs(gap))}.` : `${a.name} is still ${money(value)}.`, { label: 'Undo', fn: () => undoRedo(false) });
+    render();
+  }
   // start reconciling an account against the bank's balance; from = the bank file's date it was read from
   function startRec(acct, bank, from) {
     UI.rec = { acct, bank, from: from || null }; UI.recAll = false; UI.only = null; UI.recSkip = null;
@@ -1847,7 +1880,16 @@
     if (uncat) todo.push(`<button class="chip" data-action="goto-uncat"><b>${uncat}</b> ${uncat === 1 ? 'needs' : 'need'} a category</button>`);
     const uncatBar = todo.length ? `<div class="todo-bar"><span>Still to do</span>${todo.join('')}</div>` : '';
     // the line under the search only when there's something to say: a filter, a search, or review buttons
-    const sumBits = activeFilters || UI.q || UI.only || matches || updates || (review && reviewable) || !isPhone();
+    const nPicked = UI.sel ? 1 + (UI.multi || []).length : 0;
+    // Select mode says what to do until two are picked; then the selection bar takes over
+    // on a phone it always shows, as it holds the Select button
+    const sumBits = activeFilters || UI.q || UI.only || matches || updates || (review && reviewable) || isPhone();
+    const chips = UI.only ? `<button class="chip fchip" data-action="clear-only" title="Back to the full list">${UI.onlyWhat === 'balance' ? 'Could explain the difference' : 'Possible doubles'} only <span aria-hidden="true">×</span></button>` : filterChips();
+    // a phone gets the chips on their own line, so the count and Select sit level underneath
+    const phoneChips = isPhone() && chips ? `<div class="tx-fchips">${chips}</div>` : '';
+    const selBtns = isPhone()
+      ? (UI.pick ? `${list.length > 1 ? `<button class="btn sm" data-action="select-all">All ${list.length}</button>` : ''}<button class="btn sm primary" data-action="pick-mode">Done</button>` : '<button class="btn sm" data-action="pick-mode">Select</button>')
+      : list.length > 1 && (activeFilters || UI.q || UI.only) ? `<button class="btn sm" data-action="select-all" title="${MAC ? '⌘' : 'Ctrl+'}A">Select all ${list.length}</button>` : '';
     return `${acctBalanceHead()}${uncatBar}
       <div class="tx-tools">
         <div class="tools-l">
@@ -1870,16 +1912,16 @@
         </div>
         <div class="search"><span aria-hidden="true">${ICON.search}</span><input id="txq" type="search" data-live="0" placeholder="${isPhone() ? 'Search' : 'Search payee, bank description, note, amount, date, category'}" value="${esc(UI.q)}" aria-label="Search transactions"></div>
       </div>
-      ${sumBits ? `<div class="tx-sum">
+      ${phoneChips}${sumBits ? `<div class="tx-sum">
         <div class="ts-l">
-          ${UI.only ? `<button class="chip fchip" data-action="clear-only" title="Back to the full list">${UI.onlyWhat === 'balance' ? 'Could explain the difference' : 'Possible doubles'} only <span aria-hidden="true">×</span></button>` : filterChips()}
-          <span class="ts-count${activeFilters || UI.q || UI.only ? '' : ' plain'}">${UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
+          ${isPhone() ? '' : chips}
+          <span class="ts-count${activeFilters || UI.q || UI.only || UI.pick ? '' : ' plain'}">${UI.pick && isPhone() ? (nPicked ? 'Tap another one to go with it' : 'Tap the transactions to select them') : UI.only ? (UI.onlyWhat === 'balance' ? 'Hover over a red-underlined amount to see why it could explain the difference.' : list.length > 1 ? `${list.length} transactions with the same amount as another within a few days. If any are the same purchase, delete the extra.` : 'Only one left, so no double-up here now.') : activeFilters || UI.q ? `Showing ${list.length} of ${D.tx.length} &middot; totalling <b class="${total > 0 ? 'pos' : ''}">${signed(total)}</b>` : `${list.length} ${list.length === 1 ? 'transaction' : 'transactions'}`}</span>
         </div>
         <div class="ts-r">
-          ${list.length > 1 && (activeFilters || UI.q || UI.only) ? `<button class="btn sm" data-action="select-all" title="${MAC ? '⌘' : 'Ctrl+'}A">Select all ${list.length}</button>` : ''}
           ${matches ? `<span class="hint">${matches} matched ${matches === 1 ? 'transaction needs' : 'transactions need'} approving one by one</span>` : ''}
           ${updates ? `<button class="btn sm" data-action="approve-updates">Approve ${updates} description ${updates === 1 ? 'update' : 'updates'}</button>` : ''}
           ${review && reviewable ? `<button class="btn sm primary" data-action="approve-all">Approve ${reviewable} with a category</button>` : ''}
+          ${selBtns}
         </div>
       </div>` : ''}
       <div class="txl${byDay ? ' by-day' : ''} ${UI.rec || (UI.f.acct && D.accounts[UI.f.acct]) || Object.keys(D.accounts).length < 2 ? 'one-acct' : ''}" role="list">
@@ -1890,9 +1932,12 @@
   }
 
   // needs a category: not a transfer, split or tracking entry, and none chosen
-  const isUncat = (t) => !t.cat && !(t.splits && t.splits.length) && !t.transfer && !isTrack(t.acct);
+  const isUncat = (t) => !t.cat && !(t.splits && t.splits.length) && !(t.transfer && !trkXfer(t)) && !isTrack(t.acct);
   function txCatLabel(t) {
-    if (t.transfer) return `<span class="tcat xfer">${isDebt(t.transfer) && t.amt < 0 ? 'Payment to' : isDebt(t.acct) && t.amt > 0 ? 'Payment from' : t.amt < 0 ? 'Transfer to' : 'Transfer from'} ${esc(acctName(t.transfer))}</span>`;
+    if (t.transfer) {
+      const x = `${isDebt(t.transfer) && t.amt < 0 ? 'Payment to' : isDebt(t.acct) && t.amt > 0 ? 'Payment from' : t.amt < 0 ? 'Transfer to' : 'Transfer from'} ${esc(acctName(t.transfer))}`;
+      return trkXfer(t) ? `<span class="tcat ${t.cat ? 'xfer' : 'none'}">${x} · ${t.cat ? esc(catName(t.cat)) : 'Uncategorized'}</span>` : `<span class="tcat xfer">${x}</span>`;
+    }
     if (t.splits && t.splits.length) return `<span class="tcat">Split: ${t.splits.map((p) => esc(p.cat ? catName(p.cat) : 'Uncategorized')).join(', ')}</span>`;
     if (!t.cat) return isTrack(t.acct) ? '<span class="tcat faint">Tracking</span>' : '<span class="tcat none">Uncategorized</span>';
     if (t.cat === START) return '<span class="tcat faint">Starting balance owed</span>';
@@ -1904,11 +1949,12 @@
   function txEditRow(t) {
     const d = UI.editDraft || {};
     const v = (k, def) => (k in d ? d[k] : def);
-    if (!d.splits && t.splits && t.splits.length && !('cat' in d)) d.splits = t.splits.map((p) => ({ cat: p.cat || '', amt: plain(Math.abs(p.amt)), memo: p.memo || '' }));
+    if (!d.splits && t.splits && t.splits.length && !('cat' in d)) d.splits = t.splits.map((p) => ({ cat: p.cat || '', amt: box(Math.abs(p.amt)), memo: p.memo || '' }));
     const acct = v('acct', t.acct);
-    const amtNow = E.parseMoney(String(v('amt', plain(t.amt)))) || t.amt;
+    const amtNow = E.parseMoney(String(v('amt', box(t.amt)))) || t.amt;
     const curCat = d.splits ? '__split' : v('cat', t.transfer ? 'xfer:' + t.transfer : (t.cat || ''));
-    const others = Object.values(D.accounts).filter((a) => a.id !== acct && !a.closed && xferOK(a.id, acct));
+    const others = Object.values(D.accounts).filter((a) => a.id !== acct && !a.closed);
+    const xcatBox = curCat.indexOf('xfer:') === 0 && isTrack(curCat.slice(5)) && !isTrack(acct);
     let opts = isTrack(acct) ? `<option value="">No category (tracking account)</option>` : catOptions(curCat.indexOf('xfer:') === 0 || curCat === '__split' ? '' : curCat, { blankLabel: 'Uncategorized', forTx: true, acct });
     if (others.length) opts += `<optgroup label="Transfer between your accounts">${others.map((a) => `<option value="xfer:${a.id}" ${curCat === 'xfer:' + a.id ? 'selected' : ''}>Transfer ${amtNow < 0 ? 'to' : 'from'} ${esc(a.name)}</option>`).join('')}</optgroup>`;
     if (!isTrack(acct)) opts += `<option value="__split" ${curCat === '__split' ? 'selected' : ''}>${d.splits ? 'Split' : 'Split between categories…'}</option>`;
@@ -1923,8 +1969,9 @@
         <span class="t-ac">${esc(acctName(acct))}</span>
         <textarea id="ie-bank" class="t-bank" rows="1" placeholder="Bank description" aria-label="Bank description">${esc(v('bank', t.bank || ''))}</textarea>
         <input id="ie-memo" class="t-memo" autocomplete="off" value="${esc(v('memo', t.memo || ''))}" placeholder="Note" aria-label="Note">
-        <input id="ie-amt" class="t-amt cents" inputmode="numeric" autocomplete="off" value="${esc(v('amt', plain(t.amt)))}" aria-label="Amount (minus for money out)">
+        <input id="ie-amt" class="t-amt cents" inputmode="numeric" autocomplete="off" value="${esc(v('amt', box(t.amt)))}" aria-label="Amount (minus for money out)">
         <div class="ie-extra">
+          ${xcatBox ? `<label class="ie-x">${amtNow < 0 ? 'Paid from' : 'Goes to'} <select id="ie-xcat" aria-label="${amtNow < 0 ? 'Paid from category' : 'Goes to category'}">${catOptions(v('xcat', t.cat || ''), { blankLabel: 'Uncategorized', forTx: true, acct })}</select></label>` : ''}
           ${openAccts.length > 1 ? `<label class="ie-x">Account <select id="ie-acct" aria-label="Account">${openAccts.map((a) => `<option value="${a.id}" ${a.id === acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>` : ''}
           ${receipt ? `<span class="ie-x">${ICON.receipt}<button class="linkish" data-action="ie-rcpt-view">Receipt</button><button class="linkish" data-action="ie-rcpt-rm" title="Remove the receipt">Remove</button></span>`
             : S.assets ? `<label class="ie-x linkish" for="ie-rfile">${ICON.receipt} Add receipt</label><input type="file" id="ie-rfile" accept="image/*,application/pdf" hidden>` : ''}
@@ -2014,6 +2061,7 @@
       t.splits = null;
       if (d.cat.indexOf('xfer:') === 0) { t.transfer = d.cat.slice(5); t.cat = null; } else { t.transfer = null; t.cat = d.cat || null; }
     }
+    if (trkXfer(t)) t.cat = 'xcat' in d ? d.xcat || null : t.cat || orig.cat || null;
     if (t.transfer && t.transfer === t.acct) return keep('A transfer needs two different accounts.');
     if ('receipt' in d) { t.receipt = d.receipt || null; t.receiptType = d.receiptType || null; }
     // an imported transaction waiting for approval is approved once it's saved with a job (a category, split or transfer)
@@ -2035,7 +2083,7 @@
       const p = oldPair && oldPair.acct === t.transfer ? Object.assign({}, oldPair) : { id: S.uid(), cleared: 'u', by: myId() };
       if (oldPair && oldPair.acct !== t.transfer) removes.push(oldPair);
       if (oldPair && p.id === oldPair.id && E.monthOf(oldPair.date) !== E.monthOf(t.date)) removes.push(oldPair);
-      Object.assign(p, { acct: t.transfer, date: t.date, amt: -t.amt, transfer: t.acct, pair: t.id, cat: null, splits: null, payee: t.payee || null, memo: t.memo || null });
+      Object.assign(p, { acct: t.transfer, date: t.date, amt: -t.amt, transfer: t.acct, pair: t.id, cat: pairCat(t, p), splits: null, payee: t.payee || null, memo: t.memo || null });
       t.pair = p.id;
       writes.push(p);
     } else {
@@ -2069,7 +2117,7 @@
     const cl = t.cleared === 'r' ? `<span class="clr r" title="Reconciled">${ICON.lock}</span>` : `<button class="clr ${t.cleared === 'c' ? 'c' : 'u'}" data-action="toggle-clear" data-id="${t.id}" aria-label="${t.cleared === 'c' ? 'Cleared. Mark as not cleared' : 'Not cleared. Mark as cleared'}" title="${t.cleared === 'c' ? 'Cleared by the bank' : 'Not yet cleared'}">C</button>`;
     return `<div class="txr${UI.peekTx === t.id ? ' open' : ''}${t.match ? ' matched' : t.approved === false ? ' review' : ''}${isUncat(t) ? ' nocat' : ''}${REC_FLAGS[t.id] ? ' rflagged' : ''}${UI.sel === t.id || (UI.multi || []).includes(t.id) ? ' selected' : ''}${UI.delAsk === t.id && UI.editTx !== t.id ? ' del-ask' : ''}" role="listitem" data-row="${t.id}">
       <div class="t-side">${t.match ? `<button class="ic ic-match" data-action="${isPhone() ? 'approve' : 'open-tx'}" data-id="${t.id}" title="${isPhone() ? 'Approve' : t.match.kind === 'update' ? 'Bank description updated. Click to compare and approve' : 'Matched to a bank line. Click to compare and approve'}" aria-label="${t.match.kind === 'update' ? 'Updated' : 'Matched'}">${t.match.kind === 'update' ? ICON.redo : ICON.link}</button>` : t.approved === false ? `<button class="ic ic-approve" data-action="approve" data-id="${t.id}" title="Approve" aria-label="Approve">${ICON.tick}</button>` : ''}</div>
-      <button class="tx-main" data-action="${isPhone() ? 'tx-peek' : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
+      <button class="tx-main" data-action="${isPhone() ? (UI.pick ? 'pick-tx' : 'tx-peek') : 'sel-tx'}" data-id="${t.id}" title="Click again or press Enter to edit">
         <span class="t-date">${esc(dateLabel(t.date))}</span>
         <span class="t-payee" title="${esc(t.payee || '')}">${esc(t.payee || (t.transfer ? 'Transfer' : t.bank) || 'No payee')}${t.receipt ? `<i class="ricon" title="Has a receipt">${ICON.receipt}</i>` : ''}</span>
         <span class="t-cat" title="${esc(t.transfer ? 'Transfer' : t.splits && t.splits.length ? 'Split' : t.cat ? catPath(t.cat) : 'Uncategorized')}">${txCatLabel(t)}<span class="t-acct">${esc(acctName(t.acct))}</span></span>
@@ -2138,13 +2186,13 @@
 
     const catSel = () => {
       let opts = isTrack(t.acct) ? `<option value="">No category (tracking account)</option>` : catOptions(t.transfer ? 'xfer:' + t.transfer : (t.cat || ''), { blankLabel: 'Uncategorized', forTx: true, acct: t.acct });
-      const others = Object.values(D.accounts).filter((a) => a.id !== t.acct && !a.closed && xferOK(a.id, t.acct));
+      const others = Object.values(D.accounts).filter((a) => a.id !== t.acct && !a.closed);
       if (others.length) opts += `<optgroup label="Transfer between your accounts">${others.map((a) => `<option value="xfer:${a.id}" ${t.transfer === a.id ? 'selected' : ''}>Transfer ${dir === 'out' ? 'to' : 'from'} ${esc(a.name)}</option>`).join('')}</optgroup>`;
       return opts;
     };
     const splitRows = () => splits.map((p, i) => `<div class="split" data-i="${i}">
         <select id="sp-cat-${i}" aria-label="Split ${i + 1} category">${catOptions(p.cat || '', { blankLabel: 'Uncategorized', forTx: true })}</select>
-        <input id="sp-amt-${i}" class="cents" inputmode="numeric" autocomplete="off" value="${p.amt ? plain(Math.abs(p.amt)) : ''}" placeholder="0.00" aria-label="Split ${i + 1} amount">
+        <input id="sp-amt-${i}" class="cents" inputmode="numeric" autocomplete="off" value="${p.amt ? box(Math.abs(p.amt)) : ''}" placeholder="0.00" aria-label="Split ${i + 1} amount">
         <input id="sp-memo-${i}" value="${esc(p.memo || '')}" placeholder="Note" aria-label="Split ${i + 1} note">
         <button class="icon-btn" data-saction="rm-split" data-i="${i}" aria-label="Remove split ${i + 1}">×</button>
       </div>`).join('');
@@ -2162,7 +2210,7 @@
         : t.approved === false ? '<p class="hint warn">Imported from your bank. Check the payee and category, then approve it.</p>' : ''}
       <div class="grid2 tx-pair">
         <div class="field"><span class="lbl-row"><label for="tx-amt">Amount</label><span class="dir seg-ctl" role="group" aria-label="Money out or in">
-          <button data-saction="dir" data-v="out" aria-pressed="${dir === 'out'}">Out</button><button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">In</button></span></span><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? plain(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
+          <button data-saction="dir" data-v="out" aria-pressed="${dir === 'out'}">Out</button><button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">In</button></span></span><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? box(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
         <div class="field"><label for="tx-date">Date</label><input id="tx-date" type="date" value="${t.date}"></div>
       </div>
       <div class="grid2 tx-pair">
@@ -2172,6 +2220,7 @@
       ${splits ? `<div class="field"><span class="lbl">Split between categories</span><div id="splits">${splitRows()}</div>
           <div class="row-btns"><button class="btn sm" data-saction="add-split">${ICON.plus} Add line</button><button class="btn sm" data-saction="unsplit">Stop splitting</button><span id="split-left" class="hint"></span></div></div>`
         : `<div class="field"><span class="lbl-row"><label for="tx-cat">Category</label><button class="linkish" data-saction="split">Split</button></span><select id="tx-cat">${catSel()}</select></div>`}
+      ${!splits && trkXfer(t) ? `<div class="field"><label for="tx-xcat">${dir === 'out' ? 'Paid from category' : 'Goes to category'}</label><select id="tx-xcat">${catOptions(t.cat || '', { blankLabel: 'Uncategorized', forTx: true, acct: t.acct })}</select></div>` : ''}
       ${t.posted ? `<p class="fine">Bought ${esc(dateLabel(t.date))}. The bank processed it on ${esc(dateLabel(t.posted))}.</p>` : ''}
       <div class="field"><label for="tx-bank">Bank description</label><input id="tx-bank" autocomplete="off" value="${esc(t.bank || '')}" placeholder="As it appears on your statement"></div>
       <div class="field"><label for="tx-memo">Your note</label><textarea id="tx-memo" rows="${isPhone() ? 1 : 2}" placeholder="Anything you want to remember">${esc(t.memo || '')}</textarea></div>
@@ -2202,7 +2251,7 @@
         splits = splits.map((p, i) => ({ cat: $('#sp-cat-' + i).value || null, amt: (dir === 'out' ? -1 : 1) * Math.abs(E.parseMoney($('#sp-amt-' + i).value) || 0), memo: $('#sp-memo-' + i).value.trim() || null }));
       } else if ($('#tx-cat')) {
         const v = $('#tx-cat').value;
-        if (v.indexOf('xfer:') === 0) { t.transfer = v.slice(5); t.cat = null; } else { t.transfer = null; t.cat = v || null; }
+        if (v.indexOf('xfer:') === 0) { t.transfer = v.slice(5); t.cat = trkXfer(t) ? ($('#tx-xcat') ? $('#tx-xcat').value || null : t.cat) : null; } else { t.transfer = null; t.cat = v || null; }
       }
     };
     const paint = () => {
@@ -2247,7 +2296,7 @@
         const p = oldPair && oldPair.acct === t.transfer ? Object.assign({}, oldPair) : { id: S.uid(), cleared: 'u', by: myId() };
         if (oldPair && oldPair.acct !== t.transfer) removes.push(oldPair);
         if (p.date && E.monthOf(p.date) !== E.monthOf(t.date) && oldPair) removes.push(oldPair);
-        Object.assign(p, { acct: t.transfer, date: t.date, amt: -t.amt, transfer: t.acct, pair: t.id, cat: null, splits: null, payee: t.payee || null, memo: t.memo || null });
+        Object.assign(p, { acct: t.transfer, date: t.date, amt: -t.amt, transfer: t.acct, pair: t.id, cat: pairCat(t, p), splits: null, payee: t.payee || null, memo: t.memo || null });
         t.pair = p.id;
         writes.push(p);
       } else {
@@ -2298,7 +2347,7 @@
         const pc = payeeCat(el.value);
         if (pc) $('#tx-cat').value = pc;
       }
-      if (el.id === 'tx-acct') { readForm(); paint(); }
+      if (el.id === 'tx-acct' || el.id === 'tx-cat') { readForm(); paint(); }
       if (el.id === 'rfile' && el.files && el.files[0]) {
         readForm();
         const stat = $('#rstat');
@@ -2490,10 +2539,10 @@
               <div class="row-btns"><button class="btn primary" data-saction="pick">Choose bank file</button><input type="file" id="im-file" accept=".csv,.ofx,.qfx,.qif,.txt,text/csv" hidden></div></li>
           </ol>
           <p class="fine">To undo an import, see Settings › Bank imports.</p>`
-          : `<div class="field narrow"><label for="rec-bank">${isDebt(st.acct) ? 'Amount owing' : isTrk() ? "What it's worth now" : "Bank's current balance"}</label><input id="rec-bank" class="cents" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${v != null && !isTrk() ? plain(v) : ''}"></div>
+          : `<div class="field narrow"><label for="rec-bank">${isDebt(st.acct) ? 'Amount owing' : isTrk() ? "What it's worth now" : "Bank's current balance"}</label><input id="rec-bank" class="cents" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${v != null && !isTrk() ? box(v) : ''}"></div>
           ${v != null && !isTrk() ? `<p class="hint">Filled in from your last bank file (end of ${esc(dateLabel(last))}). Check it matches your banking app.</p>` : ''}
-          ${isTrk() ? '' : '<p class="hint">Use the balance in your banking app. If there are pending purchases, use the <b>available</b> balance.</p>'}
-          <div class="row-btns"><button class="btn primary" data-saction="rec">${isTrk() ? 'Next' : 'Start reconciling'}</button></div>`}`;
+          ${isTrk() ? '<p class="hint">The difference goes in as one adjustment: your gains or losses since last time. Money you put in or took out should be a transfer first.</p>' : '<p class="hint">Use the balance in your banking app. If there are pending purchases, use the <b>available</b> balance.</p>'}
+          <div class="row-btns"><button class="btn primary" data-saction="rec">${isTrk() ? 'Save' : 'Start reconciling'}</button></div>`}`;
       } else if (st.step === 2) {
         const cols = st.rows[0].map((_, i) => i);
         const name = (i) => (st.header ? st.header[i] || `Column ${i + 1}` : `Column ${i + 1}`);
@@ -2525,7 +2574,7 @@
         ? '<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="check">Next</button>'
         : `<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="go">Import ${Object.values(st.include).filter(Boolean).length} rows${st.goneSel && st.goneSel.size ? ` and remove ${st.goneSel.size} released` : ''}</button>`);
     };
-    openSheet({ title: 'Import & reconcile', body: '', wide: true });
+    openSheet({ title: isTrk() ? 'Update balance' : 'Import & reconcile', body: '', wide: true });
     paint();
     const classify = (rows) => {
       // the date the purchase was made (from the description), keeping the bank's date for duplicate checks
@@ -2631,6 +2680,7 @@
         const raw = ($('#rec-bank') && $('#rec-bank').value || '').trim(), v = E.parseMoney(raw);
         if (!raw || Number.isNaN(v)) { toast(isTrk() ? "Type what it's worth now." : "Type the bank's current balance."); $('#rec-bank') && $('#rec-bank').focus(); return; }
         UI.lastImport = st.acct;
+        if (isTrk()) { closeSheet(); updateValue(st.acct, v); return; }
         closeSheet(); startRec(st.acct, isDebt(st.acct) ? -Math.abs(v) : v);
       },
       back: () => { st.step = st.step === 3 && st.rows && !st.autoCols ? 2 : 1; paint(); },
@@ -3234,11 +3284,11 @@
         <div id="ac-debt">
           <div class="grid2">
             <div class="field"><label for="ac-rate">Interest rate (% a year)</label><input id="ac-rate" inputmode="decimal" placeholder="e.g. 19.99" value="${a.rate || ''}"></div>
-            <div class="field"><label for="ac-pay">Repayment each month</label><input id="ac-pay" class="cents" inputmode="numeric" autocomplete="off" placeholder="optional" value="${a.payment ? plain(a.payment) : ''}"></div>
+            <div class="field"><label for="ac-pay">Repayment each month</label><input id="ac-pay" class="cents" inputmode="numeric" autocomplete="off" placeholder="optional" value="${a.payment ? box(a.payment) : ''}"></div>
           </div>
           <div class="grid2">
-            <div class="field"><label for="ac-min">Minimum payment each month</label><input id="ac-min" class="cents" inputmode="numeric" autocomplete="off" placeholder="${a.type === 'credit' ? 'from your statement' : 'same as the repayment'}" value="${a.minPay != null ? plain(a.minPay) : ''}"></div>
-            <div class="field" id="ac-limit-f"><label for="ac-limit">Credit limit</label><input id="ac-limit" class="cents" inputmode="numeric" autocomplete="off" placeholder="optional" value="${a.limit ? plain(a.limit) : ''}"></div>
+            <div class="field"><label for="ac-min">Minimum payment each month</label><input id="ac-min" class="cents" inputmode="numeric" autocomplete="off" placeholder="${a.type === 'credit' ? 'from your statement' : 'same as the repayment'}" value="${a.minPay != null ? box(a.minPay) : ''}"></div>
+            <div class="field" id="ac-limit-f"><label for="ac-limit">Credit limit</label><input id="ac-limit" class="cents" inputmode="numeric" autocomplete="off" placeholder="optional" value="${a.limit ? box(a.limit) : ''}"></div>
           </div>
           <p class="hint">The minimum payment counts as a need in "Where this month's budget is going". Anything extra counts as freedom. For a loan, leave it blank to use the repayment. ${isNew ? 'A repayment amount becomes the monthly target for its payment category.' : ''}</p>
         </div>
@@ -3319,7 +3369,7 @@
       body: `<p>You owe <b>${money(owing)}</b>${payCat ? `, and <b>${money(payAvail(id))}</b> is ready to pay it in the ${esc(D.cats[payCat].name)} payment category` : ''}.</p>
         <div class="grid2">
           <div class="field"><label for="po-rate">Interest rate (% a year)</label><input id="po-rate" inputmode="decimal" value="${a.rate || ''}" placeholder="e.g. 19.99"></div>
-          <div class="field"><label for="po-pay">Repayment each month</label><input id="po-pay" class="cents" inputmode="numeric" autocomplete="off" value="${plain(a.payment || tgt || Math.max(2500, Math.round(owing * 0.03)))}"></div>
+          <div class="field"><label for="po-pay">Repayment each month</label><input id="po-pay" class="cents" inputmode="numeric" autocomplete="off" value="${box(a.payment || tgt || Math.max(2500, Math.round(owing * 0.03)))}"></div>
         </div>
         <div class="field"><label for="po-extra">Extra each month, to see what it saves</label><input id="po-extra" class="cents" inputmode="numeric" autocomplete="off" value="0"></div>
         <div id="po-out"></div>
@@ -3535,7 +3585,7 @@
       <h3>Targets: add this much every month</h3>
       <p class="fine">YNAB's export doesn't include targets, so these come from what you usually assigned over your last ${Object.values(res.targets)[0] ? Object.values(res.targets)[0].of : 6} months. Change any amount or untick ones you don't want.</p>
       <label class="check"><input type="checkbox" id="yt-all" checked> All</label>
-      <div class="ynab-tbl">${tgtIds.map((id) => `<div class="ynab-row tgt"><label class="check"><input type="checkbox" data-ytgt="${id}" checked><span>${esc(res.cats[id].name)}</span></label><span class="fine">${res.targets[id].times > 1 ? `${res.targets[id].times} of ${res.targets[id].of} months` : 'last month'}</span><input class="num cents" inputmode="numeric" autocomplete="off" data-yamt="${id}" value="${plain(res.targets[id].amount)}" aria-label="Monthly target for ${esc(res.cats[id].name)}"></div>`).join('')}</div>
+      <div class="ynab-tbl">${tgtIds.map((id) => `<div class="ynab-row tgt"><label class="check"><input type="checkbox" data-ytgt="${id}" checked><span>${esc(res.cats[id].name)}</span></label><span class="fine">${res.targets[id].times > 1 ? `${res.targets[id].times} of ${res.targets[id].of} months` : 'last month'}</span><input class="num cents" inputmode="numeric" autocomplete="off" data-yamt="${id}" value="${box(res.targets[id].amount)}" aria-label="Monthly target for ${esc(res.cats[id].name)}"></div>`).join('')}</div>
 
       <h3>Replace this budget</h3>
       <p>${have ? '<b>This replaces everything in YNABB</b> (categories, accounts, transactions and assigning) for you and your partner.' : 'This fills your empty budget.'} Your currency and layout settings stay. Learned payees and bank-import history are cleared.</p>
@@ -3716,7 +3766,16 @@
     reconcile: (el) => openImport(el.dataset.id),
     'rec-flow': () => openImport(),
     'ie-cal': () => { const p = $('#ie-date-pick'); if (!p) return; p.value = isoOr($('#ie-date').value, p.value); try { p.showPicker(); } catch (e) { p.focus(); p.click(); } },
-    'multi-clear': () => { UI.multi = null; render(); },
+    'multi-clear': () => { UI.multi = null; if (UI.pick) UI.sel = null; render(); },
+    'pick-mode': () => { UI.pick = !UI.pick; UI.sel = null; UI.multi = null; UI.peekTx = null; UI.multiDel = false; render(); },
+    // Select mode on a phone: each tap adds or takes out one row
+    'pick-tx': (el) => {
+      const id = el.dataset.id, m = (UI.multi || []).slice(), i = m.indexOf(id);
+      if (!UI.sel) UI.sel = id;
+      else if (id === UI.sel) UI.sel = m.shift() || null;
+      else if (i >= 0) m.splice(i, 1); else m.push(id);
+      UI.multi = m; UI.delAsk = null; UI.multiDel = false; render();
+    },
     'select-all': () => selectAll(),
     'multi-payee': () => {
       const v = ($('#mb-payee') ? $('#mb-payee').value : '').trim();
@@ -3753,12 +3812,13 @@
       const ids = picked(); if (ids.length !== 2) return;
       const [k, d] = keeperOf(D.txById[ids[0]], D.txById[ids[1]]);
       if (mergeProblem(k, d)) return;
-      UI.multi = null; UI.sel = k.id; await mergePair(k.id, d.id);
+      const x = xferPair(k, d);
+      UI.multi = null; UI.sel = k.id; await (x ? mergeXfer(x[0], x[1]) : mergePair(k.id, d.id));
     },
     'dbl-open': () => { UI.dbl = true; UI.bc = null; render(); window.scrollTo(0, 0); },
     'dbl-close': () => { UI.dbl = false; render(); },
     'dbl-see': (el) => { const id = el.dataset.id, t = D.txById[id]; if (!t) return; UI.q = ''; UI.only = null; if ((UI.f.from && t.date < UI.f.from) || (UI.f.to && t.date > UI.f.to)) { UI.f.from = ''; UI.f.to = ''; } if (UI.rec && t.cleared === 'r') UI.recAll = true; UI.sel = id; render(); setTimeout(() => { const r = document.querySelector(`.txr[data-row="${id}"]`); if (r) r.scrollIntoView({ block: 'center' }); }, 40); },
-    'dbl-merge': (el) => mergePair(el.dataset.a, el.dataset.b),
+    'dbl-merge': (el) => { const x = xferPair(D.txById[el.dataset.a], D.txById[el.dataset.b]); return x ? mergeXfer(x[0], x[1]) : mergePair(el.dataset.a, el.dataset.b); },
     'dbl-not': (el) => notDouble(el.dataset.a, el.dataset.b),
     'chk-open': (el) => openTx(D.txById[el.dataset.id]),
     'chk-pair-ok': async (el) => {
@@ -3875,9 +3935,10 @@
   function editDirty() {
     const t = D.txById[UI.editTx], d = UI.editDraft || {};
     if (!t) return false;
-    const orig = { date: t.date, payee: t.payee || '', cat: t.cat || '', amt: plain(t.amt), bank: t.bank || '', memo: t.memo || '' };
+    const orig = { date: t.date, payee: t.payee || '', cat: t.cat || '', amt: box(t.amt), bank: t.bank || '', memo: t.memo || '' };
     if (d._dirty || (d.acct && d.acct !== t.acct)) return true;
     if ('cat' in d && d.cat !== (t.transfer ? 'xfer:' + t.transfer : (t.cat || ''))) return true;
+    if ('xcat' in d && d.xcat !== (t.cat || '')) return true;
     return Object.keys(d).some((k) => k in orig && k !== 'cat' && String(d[k]).trim() !== String(orig[k]).trim());
   }
   document.addEventListener('click', (ev) => {
@@ -4048,20 +4109,20 @@
       const d = UI.editDraft, sp = el.id.match(/^ie-sp-(cat|amt|memo)-(\d+)$/);
       if (sp) {
         d.splits[Number(sp[2])][sp[1]] = el.value; d._dirty = true;
-        const left = $('#ie-sp-left'); if (left) left.textContent = splitLeftText(d, E.parseMoney(String('amt' in d ? d.amt : plain(D.txById[UI.editTx].amt))));
+        const left = $('#ie-sp-left'); if (left) left.textContent = splitLeftText(d, E.parseMoney(String('amt' in d ? d.amt : box(D.txById[UI.editTx].amt))));
         return;
       }
       if (el.id === 'ie-rfile') return;
       d[el.id.slice(3)] = el.value;
       if (el.id === 'ie-cat') {
         if (el.value === '__split' && !d.splits) {
-          const t = D.txById[UI.editTx], amt = Math.abs(E.parseMoney(String('amt' in d ? d.amt : plain(t.amt))) || 0);
+          const t = D.txById[UI.editTx], amt = Math.abs(E.parseMoney(String('amt' in d ? d.amt : box(t.amt))) || 0);
           const first = (d.cat && d.cat !== '__split' && d.cat.indexOf('xfer:') !== 0) ? d.cat : (t.cat || '');
-          d.splits = [{ cat: first, amt: plain(amt), memo: '' }, { cat: '', amt: '', memo: '' }]; d._dirty = true;
+          d.splits = [{ cat: first, amt: box(amt), memo: '' }, { cat: '', amt: '', memo: '' }]; d._dirty = true;
           render(); const n = $('#ie-sp-cat-1'); if (n) n.focus();
         } else if (el.value !== '__split' && d.splits) { d.splits = null; render(); }
       }
-      if (el.id === 'ie-acct') render();
+      if (el.id === 'ie-acct' || el.id === 'ie-cat') render();
       if (el.id === 'ie-amt' && d.splits) { const left = $('#ie-sp-left'); if (left) left.textContent = splitLeftText(d, E.parseMoney(el.value)); }
       return;
     }
@@ -4198,7 +4259,7 @@
   // Like a card terminal: the cents are always there, so typing 1 0 0 gives 1.00 and a typed dot is skipped. Each amount
   // in a sum fills the same way (2500 + 1000 shows 25.00+10.00), but after × or ÷ it's a plain count (25.00×3).
   // Leaving the box works the sum out. On a phone or tablet our own number pad replaces the system keyboard.
-  const centsFmt = (c, neg) => (neg ? '-' : '') + (c / 100).toFixed(2);
+  const centsFmt = (c, neg) => (neg ? '-' : '') + commas((c / 100).toFixed(2));
   const CALC_OP = /([+−×÷])/;
   const isSum = (s) => /[+\-−×÷*/]/.test(String(s).trim().slice(1));
   const calcValue = (s) => E.parseMoney(String(s).replace(/[+\-−×÷*/\s]+$/, ''));
@@ -4241,7 +4302,7 @@
       if (only) x.neg = !x.neg;
       else if (!Number.isNaN(v)) x = { neg: v > 0, terms: [{ op: '', v: (Math.abs(v) / 100).toFixed(2) }] };
     } else return null;
-    return (x.neg ? '-' : '') + x.terms.map((t) => t.op + t.v).join('');
+    return (x.neg ? '-' : '') + x.terms.map((t) => t.op + (t.op === '×' || t.op === '÷' ? t.v : commas(t.v))).join(''); // a count after × or ÷ has no commas
   };
   const calcSet = (el, out) => {
     el.value = out;
@@ -5177,7 +5238,7 @@
     }
     const newForm = (o) => Object.assign({ texts: [{ match: 'contains', text: '' }], dir: '', amode: '', a1: '', a2: '', acct: '', dmode: '', days: '', payee: '', cat: '', memo: '', past: true }, o || {});
     // an existing rule, opened in the form
-    const ruleToForm = (r, key) => newForm({ key, order: r.order, all: !!r.all, alt: r.alt && r.alt.length > 1 ? r.alt.map((o) => ({ payee: o.payee || '', cat: o.cat || '', memo: o.memo || '' })) : null, texts: ruleTexts(r).map((m) => ({ match: m.match, text: m.text })), dir: r.dir || '', acct: r.acct || '', amode: r.amtIs != null ? 'is' : r.amtMin != null || r.amtMax != null ? 'range' : '', a1: r.amtIs != null ? plain(r.amtIs) : r.amtMin != null ? plain(r.amtMin) : '', a2: r.amtMax != null ? plain(r.amtMax) : '', dmode: r.days && r.days.length ? 'on' : '', days: r.days && r.days.length ? r.days.join(', ') : '', payee: r.payee || '', cat: r.cat || '', memo: r.memo || '', past: false });
+    const ruleToForm = (r, key) => newForm({ key, order: r.order, all: !!r.all, alt: r.alt && r.alt.length > 1 ? r.alt.map((o) => ({ payee: o.payee || '', cat: o.cat || '', memo: o.memo || '' })) : null, texts: ruleTexts(r).map((m) => ({ match: m.match, text: m.text })), dir: r.dir || '', acct: r.acct || '', amode: r.amtIs != null ? 'is' : r.amtMin != null || r.amtMax != null ? 'range' : '', a1: r.amtIs != null ? box(r.amtIs) : r.amtMin != null ? box(r.amtMin) : '', a2: r.amtMax != null ? box(r.amtMax) : '', dmode: r.days && r.days.length ? 'on' : '', days: r.days && r.days.length ? r.days.join(', ') : '', payee: r.payee || '', cat: r.cat || '', memo: r.memo || '', past: false });
     if (form && !form.texts) form = newForm({ texts: [{ match: form.match || 'contains', text: form.text || '' }], payee: form.payee || '', cat: form.cat || '', memo: form.memo || '' });
     openSheet({ title: 'Payees and rules', body: '', wide: true, refresh: () => { if (!editing && !(form && document.activeElement && document.activeElement.closest('.pr-form'))) paint(); } });
     paint();

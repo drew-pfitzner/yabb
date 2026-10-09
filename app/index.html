@@ -666,7 +666,12 @@ button.pm-chip { cursor: pointer; padding-right: 10px; }
 @media (max-width: 700px) {
   .ar { grid-template-columns: 34px minmax(0, 1fr) auto; }
   .ar-act { grid-column: 2 / -1; justify-content: flex-start; }
-  .at-tile { min-width: 0; flex: 1 1 40%; }
+  /* phone: the tiles get the full width in an even 2-up grid, the button drops below, so big numbers fit */
+  .at-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); flex: 1 1 100%; }
+  .at-tile { min-width: 0; padding: 8px 12px; }
+  .at-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .at-tile b { display: block; font-size: clamp(16px, 5vw, 21px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .acc-top > .btn { flex: 1 1 100%; justify-content: center; }
 }
 /* debt payment lines in the budget: a soft blue-grey band and an icon of what they pay */
 /* debt lines: a thin plum edge, a faint plum wash and a plum icon. Quiet, but you can't miss which lines are debts */

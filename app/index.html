@@ -682,6 +682,8 @@ span.rflag { cursor: help; }
 .pk-sheet { max-height: min(80vh, calc(100% - 24px)); }
 .pk-sheet.has-s { height: min(80vh, calc(100% - 24px)); max-height: none; }
 .pk.on .pk-back { opacity: 1; } .pk.on .pk-sheet { transform: none; }
+/* iPhone's keyboard is see-through and slides over the page: fill below the sheet so no cut-off page shows under it */
+.pk-sheet::after, .pym::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 100vh; background: var(--surface); pointer-events: none; }
 .pk-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 16px 10px; font-size: 17px; }
 .pk-top .linkish { font-size: 16px; }
 .pk-s { padding: 0 16px 10px; display: flex; }

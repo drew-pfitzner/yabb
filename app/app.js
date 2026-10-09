@@ -2183,6 +2183,9 @@
     let dir = t.amt > 0 ? 'in' : 'out';
     let receipt = t.receipt || null, receiptType = t.receiptType || null;
     const reconciled = t.cleared === 'r';
+    // the rarely-used bits stay tucked away until asked for
+    let noteOpen = !!t.memo, bankOpen = false, moreOpen = false;
+    const canSplitBank = () => !t.match && t.ik && t.bank && !isNew;
 
     const catSel = () => {
       let opts = isTrack(t.acct) ? `<option value="">No category (tracking account)</option>` : catOptions(t.transfer ? 'xfer:' + t.transfer : (t.cat || ''), { blankLabel: 'Uncategorized', forTx: true, acct: t.acct });
@@ -2197,8 +2200,9 @@
         <button class="icon-btn" data-saction="rm-split" data-i="${i}" aria-label="Remove split ${i + 1}">×</button>
       </div>`).join('');
 
+    // as little text as possible: the values explain themselves, so most labels live in aria-label only
     const body = () => `
-      ${reconciled ? '<p class="hint">This transaction is reconciled with your bank. Changing its amount or account will unbalance the account.</p>' : ''}
+      ${reconciled ? '<p class="hint">Reconciled. Changing the amount or account will unbalance the account.</p>' : ''}
       ${t.match ? (() => {
         // the same words as the reconcile list: what was there → what the bank says
         const [k, line] = checkOf(t);
@@ -2208,25 +2212,26 @@
           <div class="row-btns"><button class="btn sm primary" data-saction="approve-match">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-saction="unmatch">${esc(no)}</button></div></div>`;
       })()
         : t.approved === false ? '<p class="hint warn">Imported from your bank. Check the payee and category, then approve it.</p>' : ''}
-      <div class="grid2 tx-pair">
-        <div class="field"><span class="lbl-row"><label for="tx-amt">Amount</label><span class="dir seg-ctl" role="group" aria-label="Money out or in">
-          <button data-saction="dir" data-v="out" aria-pressed="${dir === 'out'}">Out</button><button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">In</button></span></span><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? box(Math.abs(t.amt)) : ''}" placeholder="0.00"></div>
-        <div class="field"><label for="tx-date">Date</label><input id="tx-date" type="date" value="${t.date}"></div>
-      </div>
-      <div class="grid2 tx-pair">
-        <div class="field"><label for="tx-payee">Payee</label><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" ${isPhone() ? 'readonly placeholder="Tap to choose"' : 'placeholder="Type to search your payees"'}></div>
-        <div class="field"><label for="tx-acct">Account</label><select id="tx-acct">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
-      </div>
+      <div class="tx-hero"><span class="tx-sign ${dir}">${dir === 'out' ? '−' : '+'}$</span><input id="tx-amt" class="cents" inputmode="numeric" autocomplete="off" value="${t.amt ? box(Math.abs(t.amt)) : ''}" placeholder="0.00" aria-label="Amount">
+        <span class="dir seg-ctl" role="group" aria-label="Money out or in"><button data-saction="dir" data-v="out" aria-pressed="${dir === 'out'}">Out</button><button data-saction="dir" data-v="in" aria-pressed="${dir === 'in'}">In</button></span></div>
+      <div class="tx-chips"><input id="tx-date" type="date" value="${t.date}" aria-label="Date">
+        <select id="tx-acct" aria-label="Account">${Object.values(D.accounts).filter((a) => !a.closed || a.id === t.acct).map((a) => `<option value="${a.id}" ${a.id === t.acct ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
+      <div class="field tx-who"><input id="tx-payee" data-payee="1" autocomplete="off" value="${esc(t.payee || '')}" aria-label="Payee" ${isPhone() ? 'readonly placeholder="Payee (tap to choose)"' : 'placeholder="Payee"'}>
+        ${bankOpen ? `<input id="tx-bank" class="tx-bankin" autocomplete="off" value="${esc(t.bank || '')}" placeholder="Bank description" aria-label="Bank description">`
+          : t.bank ? `<button class="tx-bankcap" data-saction="edit-bank" title="Bank description. Tap to edit">${esc(t.bank)}</button>` : ''}</div>
       ${splits ? `<div class="field"><span class="lbl">Split between categories</span><div id="splits">${splitRows()}</div>
           <div class="row-btns"><button class="btn sm" data-saction="add-split">${ICON.plus} Add line</button><button class="btn sm" data-saction="unsplit">Stop splitting</button><span id="split-left" class="hint"></span></div></div>`
-        : `<div class="field"><span class="lbl-row"><label for="tx-cat">Category</label><button class="linkish" data-saction="split">Split</button></span><select id="tx-cat">${catSel()}</select></div>`}
+        : `<div class="field tx-catrow"><select id="tx-cat" aria-label="Category">${catSel()}</select><button class="linkish" data-saction="split">Split</button></div>`}
       ${!splits && trkXfer(t) ? `<div class="field"><label for="tx-xcat">${dir === 'out' ? 'Paid from category' : 'Goes to category'}</label><select id="tx-xcat">${catOptions(t.cat || '', { blankLabel: 'Uncategorized', forTx: true, acct: t.acct })}</select></div>` : ''}
-      ${t.posted ? `<p class="fine">Bought ${esc(dateLabel(t.date))}. The bank processed it on ${esc(dateLabel(t.posted))}.</p>` : ''}
-      <div class="field"><label for="tx-bank">Bank description</label><input id="tx-bank" autocomplete="off" value="${esc(t.bank || '')}" placeholder="As it appears on your statement"></div>
-      <div class="field"><label for="tx-memo">Your note</label><textarea id="tx-memo" rows="${isPhone() ? 1 : 2}" placeholder="Anything you want to remember">${esc(t.memo || '')}</textarea></div>
-      <div class="tx-foot"><div id="rcpt">${receiptBox()}</div>
-        <label class="check"><input type="checkbox" id="tx-clear" ${t.cleared === 'c' || t.cleared === 'r' ? 'checked' : ''} ${reconciled ? 'disabled' : ''}> Cleared by the bank</label></div>
-      ${!t.match && t.ik && t.bank && !isNew ? '<p class="fine">Came from a bank import. If it was matched to the wrong entry, <button class="linkish" data-saction="split-bank">split the bank transaction off</button>.</p>' : ''}
+      ${t.posted ? `<p class="fine">Bank processed it ${esc(dateLabel(t.posted))}.</p>` : ''}
+      ${noteOpen ? `<div class="field"><textarea id="tx-memo" rows="${isPhone() ? 1 : 2}" placeholder="Note" aria-label="Note">${esc(t.memo || '')}</textarea></div>` : ''}
+      <div class="tx-foot">
+        ${noteOpen ? '' : `<button class="chip" data-saction="note">${ICON.plus} Note</button>`}
+        <div id="rcpt">${receiptBox()}</div>
+        <label class="chip"><input type="checkbox" id="tx-clear" ${t.cleared === 'c' || t.cleared === 'r' ? 'checked' : ''} ${reconciled ? 'disabled' : ''}> Cleared</label></div>
+      ${moreOpen ? `<div class="tx-more">
+        ${canSplitBank() ? '<button class="linkish" data-saction="split-bank">Wrong match? Split the bank line off</button>' : ''}
+        ${!t.bank && !bankOpen ? '<button class="linkish" data-saction="edit-bank">Add a bank description</button>' : ''}</div>` : ''}
       <p class="fine" id="tx-by"></p>`;
     const receiptBox = () => {
       if (receipt) {
@@ -2236,8 +2241,8 @@
           <div class="row-btns"><label class="btn sm" for="rfile">Replace</label><button class="btn sm" data-saction="rm-receipt">Remove</button></div>
           <input type="file" id="rfile" accept="image/*,application/pdf" hidden></div>`;
       }
-      if (!S.assets) return `<p class="hint">${S.mode === 'local' ? 'Receipts can be attached when you sign in to YNABB.' : 'Attaching receipts needs edit access to this budget.'}</p>`;
-      return `<label class="btn sm" for="rfile">${ICON.receipt} Add receipt</label><input type="file" id="rfile" accept="image/*,application/pdf" hidden><span id="rstat" class="hint"></span>`;
+      if (!S.assets) return '';
+      return `<label class="chip" for="rfile">${ICON.receipt} Receipt</label><input type="file" id="rfile" accept="image/*,application/pdf" hidden><span id="rstat" class="hint"></span>`;
     };
     const readForm = () => {
       t.amt = E.parseMoney($('#tx-amt').value);
@@ -2245,8 +2250,8 @@
       t.date = $('#tx-date').value || t.date;
       t.payee = $('#tx-payee').value.trim();
       t.acct = $('#tx-acct').value;
-      t.bank = $('#tx-bank').value.trim();
-      t.memo = $('#tx-memo').value.trim();
+      if ($('#tx-bank')) t.bank = $('#tx-bank').value.trim();
+      if ($('#tx-memo')) t.memo = $('#tx-memo').value.trim();
       if (splits) {
         splits = splits.map((p, i) => ({ cat: $('#sp-cat-' + i).value || null, amt: (dir === 'out' ? -1 : 1) * Math.abs(E.parseMoney($('#sp-amt-' + i).value) || 0), memo: $('#sp-memo-' + i).value.trim() || null }));
       } else if ($('#tx-cat')) {
@@ -2271,7 +2276,8 @@
       body: '',
       foot: `<button class="btn primary" data-saction="save">Save</button>
         ${t.approved === false ? '<button class="btn" data-saction="save-approve">Save & approve</button>' : ''}
-        ${isNew ? '' : '<button class="btn danger" data-saction="delete">Delete</button>'}`,
+        <span class="tx-fr">${canSplitBank() || !t.bank ? '<button class="icon-btn" data-saction="more" aria-label="More options" title="More">⋯</button>' : ''}
+        ${isNew ? '' : `<button class="icon-btn danger" data-saction="delete" aria-label="Delete" title="Delete">${ICON.trash}</button>`}</span>`,
     });
     paint();
     if (isNew) setTimeout(() => $('#tx-amt') && $('#tx-amt').focus(), 60);
@@ -2324,6 +2330,9 @@
       unsplit: () => { readForm(); t.cat = splits[0] ? splits[0].cat : null; splits = null; paint(); },
       'add-split': () => { readForm(); splits.push({ cat: null, amt: 0, memo: null }); paint(); },
       'rm-split': (el) => { readForm(); splits.splice(Number(el.dataset.i), 1); if (splits.length < 2) { t.cat = splits[0] ? splits[0].cat : null; splits = null; } paint(); },
+      note: () => { readForm(); noteOpen = true; paint(); $('#tx-memo').focus(); },
+      'edit-bank': () => { readForm(); bankOpen = true; moreOpen = false; paint(); $('#tx-bank').focus(); },
+      more: () => { readForm(); moreOpen = !moreOpen; paint(); },
       'rm-receipt': () => { readForm(); receipt = null; receiptType = null; paint(); },
       'view-receipt': () => openLightbox('/_blob/' + receipt, receiptType),
       delete: () => {

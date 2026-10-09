@@ -22,6 +22,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Done
 
+- 2026-10-10: **No more lost fixes after shipping (Drew).** If fixes were saved on a branch after it went live, session start, /ship and /sync now keep them and move them onto a new branch, instead of deleting the branch.
 - 2026-10-10: **Phone tidy-up and transfers to tracking accounts (Drew).** Phone Transactions: long account names end in "…", Import & reconcile sits in a footer row on the account card, the top row is just Search, Filters and +, and Select (then All / Done) sits beside the count. Select mode on a phone for picking several, with a selection bar that fits. Possible doubles show while reconciling, and a typed transfer can merge with the bank's copy. Money moved into a tracking account (super, shares) is spent from a category. Updating a tracking account's value adds one adjustment. Money boxes show commas (1,234.50).
 - 2026-10-10: **Lighter transaction sheet (Drew).** Big amount at the top with Out/In beside it, date and account as small chips, payee with the bank description under it, and Note, Receipt and Cleared as chips. Rare options sit behind ⋯, delete is a bin icon.
 - 2026-10-10: **Search past transactions while reconciling (Dani).** A quiet 'Search past transactions' link under the reconcile card opens a search of everything already checked (payee, bank description, note), to see what a shop was called and categorised as before.

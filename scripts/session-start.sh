@@ -11,13 +11,16 @@ fi
 branch=$(git rev-parse --abbrev-ref HEAD)
 dirty=$(git status --porcelain)
 
-# a branch whose pull request has merged is finished: go back to main
+# a branch whose pull request has merged is finished: go back to main.
+# Only if nothing was saved on it after it merged; otherwise deleting it would lose those fixes.
 if [ "$branch" != main ] && [ -z "$dirty" ]; then
-  state=$(gh pr view "$branch" --json state -q .state 2>/dev/null)
-  if [ "$state" = MERGED ]; then
+  merged=$(gh pr view "$branch" --json state,headRefOid -q 'select(.state == "MERGED") | .headRefOid' 2>/dev/null)
+  if [ -n "$merged" ] && [ "$merged" = "$(git rev-parse HEAD)" ]; then
     git switch -q main && git branch -q -D "$branch" 2>/dev/null
     echo "Git: the change on '$branch' has been merged and is live, so switched back to main."
     branch=main
+  elif [ -n "$merged" ]; then
+    echo "Git: '$branch' went live, but has fixes saved after that. They're not live yet: move them onto a new branch from main (git rebase --onto origin/main $merged) and ship them. Don't delete '$branch' first."
   fi
 fi
 

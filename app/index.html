@@ -394,6 +394,16 @@ button.pill:hover { box-shadow: inset 0 0 0 2px var(--accent); }
 .rc-adj { font-size: 13px; }
 /* the checklist while reconciling */
 .ck-sec { margin-bottom: 16px; }
+.ck-q { margin: 0 0 14px; }
+.ck-findlink { display: flex; align-items: center; gap: 6px; margin: -4px 2px 12px auto; font-size: 13px; color: var(--muted); }
+.ck-findlink svg { width: 14px; height: 14px; }
+.ck-past { margin: -6px 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; }
+.ck-past-r { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.ck-past-r:last-of-type { border-bottom: 0; }
+.ck-past-r .ck-c, .ck-past-r small { grid-column: 1 / -1; }
+.ck-past-r small { font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.ck-past-none { margin: 8px 0; font-size: 13px; color: var(--muted); }
+
 .ck-h { display: flex; align-items: center; gap: 8px; margin: 0 2px 6px; }
 .ck-h b { font-size: 15px; }
 .ck-i { width: 20px; height: 20px; flex: none; margin-left: auto; display: inline-grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--muted); font: 600 12px/1 var(--ui); padding: 0; cursor: pointer; opacity: .8; }

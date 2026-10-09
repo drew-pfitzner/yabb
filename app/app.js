@@ -1534,7 +1534,8 @@
       return `<section class="ck-sec"><header class="ck-h"><b>${CHECK_HEAD[k]}</b><span class="ck-n">${l.length}</span>${bulk ? `<button class="btn sm primary ck-all" data-action="chk-all" data-k="${k}">${ICON.tick} All ${l.length}</button>` : ''}<button class="ck-i${info ? ' on' : ''}" data-action="ck-info" data-k="${k}" aria-expanded="${info}" aria-label="What these are" title="What these are">?</button></header>
         ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${body}</section>`;
     };
-    return recCard() + recPanel() + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
+    const search = !UI.ckFind ? `<button class="linkish ck-findlink" data-action="ck-find">${ICON.search} Search past transactions</button>` : `<div class="search ck-q"><span aria-hidden="true">${ICON.search}</span><input id="ckq" type="search" data-live="0" placeholder="Search past transactions" value="${esc(UI.ckQ || '')}" aria-label="Search past transactions" autocomplete="off" enterkeyhint="search"></div>${pastSearch()}`;
+    return recCard() + recPanel() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
   }
   // two matches with the same amount and close dates: shown as a pair, right way round or swapped
   const swapPartner = (t, l) => l.find((o) => o !== t && o.amt === t.amt && gapDays(o.date, t.date) <= 10);
@@ -1578,9 +1579,23 @@
     const label = { amount: `Match · Use Bank's ${money(Math.abs(t.amt))}`, date: `Match · Use Bank's Date (${dateLabel(t.date)})`, joined: `Match as One ${money(Math.abs(t.amt))}`, update: 'Same Purchase' }[k] || 'Match';
     return yes(label) + keep + edit;
   }
+  const catLabel = (t) => (t.transfer ? `Transfer ${t.amt < 0 ? 'to' : 'from'} ${acctName(t.transfer)}` : t.splits && t.splits.length ? `Split: ${t.splits.map((p) => (p.cat ? catName(p.cat) : 'Uncategorized')).join(', ')}` : t.cat === INCOME ? 'Ready to Assign' : t.cat ? catName(t.cat) : '');
+  // past transactions, to see with your own eyes what a shop was called and categorised as before
+  function pastList(list, more) {
+    if (!list.length) return '<p class="ck-past-none">Nothing found.</p>';
+    return list.map((x) => `<div class="ck-past-r"><span class="ck-p">${esc(x.payee || tidyPayee(x.bank) || 'No payee')}</span><b class="${x.amt > 0 ? 'pos' : ''}">${txAmt(x.amt)}</b>
+      <span class="ck-c${catLabel(x) ? '' : ' none'}">${esc(catLabel(x) || 'Uncategorized')} · ${esc(dateLabel(x.date))}</span>${x.bank ? `<small class="mono">${esc(x.bank)}</small>` : ''}</div>`).join('') + (more ? `<p class="ck-past-none">${more}</p>` : '');
+  }
+  const pastTx = () => { const w = new Set(recWaiting().map((x) => x.id)); return D.tx.filter((x) => !w.has(x.id)).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)); };
+  function pastSearch() {
+    const words = fold(UI.ckQ).split(' ').filter(Boolean);
+    if (!words.length) return '';
+    const hits = pastTx().filter((x) => { const h = fold(`${x.payee} ${x.bank} ${x.memo}`); return words.every((w) => h.includes(w)); });
+    return `<div class="ck-past">${pastList(hits.slice(0, 10), hits.length > 10 ? `Showing the latest 10 of ${hits.length}.` : '')}</div>`;
+  }
   function chkRow(t) {
     const [k, line] = checkOf(t);
-    const cat = t.transfer ? `Transfer ${t.amt < 0 ? 'to' : 'from'} ${acctName(t.transfer)}` : t.splits && t.splits.length ? `Split: ${t.splits.map((p) => (p.cat ? catName(p.cat) : 'Uncategorized')).join(', ')}` : t.cat === INCOME ? 'Ready to Assign' : t.cat ? catName(t.cat) : '';
+    const cat = catLabel(t);
     const name = esc(t.payee || tidyPayee(t.bank) || 'No payee');
     // a row that needs a category: tap anywhere on it to choose one (the list slides up on a phone)
     if (k === 'nocat') return `<div class="ck-row nocat" data-row="${t.id}">
@@ -3765,6 +3780,8 @@
       UI.ckOpen = null; render();
       toast('Swapped. Check them, then tick Right Way Round.', { label: 'Undo', fn: () => undoRedo(false) });
     },
+    // the search for past transactions is a quiet link until wanted
+    'ck-find': () => { UI.ckFind = !UI.ckFind; if (!UI.ckFind) UI.ckQ = ''; render(); const q = $('#ckq'); if (q) q.focus(); },
     'ck-info': (el) => { UI.ckInfo = Object.assign({}, UI.ckInfo, { [el.dataset.k]: !(UI.ckInfo && UI.ckInfo[el.dataset.k]) }); render(); },
     'chk-peek': (el) => { UI.ckOpen = UI.ckOpen === el.dataset.id ? null : el.dataset.id; render(); },
     // approve a whole section at once (perfect matches, or new lines already given a category): one undo step
@@ -4049,12 +4066,15 @@
       return;
     }
     if (sheet && $('#sheet').contains(el)) { if (sheet.onInput) sheet.onInput(el); return; }
+    if (el.id === 'ckq') { UI.ckQ = el.value; clearTimeout(qTimer); qTimer = setTimeout(render, 180); return; }
     if (el.id === 'txq') {
       UI.q = el.value; UI.limit = 150;
       clearTimeout(qTimer);
       qTimer = setTimeout(render, 180);
     }
   });
+  // an emptied search for past transactions folds back into its link
+  document.addEventListener('focusout', (ev) => { if (ev.target.id === 'ckq' && !ev.target.value.trim()) setTimeout(() => { if (UI.ckFind && !(UI.ckQ || '').trim()) { UI.ckFind = false; UI.ckQ = ''; render(); } }, 150); });
   document.addEventListener('focusin', (ev) => {
     const el = ev.target;
     if (!el.classList) return;

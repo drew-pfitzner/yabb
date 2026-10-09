@@ -4,7 +4,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Now
 
-- [ ] **Dani: get set up** with `docs/GETTING-STARTED.md` (invite sent 5 Oct; YNABB login made) (Dani)
+- [x] **Dani: get set up** with `docs/GETTING-STARTED.md` (invite sent 5 Oct; YNABB login made) (Dani)
 - [ ] **Test-open one iCloud backup on the Mac** with the key from the password manager (`node server/backup.js decrypt`), to prove a restore works away from the A6.
 
 ## Next
@@ -22,6 +22,8 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Done
 
+- 2026-10-10: **Phone tidy-up and transfers to tracking accounts (Drew).** Phone Transactions: long account names end in "…", Import & reconcile sits in a footer row on the account card, the top row is just Search, Filters and +, and Select (then All / Done) sits beside the count. Select mode on a phone for picking several, with a selection bar that fits. Possible doubles show while reconciling, and a typed transfer can merge with the bank's copy. Money moved into a tracking account (super, shares) is spent from a category. Updating a tracking account's value adds one adjustment. Money boxes show commas (1,234.50).
+- 2026-10-10: **Lighter transaction sheet (Drew).** Big amount at the top with Out/In beside it, date and account as small chips, payee with the bank description under it, and Note, Receipt and Cleared as chips. Rare options sit behind ⋯, delete is a bin icon.
 - 2026-10-10: **Search past transactions while reconciling (Dani).** A quiet 'Search past transactions' link under the reconcile card opens a search of everything already checked (payee, bank description, note), to see what a shop was called and categorised as before.
 - 2026-10-10: **PDF receipts open inside YNABB (Dani).** They show in the receipt viewer with a × to close, instead of opening a page with no way back in the home-screen app.
 - 2026-10-10: **Import & reconcile in one go (Dani).** One button opens your bank, takes the downloaded file, imports it and reconciles straight away using the file's balance (which you can change). Likely pairs (different amount or date, paid in one go, charged in parts, pending gone through, edited since the last reconcile) are matched at import for you to check, in a grouped checklist with Manual → Bank lines and a ? for what each group means. Reconcile finishes by itself once everything is ticked. Uncategorised transactions show orange with a Still to do strip, Might Be Swapped pairs swap in two steps, and the edit screen fits a phone. New practice test: `test-data/ANSWER-KEY-3.md`.

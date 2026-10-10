@@ -2529,6 +2529,11 @@
     if (!accts.length) { toast('Add an account first.'); UI.view = 'accounts'; saveUI(); render(); return; }
     const st = { step: 1, acct: flowAcct(acctPreset) || accts[0].id, mode: mode || 'import', note: note || '', rows: null, header: null, map: {}, flip: false, datefmt: 'dmy', classified: null, include: {} };
     const isTrk = () => D.accounts[st.acct].type === 'tracking';
+    // with nothing ticked the button still goes on to the balance check
+    const importFoot = () => {
+      const k = Object.values(st.include).filter(Boolean).length, g = st.goneSel ? st.goneSel.size : 0;
+      return `<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="go">${k ? `Import ${k}` : g ? 'Remove' : 'Check the balance'}${g ? `${k ? ' and remove' : ''} ${g} released` : ''}</button>`;
+    };
     const paint = () => {
       let html = '';
       if (st.step === 1) {
@@ -2566,19 +2571,44 @@
         const c = st.classified;
         const n = { new: 0, match: 0, dupe: 0, update: 0, early: 0 };
         c.forEach((r) => n[r.status]++);
-        html = `${st.rows ? `<p class="hint">Read ${c.length} transactions from ${esc(st.file || 'your file')}. <button class="linkish" data-saction="cols">Columns look wrong?</button></p>` : ''}<div class="im-sum"><span class="chip ok">${n.new} new</span><span class="chip">${n.match} matched to ones you entered</span><span class="chip">${n.dupe} already imported</span>${n.update ? `<span class="chip">${n.update} updated descriptions</span>` : ''}${n.early ? `<span class="chip">${n.early} skipped: before your starting balance</span>` : ''}</div>
-          ${n.early ? `<p class="hint">${n.early} ${n.early === 1 ? 'line is' : 'lines are'} from before ${esc(acctName(st.acct))}'s starting balance on ${esc(dateLabel(st.startDate))}. That balance already includes ${n.early === 1 ? 'it' : 'them'}, so ${n.early === 1 ? "it's" : "they're"} left out.</p>` : ''}
-          <p class="hint">Matches are bank transactions that look like ones you entered yourself. After importing, each one waits in Needs review for you to approve or unmatch. Already-imported rows are skipped unless you tick them.</p>
-          <div class="table-wrap"><table class="ptable im-table"><thead><tr><th><span class="sr">Include</span></th><th>Date</th><th>Description</th><th>Amount</th><th>What happens</th></tr></thead><tbody>
-          ${c.map((r, i) => `<tr class="${r.status}"><td><input type="checkbox" id="inc-${i}" data-inc="${i}" ${st.include[i] ? 'checked' : ''} aria-label="Include row ${i + 1}"></td><td>${esc(dateLabel(r.date))}${r.posted && r.posted !== r.date ? `<br><small class="muted">bank: ${esc(dateLabel(r.posted))}</small>` : ''}</td><td>${esc(r.desc)}</td><td class="num ${r.amt > 0 ? 'pos' : ''}">${signed(r.amt)}</td><td>${r.copyFrom ? `Part of your “${esc((D.txById[r.copyFrom] || {}).payee || '')}” entry` : r.status === 'update' && r.fix ? `<b>Already here, but changed to ${esc(money(Math.abs(r.amtFrom)))} in YNABB.</b> Puts back the bank's amount.` : r.status === 'new' ? (r.rule ? `New · ${esc(r.rule.payee || tidyPayee(r.desc))}${r.rule.cat ? ` → ${esc(catName(r.rule.cat))}` : ''}${r.rule.mine ? ` <small class="muted">(your rule${r.rule.turn ? ', taking turns' : ''})</small>` : ''}` : 'New') : r.status === 'update' ? `Looks like “${esc(D.txById[r.updateId].payee || D.txById[r.updateId].bank)}” clearing (imported before as ${esc(D.txById[r.updateId].bank)})${r.amtFrom != null ? `. <b>The amount changed from ${esc(money(Math.abs(r.amtFrom)))} to ${esc(money(Math.abs(r.amt)))}.</b>` : ''} You'll approve it after importing.` : r.status === 'early' ? 'Skipped: before the starting balance' : r.status === 'match' ? `Matches your entry “${esc(D.txById[r.matchId].payee || 'no payee')}” (${esc(dateLabel(D.txById[r.matchId].date))}).${r.how && howNote(r.how, D.txById[r.matchId], r) ? ` <b>${esc(howNote(r.how, D.txById[r.matchId], r))}</b>` : ''} You'll approve it after importing.` : 'Already imported'}</td></tr>`).join('')}
-          </tbody></table></div>
+        const keep = $('#im-dupes'), keepEarly = $('#im-early');
+        if (keep) st.dupesOpen = keep.open;
+        if (keepEarly) st.earlyOpen = keepEarly.open;
+        // one bank line: tick, a readable name and amount, then the date and the bank's wording, then anything worth knowing
+        const row = (r, i) => {
+          const t = D.txById[r.matchId || r.updateId] || null;
+          const name = r.status === 'match' && t ? t.payee || 'Your entry' : r.rule && r.rule.payee ? r.rule.payee : r.payee || tidyPayee(r.desc);
+          const cat = r.status === 'new' && r.rule && r.rule.cat ? catName(r.rule.cat) : r.status === 'match' && t && t.cat ? catName(t.cat) : '';
+          const note = r.copyFrom ? `Part of your “${esc((D.txById[r.copyFrom] || {}).payee || '')}” entry`
+            : r.status === 'update' && r.fix ? `Changed to ${esc(money(Math.abs(r.amtFrom)))} in YNABB. This puts the bank's amount back.`
+            : r.status === 'update' && t ? `Was pending as “${esc(t.payee || t.bank)}”${r.amtFrom != null ? `. Amount now ${esc(money(Math.abs(r.amt)))}, was ${esc(money(Math.abs(r.amtFrom)))}` : ''}.`
+            : r.status === 'match' && t && r.how && howNote(r.how, t, r) ? esc(howNote(r.how, t, r))
+            : r.status === 'match' && t && t.date !== r.date ? `You dated it ${esc(dateLabel(t.date))}.` : '';
+          return `<label class="im-row ${r.status}"><input type="checkbox" data-inc="${i}" ${st.include[i] ? 'checked' : ''} aria-label="Include ${esc(name)}">
+            <span class="im-main"><span class="im-top"><b>${esc(name)}</b><span class="im-amt ${r.amt > 0 ? 'pos' : ''}">${signed(r.amt)}</span></span>
+            <span class="im-bank">${cat ? `<span class="im-cat">${esc(cat)}</span>` : ''}<span>${esc(dateLabel(r.date))} · ${esc(r.desc)}</span></span>${note ? `<span class="im-why">${note}</span>` : ''}</span></label>`;
+        };
+        const group = (want) => c.map((r, i) => (want(r) ? row(r, i) : '')).join('');
+        const check = group((r) => r.status === 'match' || r.status === 'update');
+        const fresh = group((r) => r.status === 'new');
+        const todo = n.new + n.match + n.update;
+        const stat = (num, label, cls) => `<div class="im-stat ${cls}${num ? '' : ' zero'}"><b>${num}</b><span>${label}</span></div>`;
+        html = `<div class="im-head ${todo ? '' : 'done'}">${todo
+            ? `<b>${todo} to bring in</b><span>Untick anything you don't want. Then import and check the balance.</span>`
+            : `<b>&#10003; You're up to date</b><span>All ${c.length} in this file are already in YNABB. Next, check the balance.</span>`}</div>
+          <div class="im-stats">${stat(n.new, 'New', 'new')}${stat(n.match + n.update, 'Matched', 'match')}${stat(n.dupe, 'Already in', 'dupe')}</div>
+          ${check ? `<h3 class="im-h">Matched to what you entered <small>You'll approve these after</small></h3><div class="im-list">${check}</div>` : ''}
+          ${fresh ? `<h3 class="im-h">New</h3><div class="im-list">${fresh}</div>` : ''}
           ${st.gone && st.gone.length ? `<div class="warn-box gone-box"><b>${st.gone.length === 1 ? 'A pending charge is' : `${st.gone.length} pending charges are`} no longer in the bank file.</b> ${st.gone.length === 1 ? 'It was' : 'They were'} imported while pending, but this file covers ${st.gone.length === 1 ? 'its date' : 'their dates'} and doesn't include ${st.gone.length === 1 ? 'it' : 'them'}, cleared or pending. That usually means the bank released a hold (a hotel, a hire car, a fuel pre-authorisation). Ticked ones are removed when you import.
-            <ul class="rc-list">${st.gone.map((t) => `<li><label class="check"><input type="checkbox" data-gone="${t.id}" ${st.goneSel.has(t.id) ? 'checked' : ''}><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || '')} <small class="muted">${esc(t.bank || '')}${t.cleared === 'r' ? ' · reconciled' : ''}</small></span><b class="${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</b></label></li>`).join('')}</ul></div>` : ''}`;
+            <ul class="rc-list">${st.gone.map((t) => `<li><label class="check"><input type="checkbox" data-gone="${t.id}" ${st.goneSel.has(t.id) ? 'checked' : ''}><span>${esc(dateLabel(t.date))}</span><span>${esc(t.payee || '')} <small class="muted">${esc(t.bank || '')}${t.cleared === 'r' ? ' · reconciled' : ''}</small></span><b class="${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</b></label></li>`).join('')}</ul></div>` : ''}
+          ${n.dupe ? `<details class="im-more" id="im-dupes" ${st.dupesOpen ? 'open' : ''}><summary>${n.dupe} already in YNABB <small>skipped</small></summary><div class="im-list">${group((r) => r.status === 'dupe')}</div></details>` : ''}
+          ${n.early ? `<details class="im-more" id="im-early" ${st.earlyOpen ? 'open' : ''}><summary>${n.early} from before the starting balance <small>skipped</small></summary><p class="hint">${esc(acctName(st.acct))}'s starting balance on ${esc(dateLabel(st.startDate))} already includes ${n.early === 1 ? 'it' : 'them'}.</p><div class="im-list">${group((r) => r.status === 'early')}</div></details>` : ''}
+          ${st.rows ? `<p class="fine im-file">${esc(st.file || 'Your file')} · ${c.length} lines · <button class="linkish" data-saction="cols">Columns look wrong?</button></p>` : ''}`;
       }
       setSheetBody(html);
       setSheetFoot(st.step === 1 ? '' : st.step === 2
         ? '<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="check">Next</button>'
-        : `<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="go">Import ${Object.values(st.include).filter(Boolean).length} rows${st.goneSel && st.goneSel.size ? ` and remove ${st.goneSel.size} released` : ''}</button>`);
+        : importFoot());
     };
     openSheet({ title: isTrk() ? 'Update balance' : 'Import & reconcile', body: '', wide: true });
     paint();
@@ -2631,7 +2661,7 @@
       if (el.dataset.map) { st.map[el.dataset.map] = el.value === '' ? undefined : Number(el.value); paint(); }
       if (el.id === 'im-flip') { st.flip = el.checked; paint(); }
       if (el.id === 'im-datefmt') { st.datefmt = el.value; paint(); }
-      if (el.dataset.inc) { st.include[el.dataset.inc] = el.checked; setSheetFoot(`<button class="btn" data-saction="back">Back</button><button class="btn primary" data-saction="go">Import ${Object.values(st.include).filter(Boolean).length} rows</button>`); }
+      if (el.dataset.inc) { st.include[el.dataset.inc] = el.checked; setSheetFoot(importFoot()); }
     };
     const loadFile = async (file) => {
       st.file = file.name;

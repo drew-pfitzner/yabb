@@ -1523,7 +1523,7 @@
       </div>`;
   }
   // the checklist: what's waiting, under headings, most worth a look first
-  const CHECK_ORDER = ['fix', 'double', 'amount', 'date', 'joined', 'parts', 'swap', 'hold', 'extra', 'nocat', 'update', 'match', 'new'];
+  const CHECK_ORDER = ['extra', 'amount', 'double', 'fix', 'date', 'joined', 'parts', 'swap', 'hold', 'nocat', 'update', 'match', 'new'];
   const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Possible Matches', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'No Matching Bank Transaction', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
   // what they are, then what ticking does, said once under each heading
   const CHECK_HINT = {
@@ -1550,21 +1550,22 @@
     UI.recItems = items;
     const ritems = {}, inItem = new Set(items.flatMap((it) => it.ts.concat(it.bs).map((t) => t.id)));
     items.forEach((it, i) => (ritems[RD_SEC[it.kind]] = ritems[RD_SEC[it.kind]] || []).push(i));
+    const gone = extraFit(items);
     const pairs = out ? recPairs(UI.rec.acct).filter((p) => !inItem.has(p.a.id) && !inItem.has(p.b.id)) : [];
     const inPair = new Set(pairs.flatMap((p) => [p.a.id, p.b.id]));
     // a waiting row that's part of one of those sits only there, till it's sorted, so nothing shows twice
     recWaiting().filter((t) => !inPair.has(t.id) && !inItem.has(t.id)).forEach((t) => (groups[checkOf(t)[0]] = groups[checkOf(t)[0]] || []).push(t));
     const sec = (k) => {
       const l = k === 'double' ? pairs : (groups[k] || []).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-      const ri = ritems[k] || [], n = l.length + ri.length;
+      const ri = (ritems[k] || []).sort((a, b) => (gone.mark && gone.mark.has(b) ? 1 : 0) - (gone.mark && gone.mark.has(a) ? 1 : 0)), n = l.length + ri.length;
       if (!n) return '';
       const bulk = (k === 'match' || k === 'new') && l.length > 1;
-      const rows = ri.map((i) => rdRow(items[i], i)).join('') + l.map(k === 'double' ? dblRow : chkRow).join('');
+      const rows = ri.map((i) => rdRow(items[i], i, gone.mark)).join('') + l.map(k === 'double' ? dblRow : chkRow).join('');
       const body = k === 'swap' ? (ri.length ? `<div class="ck-list">${ri.map((i) => rdRow(items[i], i)).join('')}</div>` : '') + swapCards(l) : `<div class="ck-list">${rows}</div>`;
       // what the group means stays tucked away behind the little ? until asked for
       const info = !!(UI.ckInfo && UI.ckInfo[k]);
       return `<section class="ck-sec"><header class="ck-h"><b>${CHECK_HEAD[k]}</b><span class="ck-n">${n}</span>${bulk ? `<button class="btn sm primary ck-all" data-action="chk-all" data-k="${k}">${ICON.tick} All ${l.length}</button>` : ''}<button class="ck-i${info ? ' on' : ''}" data-action="ck-info" data-k="${k}" aria-expanded="${info}" aria-label="What these are" title="What these are">?</button></header>
-        ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${body}</section>`;
+        ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${k === 'extra' ? gone.html : ''}${body}</section>`;
     };
     const search = !UI.ckFind ? `<button class="linkish ck-findlink" data-action="ck-find">${ICON.search} Search past transactions</button>` : `<div class="search ck-q"><span aria-hidden="true">${ICON.search}</span><input id="ckq" type="search" data-live="0" placeholder="Search past transactions" value="${esc(UI.ckQ || '')}" aria-label="Search past transactions" autocomplete="off" enterkeyhint="search"></div>${pastSearch()}`;
     return recCard() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
@@ -1817,10 +1818,38 @@
     toast(`${n === 1 ? word : `${word} ${n}`}. ${diff ? `Still out by ${money(Math.abs(diff))}.` : 'It matches the bank now.'}`, { label: 'Undo', fn: () => undoRedo(false) });
     render();
   }
+  // would deleting the entries with no bank transaction make it match? All of them, or exactly one mix of them
+  function extraFit(items) {
+    const ex = items.map((it, i) => (it.kind === 'extra' ? i : -1)).filter((i) => i >= 0), none = { html: '', mark: null };
+    if (!ex.length) return none;
+    const { diff } = recState(), eff = ex.map((i) => items[i].effect), n = ex.length;
+    const all = eff.reduce((a, b) => a + b, 0), left = diff + all;
+    const btn = (is, label) => `<button class="btn sm danger" data-action="rd-fix-many" data-is="${is.join(',')}">${ICON.cross} ${label}</button>`;
+    const line = (cls, text, b) => ({ html: `<div class="ck-fit ${cls}"><span>${text}</span>${b || ''}</div>` });
+    if (!left) return Object.assign(line('ok', `Deleting ${n === 1 ? 'it' : `all ${n}`} makes YNABB match the bank.`, btn(ex, n === 1 ? 'Delete It' : `Delete All ${n}`)), { mark: null });
+    // up to 16 is quick to try every mix of; only say so when there's just one mix that works
+    if (n > 1 && n <= 16) {
+      let hit = null, hits = 0;
+      for (let m = 1; m < (1 << n) - 1 && hits < 2; m++) {
+        let sum = 0;
+        for (let j = 0; j < n; j++) if (m & (1 << j)) sum += eff[j];
+        if (diff + sum === 0) { hits++; hit = m; }
+      }
+      if (hits === 1) {
+        const is = ex.filter((_, j) => hit & (1 << j)), c = is.length;
+        return Object.assign(line('ok', `Deleting ${c === 1 ? 'the one marked' : `the ${c} marked`} makes YNABB match the bank.`, btn(is, c === 1 ? 'Delete It' : `Delete These ${c}`)), { mark: new Set(is) });
+      }
+      if (hits > 1) return Object.assign(line('', `Some of these add up to the gap in more than one way, so check them one by one.`), { mark: null });
+    }
+    // the other headings' fixes change the total too: say whether doing everything gets there
+    const every = diff + items.reduce((a, it) => a + (it.kind === 'edited' && it.ts[0].splits && it.ts[0].splits.length ? 0 : it.effect), 0);
+    const also = every ? `Even with everything on this list fixed, it would be out by ${money(Math.abs(every))}.` : 'Fixing the rest of this list as well makes it match.';
+    return Object.assign(line(every ? '' : 'ok', `Deleting ${n === 1 ? 'it' : `all ${n}`} leaves it out by ${money(Math.abs(left))}. ${also}`), { mark: null });
+  }
   // which checklist heading each kind of mismatch goes under
   const RD_SEC = { same: 'double', amount: 'amount', transfer: 'amount', parts: 'parts', joined: 'joined', edited: 'fix', hold: 'hold', extra: 'extra' };
   // a mismatch as a checklist row: the tick does the fix, open it to see both sides and the other choice
-  function rdRow(it, i) {
+  function rdRow(it, i, mark) {
     const [t] = it.ts, b = it.bs[0], mm = (x) => money(Math.abs(x)), key = `rd:${it.ts.concat(it.bs).map((x) => x.id).join(':')}`, open = UI.ckOpen === key;
     const fix = !(it.kind === 'edited' && t.splits && t.splits.length), del = it.kind === 'extra';
     const bd = b ? dateLabel(b.date) : '', ba = b ? mm(b.amt) : ''; // not every kind has a bank line
@@ -1846,7 +1875,7 @@
         <button class="ck-main" data-action="chk-peek" data-id="${key}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show the details'}">
           <span class="ck-l1"><span class="ck-p">${esc(t.payee || tidyPayee(t.bank) || 'No payee')}</span>${amtUp ? `<span class="ck-a ${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</span>` : ''}</span>
           <span class="ck-c">${esc(catLabel(t) || 'Uncategorized')}${it.kind === 'same' ? '' : ` · ${esc(dateLabel(t.date))}`}</span>
-          ${del ? '' : `<span class="ck-d">${esc(line)}</span>`}
+          ${del ? (mark && mark.has(i) ? `<span class="ck-d ck-fitd">${mark.size === 1 ? 'Deleting this makes it match' : 'Deleting this helps it match'}</span>` : '') : `<span class="ck-d">${esc(line)}</span>`}
         </button>
         <div class="ck-side"><button class="ck-tick${del ? ' ck-del' : ''}" data-action="${tickAct}" data-i="${i}" aria-label="${esc(tickLbl)}" title="${esc(tickLbl)}">${del ? ICON.cross : ICON.tick}</button></div>
         ${open ? `<div class="ck-more">${sides}<div class="ck-btns">${del ? `<button class="btn sm danger" data-action="rd-fix" data-i="${i}">${ICON.cross} Delete</button><button class="btn sm" data-action="rd-skip" data-i="${i}">Keep It</button>` : fix ? `<button class="btn sm primary" data-action="rd-fix" data-i="${i}">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-action="rd-skip" data-i="${i}">${esc(no)}</button>` : `<button class="btn sm primary" data-action="rd-skip" data-i="${i}">${ICON.tick} ${esc(no)}</button>`}</div></div>` : ''}
@@ -3961,6 +3990,7 @@
       if (!el.dataset.q) { if (tt && ((UI.f.from && tt.date < UI.f.from) || (UI.f.to && tt.date > UI.f.to))) { UI.f.from = ''; UI.f.to = ''; UI.bc.step = null; } }
       else { UI.bc.find = el.dataset.q; UI.q = UI.bc.find; UI.f.from = ''; UI.f.to = ''; } UI.f.acct = UI.bc.acct; UI.limit = 150; UI.sel = id; render(); if (!id) { window.scrollTo(0, 0); return; } setTimeout(() => { const r = document.querySelector(`.txr[data-row="${id}"]`); if (r) r.scrollIntoView({ block: 'center' }); }, 40); },
     'rec-stop': () => { UI.dbl = false; UI.rec = null; UI.only = null; UI.recSkip = null; saveUI(); render(); },
+    'rd-fix-many': (el) => { const l = el.dataset.is.split(',').map((i) => (UI.recItems || [])[+i]).filter(Boolean); if (l.length) recFix(l); },
     'rd-fix': (el) => { const it = (UI.recItems || [])[+el.dataset.i]; if (it) recFix([it]); },
     // "Not the same" / "Keep it": stop suggesting this one while reconciling
     'rd-skip': (el) => {

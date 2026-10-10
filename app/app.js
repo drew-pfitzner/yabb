@@ -1524,7 +1524,7 @@
   }
   // the checklist: what's waiting, under headings, most worth a look first
   const CHECK_ORDER = ['fix', 'double', 'amount', 'date', 'joined', 'parts', 'swap', 'hold', 'extra', 'nocat', 'update', 'match', 'new'];
-  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Possible Matches', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'Not at the Bank', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
+  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Possible Matches', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'No Matching Bank Transaction', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
   // what they are, then what ticking does, said once under each heading
   const CHECK_HINT = {
     fix: ["These matched the bank, then someone changed the amount in YNABB.", "Tick to put back the bank's amount."],
@@ -1846,7 +1846,7 @@
         <button class="ck-main" data-action="chk-peek" data-id="${key}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show the details'}">
           <span class="ck-l1"><span class="ck-p">${esc(t.payee || tidyPayee(t.bank) || 'No payee')}</span>${amtUp ? `<span class="ck-a ${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</span>` : ''}</span>
           <span class="ck-c">${esc(catLabel(t) || 'Uncategorized')}${it.kind === 'same' ? '' : ` · ${esc(dateLabel(t.date))}`}</span>
-          <span class="ck-d">${esc(line)}</span>
+          ${del ? '' : `<span class="ck-d">${esc(line)}</span>`}
         </button>
         <div class="ck-side"><button class="ck-tick${del ? ' ck-del' : ''}" data-action="${tickAct}" data-i="${i}" aria-label="${esc(tickLbl)}" title="${esc(tickLbl)}">${del ? ICON.cross : ICON.tick}</button></div>
         ${open ? `<div class="ck-more">${sides}<div class="ck-btns">${del ? `<button class="btn sm danger" data-action="rd-fix" data-i="${i}">${ICON.cross} Delete</button><button class="btn sm" data-action="rd-skip" data-i="${i}">Keep It</button>` : fix ? `<button class="btn sm primary" data-action="rd-fix" data-i="${i}">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-action="rd-skip" data-i="${i}">${esc(no)}</button>` : `<button class="btn sm primary" data-action="rd-skip" data-i="${i}">${ICON.tick} ${esc(no)}</button>`}</div></div>` : ''}

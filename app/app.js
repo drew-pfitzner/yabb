@@ -1524,11 +1524,11 @@
   }
   // the checklist: what's waiting, under headings, most worth a look first
   const CHECK_ORDER = ['fix', 'double', 'amount', 'date', 'joined', 'parts', 'swap', 'hold', 'extra', 'nocat', 'update', 'match', 'new'];
-  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Counted Twice?', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'Not at the Bank', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
+  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Possible Matches', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'Not at the Bank', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
   // what they are, then what ticking does, said once under each heading
   const CHECK_HINT = {
     fix: ["These matched the bank, then someone changed the amount in YNABB.", "Tick to put back the bank's amount."],
-    double: ['The same amount close together. It may be one purchase entered twice.', 'Tick to merge them into one.'],
+    double: ["The same amount, but too far apart for YNABB to be sure they're the same.", 'Tick to match them as one.'],
     amount: ["The bank's amount is different from the manual one.", "Tick to match using the bank's amount."],
     date: ["The bank's date is different from the manual one.", "Tick to match using the bank's date."],
     joined: ['Manually entered as separate transactions, paid by the bank as one.', 'Tick to match them as one.'],
@@ -1653,19 +1653,19 @@
     const key = `dbl:${p.a.id}:${p.b.id}`, open = UI.ckOpen === key;
     const can = !((p.a.pair || p.b.pair) && !xferPair(p.a, p.b));
     const name = esc(p.a.payee || p.b.payee || tidyPayee(p.a.bank || p.b.bank) || 'No payee');
-    const when = p.a.date === p.b.date ? `Twice on ${dateLabel(p.a.date)}` : `Twice: ${dateLabel(p.b.date)} and ${dateLabel(p.a.date)}`;
+    const who = (t) => (t.ik ? 'Bank' : 'Manual'), when = `${who(p.b)} ${dateLabel(p.b.date)} → ${who(p.a)} ${dateLabel(p.a.date)}`;
     const half = (t) => `<div class="ck-cr"><span class="ck-cl">${t.ik ? 'Bank' : 'Manual'}</span><span class="ck-cn">${esc(t.payee || 'No payee')} · ${esc(catLabel(t) || 'Uncategorized')}${t.memo ? ` · <i>${esc(t.memo)}</i>` : ''}<small>${esc(dateLabel(t.date))}${t.cleared === 'r' ? ' · reconciled' : ''}</small>${t.bank ? `<small class="mono">${esc(t.bank)}</small>` : ''}</span><b>${esc(money(Math.abs(t.amt)))}</b></div>`;
     const why = p.exact ? `Both bank descriptions say ${dateLabel(p.day)}.` : p.same ? "The bank descriptions are a day apart. That happens when a pending line becomes the final one." : '';
-    const keep = `<button class="btn sm" data-action="dbl-not" data-a="${p.a.id}" data-b="${p.b.id}">Keep Both</button>`;
+    const keep = `<button class="btn sm" data-action="dbl-not" data-a="${p.a.id}" data-b="${p.b.id}">Not the Same</button>`;
     return `<div class="ck-row${open ? ' open' : ''}">
         <button class="ck-main" data-action="chk-peek" data-id="${key}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show both'}">
           <span class="ck-l1"><span class="ck-p">${name}</span><span class="ck-a ${p.a.amt > 0 ? 'pos' : ''}">${txAmt(p.a.amt)}</span></span>
           <span class="ck-c">${esc(catLabel(p.a) || catLabel(p.b) || 'Uncategorized')}</span>
           <span class="ck-d">${esc(when)}</span>
         </button>
-        <div class="ck-side">${can ? `<button class="ck-tick" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}" aria-label="Merge them into one" title="Merge them into one">${ICON.tick}</button>` : ''}</div>
-        ${open ? `<div class="ck-more">${half(p.a)}${half(p.b)}${why ? `<p class="ck-why">${esc(why)}</p>` : ''}<p class="ck-why">${can ? `Merging keeps ${p.a.ik ? "the bank's copy" : 'one'} and adds the category, note and payee from the other.` : 'One is a transfer, so delete the extra one by hand if they are the same.'}</p>
-          <div class="ck-btns">${can ? `<button class="btn sm primary" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}">${ICON.tick} Merge Into One</button>` : ''}${keep}</div></div>` : ''}
+        <div class="ck-side">${can ? `<button class="ck-tick" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}" aria-label="Match them as one" title="Match them as one">${ICON.tick}</button>` : ''}</div>
+        ${open ? `<div class="ck-more">${half(p.a)}${half(p.b)}${why ? `<p class="ck-why">${esc(why)}</p>` : ''}<p class="ck-why">${can ? `Matching keeps ${p.a.ik ? "the bank's copy" : 'one'} and adds the category, note and payee from the other.` : 'One is a transfer, so delete the extra one by hand if they are the same.'}</p>
+          <div class="ck-btns">${can ? `<button class="btn sm primary" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}">${ICON.tick} Match</button>` : ''}${keep}</div></div>` : ''}
       </div>`;
   }
   // ---------- why reconcile doesn't match ----------
@@ -1825,7 +1825,7 @@
     const fix = !(it.kind === 'edited' && t.splits && t.splits.length), del = it.kind === 'extra';
     const bd = b ? dateLabel(b.date) : '', ba = b ? mm(b.amt) : ''; // not every kind has a bank line
     const line = {
-      same: `Manual ${dateLabel(t.date)} · Bank ${bd}`,
+      same: `Manual ${dateLabel(t.date)} → Bank ${bd}`,
       amount: `Manual ${mm(t.amt)} → Bank ${ba}`,
       transfer: `Transfer: Manual ${mm(t.amt)} → Bank ${ba}`,
       parts: `Manual ${mm(t.amt)} · Bank charged it in parts`,
@@ -1838,7 +1838,7 @@
     const sides = it.kind === 'hold' ? half('Bank hold', t) + (it.fin ? half('Final', it.fin) : '')
       : it.kind === 'edited' ? half('Bank', t, it.was) + half('YNABB', t)
       : it.ts.map((x) => half('Manual', x)).join('') + it.bs.map((x) => half('Bank', x)).join('');
-    const yes = { same: "Keep the Bank's", hold: 'Remove the Hold', extra: 'Delete' }[it.kind] || `Use the Bank's`;
+    const yes = { same: 'Match', hold: 'Remove the Hold', extra: 'Delete' }[it.kind] || `Use the Bank's`;
     const no = { hold: 'Keep It', edited: 'Leave It', extra: 'Keep It' }[it.kind] || 'Not the Same';
     const tickAct = fix ? 'rd-fix' : 'rd-skip', tickLbl = fix ? yes : no;
     const amtUp = !['amount', 'transfer', 'edited', 'joined'].includes(it.kind);

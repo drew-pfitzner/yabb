@@ -1523,7 +1523,7 @@
       </div>`;
   }
   // the checklist: what's waiting, under headings, most worth a look first
-  const CHECK_ORDER = ['extra', 'amount', 'double', 'fix', 'date', 'joined', 'parts', 'swap', 'hold', 'nocat', 'update', 'match', 'new'];
+  const CHECK_ORDER = ['amount', 'extra', 'double', 'fix', 'date', 'joined', 'parts', 'swap', 'hold', 'nocat', 'update', 'match', 'new'];
   const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Possible Matches', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'No Matching Bank Transaction', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
   // what they are, then what ticking does, said once under each heading
   const CHECK_HINT = {
@@ -1843,7 +1843,9 @@
     }
     // the other headings' fixes change the total too: say whether doing everything gets there
     const every = diff + items.reduce((a, it) => a + (it.kind === 'edited' && it.ts[0].splits && it.ts[0].splits.length ? 0 : it.effect), 0);
-    const also = every ? `Even with everything on this list fixed, it would be out by ${money(Math.abs(every))}.` : 'Fixing the rest of this list as well makes it match.';
+    // different amounts come first: once they're sorted, this line says whether deleting these closes the gap
+    const amtLeft = items.some((it) => RD_SEC[it.kind] === 'amount');
+    const also = amtLeft ? 'Sort out the Different Amounts above first. This updates as you go.' : every ? `Even with everything on this list fixed, it would be out by ${money(Math.abs(every))}.` : 'Fixing the rest of this list as well makes it match.';
     return Object.assign(line(every ? '' : 'ok', `Deleting ${n === 1 ? 'it' : `all ${n}`} leaves it out by ${money(Math.abs(left))}. ${also}`), { mark: null });
   }
   // which checklist heading each kind of mismatch goes under

@@ -22,6 +22,7 @@ How this works: ask Claude to "add X to the todo list", or edit this file. When 
 
 ## Done
 
+- 2026-10-10: **Ready to Assign below zero is readable (Drew).** When more is assigned than you have, the red box showed only a "Fix this" button: its amount and words were red on red. They are white now.
 - 2026-10-10: **Settings, amounts and phone pickers (Drew).** Settings are grouped cards with one-line rows and much less text, in two columns on wide screens. Money boxes take the dot as you type it (no more cents filling in), with a dot key on the number pad. The transaction sheet drops the ⋯ menu and shows 'Add a bank description' under the payee. Phone pickers show plain background under the list while the keyboard is up.
 - 2026-10-10: **No more lost fixes after shipping (Drew).** If fixes were saved on a branch after it went live, session start, /ship and /sync now keep them and move them onto a new branch, instead of deleting the branch.
 - 2026-10-10: **Phone tidy-up and transfers to tracking accounts (Drew).** Phone Transactions: long account names end in "…", Import & reconcile sits in a footer row on the account card, the top row is just Search, Filters and +, and Select (then All / Done) sits beside the count. Select mode on a phone for picking several, with a selection bar that fits. Possible doubles show while reconciling, and a typed transfer can merge with the bank's copy. Money moved into a tracking account (super, shares) is spent from a category. Updating a tracking account's value adds one adjustment. Money boxes show commas (1,234.50).

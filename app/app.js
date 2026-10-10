@@ -1522,8 +1522,8 @@
       </div>`;
   }
   // the checklist: what's waiting, under headings, most worth a look first
-  const CHECK_ORDER = ['fix', 'double', 'amount', 'date', 'joined', 'parts', 'swap', 'nocat', 'update', 'match', 'new'];
-  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Counted Twice?', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
+  const CHECK_ORDER = ['fix', 'double', 'amount', 'date', 'joined', 'parts', 'swap', 'hold', 'extra', 'nocat', 'update', 'match', 'new'];
+  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Counted Twice?', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', hold: 'Hold Released', extra: 'Not at the Bank', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
   // what they are, then what ticking does, said once under each heading
   const CHECK_HINT = {
     fix: ["These matched the bank, then someone changed the amount in YNABB.", "Tick to put back the bank's amount."],
@@ -1533,6 +1533,8 @@
     joined: ['Manually entered as separate transactions, paid by the bank as one.', 'Tick to match them as one.'],
     parts: ['Manually entered as one transaction, paid by the bank in parts.', 'Tick to match.'],
     swap: ["Same amount, close dates: YNABB couldn't tell which is which.", ''],
+    hold: ['A pending hold the bank has since let go of.', 'Tick to remove the hold.'],
+    extra: ["Entered manually, but the bank file doesn't have it.", 'Tick to keep it. Open it to delete it.'],
     nocat: ["YNABB couldn't guess these from your past choices.", 'Tap one to choose its category.'],
     update: ['These were pending and have now gone through.', "Tick if it's the same purchase."],
     match: ['Same amount and date as the manual entry.', 'Tick if they look right.'],
@@ -1542,21 +1544,29 @@
   function recView() {
     const groups = {};
     // the same amount in twice close together: often the whole gap. Only looked for while it's out.
-    const pairs = recState().diff ? recPairs(UI.rec.acct) : [], inPair = new Set(pairs.flatMap((p) => [p.a.id, p.b.id]));
-    // a waiting row that might be a double sits only under Counted Twice?, till it's merged or kept
-    recWaiting().filter((t) => !inPair.has(t.id)).forEach((t) => (groups[checkOf(t)[0]] = groups[checkOf(t)[0]] || []).push(t));
+    // and while it's out, entries typed by hand that don't line up with the bank's: under the heading that fits
+    const out = !!recState().diff, items = out ? recDiff().items : [];
+    UI.recItems = items;
+    const ritems = {}, inItem = new Set(items.flatMap((it) => it.ts.concat(it.bs).map((t) => t.id)));
+    items.forEach((it, i) => (ritems[RD_SEC[it.kind]] = ritems[RD_SEC[it.kind]] || []).push(i));
+    const pairs = out ? recPairs(UI.rec.acct).filter((p) => !inItem.has(p.a.id) && !inItem.has(p.b.id)) : [];
+    const inPair = new Set(pairs.flatMap((p) => [p.a.id, p.b.id]));
+    // a waiting row that's part of one of those sits only there, till it's sorted, so nothing shows twice
+    recWaiting().filter((t) => !inPair.has(t.id) && !inItem.has(t.id)).forEach((t) => (groups[checkOf(t)[0]] = groups[checkOf(t)[0]] || []).push(t));
     const sec = (k) => {
       const l = k === 'double' ? pairs : (groups[k] || []).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-      if (!l.length) return '';
+      const ri = ritems[k] || [], n = l.length + ri.length;
+      if (!n) return '';
       const bulk = (k === 'match' || k === 'new') && l.length > 1;
-      const body = k === 'swap' ? swapCards(l) : `<div class="ck-list">${l.map(k === 'double' ? dblRow : chkRow).join('')}</div>`;
+      const rows = ri.map((i) => rdRow(items[i], i)).join('') + l.map(k === 'double' ? dblRow : chkRow).join('');
+      const body = k === 'swap' ? (ri.length ? `<div class="ck-list">${ri.map((i) => rdRow(items[i], i)).join('')}</div>` : '') + swapCards(l) : `<div class="ck-list">${rows}</div>`;
       // what the group means stays tucked away behind the little ? until asked for
       const info = !!(UI.ckInfo && UI.ckInfo[k]);
-      return `<section class="ck-sec"><header class="ck-h"><b>${CHECK_HEAD[k]}</b><span class="ck-n">${l.length}</span>${bulk ? `<button class="btn sm primary ck-all" data-action="chk-all" data-k="${k}">${ICON.tick} All ${l.length}</button>` : ''}<button class="ck-i${info ? ' on' : ''}" data-action="ck-info" data-k="${k}" aria-expanded="${info}" aria-label="What these are" title="What these are">?</button></header>
+      return `<section class="ck-sec"><header class="ck-h"><b>${CHECK_HEAD[k]}</b><span class="ck-n">${n}</span>${bulk ? `<button class="btn sm primary ck-all" data-action="chk-all" data-k="${k}">${ICON.tick} All ${l.length}</button>` : ''}<button class="ck-i${info ? ' on' : ''}" data-action="ck-info" data-k="${k}" aria-expanded="${info}" aria-label="What these are" title="What these are">?</button></header>
         ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${body}</section>`;
     };
     const search = !UI.ckFind ? `<button class="linkish ck-findlink" data-action="ck-find">${ICON.search} Search past transactions</button>` : `<div class="search ck-q"><span aria-hidden="true">${ICON.search}</span><input id="ckq" type="search" data-live="0" placeholder="Search past transactions" value="${esc(UI.ckQ || '')}" aria-label="Search past transactions" autocomplete="off" enterkeyhint="search"></div>${pastSearch()}`;
-    return recCard() + recPanel() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
+    return recCard() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
   }
   // two matches with the same amount and close dates: shown as a pair, right way round or swapped
   const swapPartner = (t, l) => l.find((o) => o !== t && o.amt === t.amt && gapDays(o.date, t.date) <= 10);
@@ -1803,32 +1813,40 @@
     toast(`${n === 1 ? 'Fixed' : `Fixed ${n}`}. ${diff ? `Still out by ${money(Math.abs(diff))}.` : 'It matches the bank now.'}`, { label: 'Undo', fn: () => undoRedo(false) });
     render();
   }
-  // each item: a short label, then the two sides as rows (who, date, amount), then its buttons
-  function recItemHTML(it, i) {
-    const [t] = it.ts, b = it.bs[0];
-    const row = (label, x, amt) => `<div class="rd-row"><span class="rd-l">${label}</span><span class="rd-p">${esc(x.payee || tidyPayee(x.bank) || 'No payee')}<small>${esc(dateLabel(x.date))}${E.isPending(x.bank) ? ' · pending' : ''}</small></span><b>${esc(money(Math.abs(amt != null ? amt : x.amt)))}</b></div>`;
-    const typedRows = () => it.ts.map((x) => row('You typed', x)).join('');
-    const bankRows = () => it.bs.map((x) => row('Bank', x)).join('');
-    const K = {
-      same: ['In twice', typedRows() + bankRows(), "Keep the bank's"],
-      amount: ['Different amount', typedRows() + bankRows(), "Use the bank's"],
-      parts: ['Charged in parts', typedRows() + bankRows(), "Use the bank's"],
-      joined: ['Charged in one go', typedRows() + bankRows(), "Use the bank's"],
-      transfer: ['Transfer amount', typedRows() + bankRows(), "Use the bank's"],
-      hold: ['Hold released', row('Bank hold', t) + (it.fin ? row('Final charge', it.fin) : ''), 'Remove the hold', 'Keep it'],
-      edited: ['Amount changed', row('Bank', t, it.was) + row('YNABB', t), t.splits && t.splits.length ? '' : "Use the bank's", 'Leave it'],
-      extra: ['Not at the bank', typedRows(), 'Delete', 'Keep it'],
+  // which checklist heading each kind of mismatch goes under
+  const RD_SEC = { same: 'double', amount: 'amount', transfer: 'amount', parts: 'parts', joined: 'joined', edited: 'fix', hold: 'hold', extra: 'extra' };
+  // a mismatch as a checklist row: the tick does the fix, open it to see both sides and the other choice
+  function rdRow(it, i) {
+    const [t] = it.ts, b = it.bs[0], mm = (x) => money(Math.abs(x)), key = `rd:${it.ts.concat(it.bs).map((x) => x.id).join(':')}`, open = UI.ckOpen === key;
+    const fix = it.kind !== 'extra' && !(it.kind === 'edited' && t.splits && t.splits.length);
+    const bd = b ? dateLabel(b.date) : '', ba = b ? mm(b.amt) : ''; // not every kind has a bank line
+    const line = {
+      same: `Manual ${dateLabel(t.date)} · Bank ${bd}`,
+      amount: `Manual ${mm(t.amt)} → Bank ${ba}`,
+      transfer: `Transfer: Manual ${mm(t.amt)} → Bank ${ba}`,
+      parts: `Manual ${mm(t.amt)} · Bank charged it in parts`,
+      joined: `Manual ${it.ts.map((x) => mm(x.amt)).join(' + ')} → Bank ${ba} in one payment`,
+      edited: `Edited ${mm(t.amt)} → Bank ${mm(it.was)}`,
+      hold: it.fin ? `Pending hold · final charge ${mm(it.fin.amt)}` : "Pending hold the bank's let go of",
+      extra: "Not in the bank file",
     }[it.kind];
-    return `<li class="rd-card"><span class="rd-tag">${K[0]}</span>${K[1]}
-      <div class="rd-act">${K[2] ? `<button class="btn sm ${it.kind === 'extra' ? '' : 'primary'}" data-action="rd-fix" data-i="${i}">${K[2]}</button>` : ''}<button class="btn sm" data-action="rd-skip" data-i="${i}">${K[3] || 'Not the same'}</button></div></li>`;
-  }
-  function recPanel() {
-    const { diff } = recState();
-    if (!diff) return '';
-    const res = recDiff();
-    UI.recItems = res.items;
-    if (!res.items.length) return '';
-    return `<section class="rd" aria-label="Not matched yet"><h3>Not matched yet</h3><ol class="rd-list">${res.items.map(recItemHTML).join('')}</ol></section>`;
+    const half = (lbl, x, amt) => `<div class="ck-cr"><span class="ck-cl">${lbl}</span><span class="ck-cn">${esc(x.payee || tidyPayee(x.bank) || 'No payee')}${x.memo ? ` · <i>${esc(x.memo)}</i>` : ''}<small>${esc(dateLabel(x.date))}${E.isPending(x.bank) ? ' · pending' : ''}</small>${x.bank ? `<small class="mono">${esc(x.bank)}</small>` : ''}</span><b>${esc(mm(amt != null ? amt : x.amt))}</b></div>`;
+    const sides = it.kind === 'hold' ? half('Bank hold', t) + (it.fin ? half('Final', it.fin) : '')
+      : it.kind === 'edited' ? half('Bank', t, it.was) + half('YNABB', t)
+      : it.ts.map((x) => half('Manual', x)).join('') + it.bs.map((x) => half('Bank', x)).join('');
+    const yes = { same: "Keep the Bank's", hold: 'Remove the Hold' }[it.kind] || `Use the Bank's`;
+    const no = { hold: 'Keep It', edited: 'Leave It', extra: 'Keep It' }[it.kind] || 'Not the Same';
+    const tickAct = fix ? 'rd-fix' : 'rd-skip', tickLbl = fix ? yes : no;
+    const amtUp = !['amount', 'transfer', 'edited', 'joined'].includes(it.kind);
+    return `<div class="ck-row${open ? ' open' : ''}">
+        <button class="ck-main" data-action="chk-peek" data-id="${key}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show the details'}">
+          <span class="ck-l1"><span class="ck-p">${esc(t.payee || tidyPayee(t.bank) || 'No payee')}</span>${amtUp ? `<span class="ck-a ${t.amt > 0 ? 'pos' : ''}">${txAmt(t.amt)}</span>` : ''}</span>
+          <span class="ck-c">${esc(catLabel(t) || 'Uncategorized')}${it.kind === 'same' ? '' : ` · ${esc(dateLabel(t.date))}`}</span>
+          <span class="ck-d">${esc(line)}</span>
+        </button>
+        <div class="ck-side"><button class="ck-tick" data-action="${tickAct}" data-i="${i}" aria-label="${esc(tickLbl)}" title="${esc(tickLbl)}">${ICON.tick}</button></div>
+        ${open ? `<div class="ck-more">${sides}<div class="ck-btns">${fix ? `<button class="btn sm primary" data-action="rd-fix" data-i="${i}">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-action="rd-skip" data-i="${i}">${esc(no)}</button>` : `<button class="btn sm primary" data-action="rd-skip" data-i="${i}">${ICON.tick} ${esc(no)}</button>${it.kind === 'extra' ? `<button class="btn sm" data-action="rd-fix" data-i="${i}">Delete</button>` : ''}`}</div></div>` : ''}
+      </div>`;
   }
 
   async function recFinish(adjust) {

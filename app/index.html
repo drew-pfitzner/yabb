@@ -488,7 +488,6 @@ button.pill:hover { box-shadow: inset 0 0 0 2px var(--accent); }
 .ck-all { display: inline-flex; gap: 4px; align-items: center; }
 .ck-all svg { width: 14px; height: 14px; }
 .ck-row.open { background: var(--surface-2); }
-.rd { margin-bottom: 12px; }
 .d-mnote { display: block; color: var(--muted); font-weight: 600; font-style: normal; }
 /* what to check on a row waiting for approval: one short line (phone only; a computer shows it with the bank text) */
 .t-chk { display: none; }
@@ -496,20 +495,6 @@ button.pill:hover { box-shadow: inset 0 0 0 2px var(--accent); }
 :root[data-layout="phone"] .tx-main:has(.t-chk) { grid-template-areas: "payee amt" "chk chk"; row-gap: 2px; }
 :root[data-layout="phone"] .txr.open .tx-main:has(.t-chk) { grid-template-areas: "payee amt" "chk chk" "cat cat" "desc desc"; }
 .t-chk.c-amount, .t-chk.c-date, .t-chk.c-joined { color: color-mix(in srgb, var(--need) 65%, var(--ink)); font-weight: 600; }
-.rd h3 { margin: 0 2px 6px; font-size: 15px; }
-.rd p { margin: 4px 0; line-height: 1.45; }
-.rd-sum { font-weight: 600; color: var(--muted); }
-.rd-sum.ok { color: var(--good); }
-.rd-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
-.rd-card { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 10px; background: var(--surface); }
-.rd-tag { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
-.rd-row { display: grid; grid-template-columns: 5.5em 1fr auto; gap: 8px; align-items: baseline; padding: 3px 0; }
-.rd-row + .rd-row { border-top: 1px dashed var(--line); }
-.rd-l { font-size: 12px; color: var(--muted); }
-.rd-p { min-width: 0; overflow-wrap: anywhere; }
-.rd-p small { margin-left: 6px; font-size: 12px; color: var(--muted); }
-.rd-row b { font-variant-numeric: tabular-nums; }
-.rd-act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .rb-x { background: none; border: 0; font-size: 18px; line-height: 1; color: var(--muted); cursor: pointer; padding: 2px 4px; }
 .rb-x:hover { color: var(--ink); }
 .check.sm { font-size: 12.5px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; margin: 0; }

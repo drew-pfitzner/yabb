@@ -113,6 +113,7 @@
     receipt: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h10v15l-2-1.3-1.7 1.3L10 16.2l-1.3 1.3L7 16.2l-2 1.3z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M7.5 6.5h5M7.5 9.5h5M7.5 12.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
     lock: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
     search: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12.5 12.5l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    cross: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
     swap: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3v13M6 16l-3-3M6 16l3-3M14 17V4M14 4l-3 3M14 4l3 3" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
 
@@ -1534,7 +1535,7 @@
     parts: ['Manually entered as one transaction, paid by the bank in parts.', 'Tick to match.'],
     swap: ["Same amount, close dates: YNABB couldn't tell which is which.", ''],
     hold: ['A pending hold the bank has since let go of.', 'Tick to remove the hold.'],
-    extra: ["Entered manually, but the bank file doesn't have it.", 'Tick to keep it. Open it to delete it.'],
+    extra: ['Entered manually, but no matching bank transaction was found.', 'Tap the cross to delete it. Open it if you need to keep it.'],
     nocat: ["YNABB couldn't guess these from your past choices.", 'Tap one to choose its category.'],
     update: ['These were pending and have now gone through.', "Tick if it's the same purchase."],
     match: ['Same amount and date as the manual entry.', 'Tick if they look right.'],
@@ -1780,7 +1781,9 @@
   function recFixPlan(it) {
     const [t] = it.ts, approvedIf = (k) => (k.cat || (k.splits && k.splits.length) || k.transfer ? Object.assign(k, { approved: true }) : k);
     if (it.kind === 'edited') return t.splits && t.splits.length ? null : { puts: [Object.assign({}, t, { amt: it.was })], removes: [] };
-    if (it.kind === 'hold' || it.kind === 'extra') return { puts: [], removes: [t] };
+    if (it.kind === 'hold') return { puts: [], removes: [t] };
+    // a transfer goes from both accounts, or the other side is left behind on its own
+    if (it.kind === 'extra') return { puts: [], removes: [t].concat(t.pair && D.txById[t.pair] ? [D.txById[t.pair]] : []) };
     if (it.kind === 'same' || it.kind === 'amount') return { puts: [approvedIf(carryInto(it.bs[0], t))], removes: [t] };
     if (it.kind === 'parts') return { puts: it.bs.map((b) => approvedIf(carryInto(b, Object.assign({}, t, { splits: null })))), removes: [t] };
     if (it.kind === 'transfer') {
@@ -1810,7 +1813,8 @@
     if (!n) return;
     S.newStep(); await putTxs(Object.values(puts), Object.values(removes)); S.newStep();
     const { diff } = recState();
-    toast(`${n === 1 ? 'Fixed' : `Fixed ${n}`}. ${diff ? `Still out by ${money(Math.abs(diff))}.` : 'It matches the bank now.'}`, { label: 'Undo', fn: () => undoRedo(false) });
+    const word = list.every((it) => it.kind === 'extra') ? 'Deleted' : 'Fixed';
+    toast(`${n === 1 ? word : `${word} ${n}`}. ${diff ? `Still out by ${money(Math.abs(diff))}.` : 'It matches the bank now.'}`, { label: 'Undo', fn: () => undoRedo(false) });
     render();
   }
   // which checklist heading each kind of mismatch goes under
@@ -1818,7 +1822,7 @@
   // a mismatch as a checklist row: the tick does the fix, open it to see both sides and the other choice
   function rdRow(it, i) {
     const [t] = it.ts, b = it.bs[0], mm = (x) => money(Math.abs(x)), key = `rd:${it.ts.concat(it.bs).map((x) => x.id).join(':')}`, open = UI.ckOpen === key;
-    const fix = it.kind !== 'extra' && !(it.kind === 'edited' && t.splits && t.splits.length);
+    const fix = !(it.kind === 'edited' && t.splits && t.splits.length), del = it.kind === 'extra';
     const bd = b ? dateLabel(b.date) : '', ba = b ? mm(b.amt) : ''; // not every kind has a bank line
     const line = {
       same: `Manual ${dateLabel(t.date)} · Bank ${bd}`,
@@ -1828,13 +1832,13 @@
       joined: `Manual ${it.ts.map((x) => mm(x.amt)).join(' + ')} → Bank ${ba} in one payment`,
       edited: `Edited ${mm(t.amt)} → Bank ${mm(it.was)}`,
       hold: it.fin ? `Pending hold · final charge ${mm(it.fin.amt)}` : "Pending hold the bank's let go of",
-      extra: "Not in the bank file",
+      extra: 'No matching bank transaction found',
     }[it.kind];
     const half = (lbl, x, amt) => `<div class="ck-cr"><span class="ck-cl">${lbl}</span><span class="ck-cn">${esc(x.payee || tidyPayee(x.bank) || 'No payee')}${x.memo ? ` · <i>${esc(x.memo)}</i>` : ''}<small>${esc(dateLabel(x.date))}${E.isPending(x.bank) ? ' · pending' : ''}</small>${x.bank ? `<small class="mono">${esc(x.bank)}</small>` : ''}</span><b>${esc(mm(amt != null ? amt : x.amt))}</b></div>`;
     const sides = it.kind === 'hold' ? half('Bank hold', t) + (it.fin ? half('Final', it.fin) : '')
       : it.kind === 'edited' ? half('Bank', t, it.was) + half('YNABB', t)
       : it.ts.map((x) => half('Manual', x)).join('') + it.bs.map((x) => half('Bank', x)).join('');
-    const yes = { same: "Keep the Bank's", hold: 'Remove the Hold' }[it.kind] || `Use the Bank's`;
+    const yes = { same: "Keep the Bank's", hold: 'Remove the Hold', extra: 'Delete' }[it.kind] || `Use the Bank's`;
     const no = { hold: 'Keep It', edited: 'Leave It', extra: 'Keep It' }[it.kind] || 'Not the Same';
     const tickAct = fix ? 'rd-fix' : 'rd-skip', tickLbl = fix ? yes : no;
     const amtUp = !['amount', 'transfer', 'edited', 'joined'].includes(it.kind);
@@ -1844,8 +1848,8 @@
           <span class="ck-c">${esc(catLabel(t) || 'Uncategorized')}${it.kind === 'same' ? '' : ` · ${esc(dateLabel(t.date))}`}</span>
           <span class="ck-d">${esc(line)}</span>
         </button>
-        <div class="ck-side"><button class="ck-tick" data-action="${tickAct}" data-i="${i}" aria-label="${esc(tickLbl)}" title="${esc(tickLbl)}">${ICON.tick}</button></div>
-        ${open ? `<div class="ck-more">${sides}<div class="ck-btns">${fix ? `<button class="btn sm primary" data-action="rd-fix" data-i="${i}">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-action="rd-skip" data-i="${i}">${esc(no)}</button>` : `<button class="btn sm primary" data-action="rd-skip" data-i="${i}">${ICON.tick} ${esc(no)}</button>${it.kind === 'extra' ? `<button class="btn sm" data-action="rd-fix" data-i="${i}">Delete</button>` : ''}`}</div></div>` : ''}
+        <div class="ck-side"><button class="ck-tick${del ? ' ck-del' : ''}" data-action="${tickAct}" data-i="${i}" aria-label="${esc(tickLbl)}" title="${esc(tickLbl)}">${del ? ICON.cross : ICON.tick}</button></div>
+        ${open ? `<div class="ck-more">${sides}<div class="ck-btns">${del ? `<button class="btn sm danger" data-action="rd-fix" data-i="${i}">${ICON.cross} Delete</button><button class="btn sm" data-action="rd-skip" data-i="${i}">Keep It</button>` : fix ? `<button class="btn sm primary" data-action="rd-fix" data-i="${i}">${ICON.tick} ${esc(yes)}</button><button class="btn sm" data-action="rd-skip" data-i="${i}">${esc(no)}</button>` : `<button class="btn sm primary" data-action="rd-skip" data-i="${i}">${ICON.tick} ${esc(no)}</button>`}</div></div>` : ''}
       </div>`;
   }
 

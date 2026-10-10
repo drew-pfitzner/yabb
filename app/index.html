@@ -206,7 +206,7 @@ h3 { font: 700 13px/1 var(--ui); text-transform: uppercase; letter-spacing: .07e
 /* ---------- Ready to Assign ---------- */
 .rta { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "amt info act"; align-items: center; gap: 8px 20px; border-radius: 12px; padding: 10px 16px; color: #fff; margin-bottom: 8px; }
 .rta.pos { background: var(--rta-pos); }
-.rta.neg { background: var(--rta-neg); }
+.rta.neg { background: var(--rta-neg); color: #fff; } /* not the global red .neg text, which vanishes on the red box */
 .rta.zero { background: var(--rta-zero); }
 .rta-amt { grid-area: amt; display: grid; gap: 1px; text-align: left; background: none; border: 0; border-right: 1px solid rgba(255,255,255,.28); color: inherit; padding: 0 20px 0 0; }
 .rta-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; opacity: .85; white-space: nowrap; }

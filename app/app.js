@@ -1447,7 +1447,7 @@
     if (!a || !b) return;
     const keep = carryInto(a, b);
     S.newStep(); await putTxs([keep], [b]); S.newStep();
-    toast(`Merged into one: kept the ${a.ik ? "bank's" : ''} copy from ${dateLabel(a.date)} with the details from both. ${MAC ? '⌘Z' : 'Ctrl+Z'} to undo.`);
+    toast(`Merged into one: kept the ${a.ik ? "bank's " : ''}copy from ${dateLabel(a.date)} with the details from both. ${MAC ? '⌘Z' : 'Ctrl+Z'} to undo.`);
     render();
   }
   // keeps the bank's line, made into the transfer you typed (the other account's side moves onto it)
@@ -1508,10 +1508,7 @@
     let sub = diff ? `YNABB has ${gap} ${diff < 0 ? 'more' : 'less'} than the bank.${waiting.length ? ' Check the list below first.' : ''}`
       : waiting.length ? "The totals match the bank. Approve these and it's reconciled." : '';
     let act = '';
-    // the same amount in twice close together: often the whole gap, and easiest to see side by side
-    const dbl = diff ? recPairs(r.acct).length : 0;
-    if (dbl && !UI.dbl) act = `<button class="btn sm" data-action="dbl-open">Possible ${dbl === 1 ? 'double' : `doubles (${dbl})`}</button>`;
-    else if (res && !res.start) act = '<button class="btn sm" data-action="rec-flow-import">Import your bank file</button>';
+    if (res && !res.start) act = '<button class="btn sm" data-action="rec-flow-import">Import your bank file</button>';
     else if (res && !res.items.length) act = `<button class="linkish rc-adj" data-action="rec-adjust">Can't find it? Add a ${gap} adjustment</button>`;
     return `<div class="rc ${diff ? 'off' : waiting.length ? 'wait' : 'ok'}">
         <div class="rc-top"><span>Reconciling <b>${esc(acctName(r.acct))}</b></span><button class="rb-x" data-action="rec-stop" aria-label="Stop reconciling" title="Stop reconciling">&times;</button></div>
@@ -1525,11 +1522,12 @@
       </div>`;
   }
   // the checklist: what's waiting, under headings, most worth a look first
-  const CHECK_ORDER = ['fix', 'amount', 'date', 'joined', 'parts', 'swap', 'nocat', 'update', 'match', 'new'];
-  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
+  const CHECK_ORDER = ['fix', 'double', 'amount', 'date', 'joined', 'parts', 'swap', 'nocat', 'update', 'match', 'new'];
+  const CHECK_HEAD = { fix: 'Edited Since Your Last Reconcile', double: 'Counted Twice?', amount: 'Different Amount', date: 'Different Date', joined: 'Paid in One Go', parts: 'Charged in Parts', swap: 'Might Be Swapped', nocat: 'Needs a Category', update: 'Gone Through', match: 'Perfect Matches', new: 'New Transactions' };
   // what they are, then what ticking does, said once under each heading
   const CHECK_HINT = {
     fix: ["These matched the bank, then someone changed the amount in YNABB.", "Tick to put back the bank's amount."],
+    double: ['The same amount close together. It may be one purchase entered twice.', 'Tick to merge them into one.'],
     amount: ["The bank's amount is different from the manual one.", "Tick to match using the bank's amount."],
     date: ["The bank's date is different from the manual one.", "Tick to match using the bank's date."],
     joined: ['Manually entered as separate transactions, paid by the bank as one.', 'Tick to match them as one.'],
@@ -1543,19 +1541,22 @@
   const PEN = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.6l2.8 2.8L7.2 15.6 3.8 16.2l.6-3.4 9.2-9.2z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M11.8 5.4l2.8 2.8" stroke="currentColor" stroke-width="1.6"/></svg>';
   function recView() {
     const groups = {};
-    recWaiting().forEach((t) => (groups[checkOf(t)[0]] = groups[checkOf(t)[0]] || []).push(t));
+    // the same amount in twice close together: often the whole gap. Only looked for while it's out.
+    const pairs = recState().diff ? recPairs(UI.rec.acct) : [], inPair = new Set(pairs.flatMap((p) => [p.a.id, p.b.id]));
+    // a waiting row that might be a double sits only under Counted Twice?, till it's merged or kept
+    recWaiting().filter((t) => !inPair.has(t.id)).forEach((t) => (groups[checkOf(t)[0]] = groups[checkOf(t)[0]] || []).push(t));
     const sec = (k) => {
-      const l = (groups[k] || []).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      const l = k === 'double' ? pairs : (groups[k] || []).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
       if (!l.length) return '';
       const bulk = (k === 'match' || k === 'new') && l.length > 1;
-      const body = k === 'swap' ? swapCards(l) : `<div class="ck-list">${l.map(chkRow).join('')}</div>`;
+      const body = k === 'swap' ? swapCards(l) : `<div class="ck-list">${l.map(k === 'double' ? dblRow : chkRow).join('')}</div>`;
       // what the group means stays tucked away behind the little ? until asked for
       const info = !!(UI.ckInfo && UI.ckInfo[k]);
       return `<section class="ck-sec"><header class="ck-h"><b>${CHECK_HEAD[k]}</b><span class="ck-n">${l.length}</span>${bulk ? `<button class="btn sm primary ck-all" data-action="chk-all" data-k="${k}">${ICON.tick} All ${l.length}</button>` : ''}<button class="ck-i${info ? ' on' : ''}" data-action="ck-info" data-k="${k}" aria-expanded="${info}" aria-label="What these are" title="What these are">?</button></header>
         ${info ? `<p class="ck-hint">${CHECK_HINT[k].filter(Boolean).map(esc).join('<br>')}</p>` : ''}${body}</section>`;
     };
     const search = !UI.ckFind ? `<button class="linkish ck-findlink" data-action="ck-find">${ICON.search} Search past transactions</button>` : `<div class="search ck-q"><span aria-hidden="true">${ICON.search}</span><input id="ckq" type="search" data-live="0" placeholder="Search past transactions" value="${esc(UI.ckQ || '')}" aria-label="Search past transactions" autocomplete="off" enterkeyhint="search"></div>${pastSearch()}`;
-    return recCard() + (UI.dbl ? dblPanel() : '') + recPanel() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
+    return recCard() + recPanel() + search + `<div class="ck">${CHECK_ORDER.map(sec).join('')}</div>`;
   }
   // two matches with the same amount and close dates: shown as a pair, right way round or swapped
   const swapPartner = (t, l) => l.find((o) => o !== t && o.amt === t.amt && gapDays(o.date, t.date) <= 10);
@@ -1634,6 +1635,26 @@
         </button>
         <div class="ck-side"><button class="ck-tick" data-action="approve" data-id="${t.id}" aria-label="${esc(CHECK_HINT[k][1] || 'Approve')}" title="${esc(CHECK_HINT[k][1] || 'Approve')}">${ICON.tick}</button></div>
         ${open ? `<div class="ck-more">${chkCompare(t, k)}<div class="ck-btns">${chkButtons(t, k)}</div></div>` : ''}
+      </div>`;
+  }
+  // a possible double in the checklist: one row for the pair, tick to merge, open it to see both
+  function dblRow(p) {
+    const key = `dbl:${p.a.id}:${p.b.id}`, open = UI.ckOpen === key;
+    const can = !((p.a.pair || p.b.pair) && !xferPair(p.a, p.b));
+    const name = esc(p.a.payee || p.b.payee || tidyPayee(p.a.bank || p.b.bank) || 'No payee');
+    const when = p.a.date === p.b.date ? `Twice on ${dateLabel(p.a.date)}` : `Twice: ${dateLabel(p.b.date)} and ${dateLabel(p.a.date)}`;
+    const half = (t) => `<div class="ck-cr"><span class="ck-cl">${t.ik ? 'Bank' : 'Manual'}</span><span class="ck-cn">${esc(t.payee || 'No payee')} · ${esc(catLabel(t) || 'Uncategorized')}${t.memo ? ` · <i>${esc(t.memo)}</i>` : ''}<small>${esc(dateLabel(t.date))}${t.cleared === 'r' ? ' · reconciled' : ''}</small>${t.bank ? `<small class="mono">${esc(t.bank)}</small>` : ''}</span><b>${esc(money(Math.abs(t.amt)))}</b></div>`;
+    const why = p.exact ? `Both bank descriptions say ${dateLabel(p.day)}.` : p.same ? "The bank descriptions are a day apart. That happens when a pending line becomes the final one." : '';
+    const keep = `<button class="btn sm" data-action="dbl-not" data-a="${p.a.id}" data-b="${p.b.id}">Keep Both</button>`;
+    return `<div class="ck-row${open ? ' open' : ''}">
+        <button class="ck-main" data-action="chk-peek" data-id="${key}" aria-expanded="${open}" title="${open ? 'Show less' : 'Show both'}">
+          <span class="ck-l1"><span class="ck-p">${name}</span><span class="ck-a ${p.a.amt > 0 ? 'pos' : ''}">${txAmt(p.a.amt)}</span></span>
+          <span class="ck-c">${esc(catLabel(p.a) || catLabel(p.b) || 'Uncategorized')}</span>
+          <span class="ck-d">${esc(when)}</span>
+        </button>
+        <div class="ck-side">${can ? `<button class="ck-tick" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}" aria-label="Merge them into one" title="Merge them into one">${ICON.tick}</button>` : ''}</div>
+        ${open ? `<div class="ck-more">${half(p.a)}${half(p.b)}${why ? `<p class="ck-why">${esc(why)}</p>` : ''}<p class="ck-why">${can ? `Merging keeps ${p.a.ik ? "the bank's copy" : 'one'} and adds the category, note and payee from the other.` : 'One is a transfer, so delete the extra one by hand if they are the same.'}</p>
+          <div class="ck-btns">${can ? `<button class="btn sm primary" data-action="dbl-merge" data-a="${p.a.id}" data-b="${p.b.id}">${ICON.tick} Merge Into One</button>` : ''}${keep}</div></div>` : ''}
       </div>`;
   }
   // ---------- why reconcile doesn't match ----------
